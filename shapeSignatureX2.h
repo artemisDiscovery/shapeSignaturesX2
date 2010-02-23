@@ -19,6 +19,12 @@
 	
 		ctTree *sourceTree ;
 		
+		int totalSegments ;	    // For 1D histos
+		int totalSegmentPairs ; // For 2D histos
+		
+		int totalInterFragmentSegments ;	// 1D fragments
+		int totalInterFragmentSegmentPairs ;	// 2D fragments
+		
 		// Signature bundles are represented by a tag - for example
 		// 1DHISTO, 2DMEPHISTO, 2DMEPREDUCEDHISTO, etc. 
 		// A 1D class maps to histogram dictionary with key GLOBAL (all reflection segments),
@@ -32,14 +38,11 @@
 		
 		NSMutableDictionary *histogramBundleForTag ;
 		
-		// Important new feature is linear ordering of fragments. Arrange this way:
-		//
-		// Na(Ra1,Ra2,...)Nb(Rb1,Rb2,...)Nc
-		//
-		// Algorithm - Find first ring with one or zero non-ring neigbors. This 
-		// becomes one terminus of the chain (Ra1). Find all rings that neighbor the
-		// initial non-ring fragment ; only one of these (Ra') may connect through 
 
 }
+
+- (id) initUsingTree:(ctTree *)tree forTag:(NSString *)tag andRayTrace:(rayTrace *)rt 
+			withStyle:(histogramStyle)st ;
+			
 
 @end
