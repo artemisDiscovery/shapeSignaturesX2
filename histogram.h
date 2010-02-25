@@ -7,16 +7,17 @@
 //
 
 #import <Cocoa/Cocoa.h>
+#import "histogramBundle.h" 
 
 @class rayTrace ;
 
-typedef enum {	ONE_DIMENSIONAL_GLOBAL, TWO_DIMENSIONAL_GLOBAL, 
-				ONE_DIMENSIONAL_INTRAFRAGMENT, TWO_DIMENSIONAL_INTRAFRAGMENT,
-				ONE_DIMENSIONAL_INTERFRAGMENT, TWO_DIMENSIONAL_INTERFRAGMENT } histogramClass ;
+
+@class X2SignatureMapping ;
+
+typedef enum {	ONE_DIMENSIONAL, TWO_DIMENSIONAL } histogramClass ;
 
 typedef struct { double lengthDelta ; double MEPDelta ; } histogramStyle ;
 
-@class X2SignatureMapping ;
 
 @interface histogram : NSObject 
 {
@@ -25,32 +26,16 @@ typedef struct { double lengthDelta ; double MEPDelta ; } histogramStyle ;
 	// It can represent a global histogram, or a fragment histogram, either
 	// intra- or inter-fragment
 	
-	histogramClass type ;
+	histogramBundle hostBundle ;
 	
 	// Descriptive tag
 	
-	NSString *tag ;
-	NSString *fragmentKey ;
-	
-	// For partition histograms
-	 
-	int nParticipatingFragments ;
-	int nParticipatingFragmentAlloc ;
-	int *fragments ;
+	NSString *sortedFragmentKey ;
 	
 	int nBins ;
-	int nLengthBins ;
-	double lengthDelta ;
 	
-	int nMEPBins ;
-	
-	// minMEP will be generated automatically and will always be in increments of MEPDelta (to ensure bin 
-	// alignment when histograms are being compared) 
-	
-	double minMEP ;
-	double MEPDelta ;
-	
-	// For a 2-D histogram, number of bins = nLengthBins * nMEPBins ; for 1-D, number of bins = nLengthBins 
+	int nFragments ;
+	int fragments[3] ;
 	
 	// Counts, segments for 1D, segmentPairs for 2D
 	
@@ -60,13 +45,24 @@ typedef struct { double lengthDelta ; double MEPDelta ; } histogramStyle ;
 	int *binCounts ;
 	double *binProbs ;
 	
+	NSMutableSet *connectToHistos ;
+	
 
 }
 
-- (id) initWithRayTrace:(rayTrace *)rt tag:(NSString *)tag 
-				style:(histogramStyle)st fragment:(int)frag  ;
+//- (id) initWithRayTrace:(rayTrace *)rt tag:(NSString *)tag 
+//				style:(histogramStyle)st fragment:(int)frag  ;
 				
 //- (id) initClusterHistogramUsingMaxLength:(double)maxL style:(histogramStyle)st ;
+
+- (id) initWithBundle:(histogramBundle *)bndl fragmentIndices:(int []) indices ;
+
+- (void) add2DSegmentPairAtLengthBin:(int)lenBin MEPBin:(int)MEPBin ;
+- (void) add1DSegmentAtLengthBin:(int)iBin ;
+
+- (void) normalize ;
+
+- (void) setSortedFragmentKey:(NSString *)key ;
 			
 - (double) scoreWithHistogram:(histogram *)target useCorrelation:(BOOL)useCor  ;
 
@@ -80,8 +76,6 @@ typedef struct { double lengthDelta ; double MEPDelta ; } histogramStyle ;
 
 + (NSString *) descriptionForTag:(NSString *)t ;
 + (BOOL) isTag2D:(NSString *)t ;
-
-- (void) useChildrenToExtendMatch:(XSignatureMapping *)map ;
 
 - (NSString *) keyStringWithIncrement:(double)probInc ;
 - (NSArray *) discretizeWithIncrement:(double)probInc ;

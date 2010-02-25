@@ -48,15 +48,9 @@
 		// be done by partitioning into ring systems, and the "remainder" pieces. Terminal pieces attached to 
 		// rings will be grouped with the rings if there size falls below a specified threshold. 
 		
-		// The key/value pair "fragmentID" -> "R<#>" will be assigned to each ring system atom, 
-		// ring substitutents will be asssigned key/value pair "fragmentID" -> "S<#>" where # matches th 
-		// ring system, and the remainder will be assigned to non-Ring systems ("fragmentID" -> "NR<#>" ) .
-		// We will also assign the property "InRing" as "YES/NO"
-		
-		// The fragments array will include pointers to ctTrees that correspond to all these pieces. 
 		
 		NSMutableArray *treeFragments ;
-		
+				
 		
 		NSString *treeName ;
 		
@@ -111,6 +105,7 @@
 - (NSArray *) neighborFragmentsTo:(fragment *)f ;
 
 + (NSSet *) connectedSetFromBond:(ctBond *)seed usingBondSet:(NSMutableSet *)bSet excludeNodes:(NSSet *)excl ;
+
 
 
 @end

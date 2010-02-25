@@ -18,36 +18,27 @@ static NSArray *tagDescriptions ;
 + (void) initialize
 	{
 		recognizedTags = [ [ NSArray alloc ] 
-			initWithObjects:@"1DHISTOGLOBAL",@"2DMEPHISTOGLOBAL",@"2DMEPREDUCEDHISTOGLOBAL",
-				@"2DMEPREDUCEDINVERTEDHISTOGLOBAL",@"1DHISTOFRAGMENT",@"2DMEPHISTOFRAGMENT",@"2DMEPREDUCEDHISTOFRAGMENT",
-				@"2DMEPREDUCEDINVERTEDHISTOFRAGMENT",nil ] ;
+			initWithObjects:@"1DHISTO",@"2DMEPHISTO",@"2DMEPREDUCEDHISTO",
+				@"2DMEPREDUCEDINVERTEDHISTO", nil ] ;
 				
 		tagDescriptions = [ [ NSArray alloc ] 
-			initWithObjects:@"Shape-only comparison, molecule fragments not used",
-							@"Shape + detailed electrostatic comparison, molecule fragments not used",
-							@"Shape + simple electrostatic comparison, molecule fragments not used",
-							@"Shape + simple electrostatic receptor-based comparison, fragments not used",
-							@"Shape-only comparison, molecule fragments used in scoring",
-							@"Shape + detailed electrostatic comparison, molecule fragments used in scoring",
-							@"Shape + simple electrostatic comparison, molecule fragments used in scoring",
-							@"Shape + simple electrostatic receptor-based comparison, molecule fragments used in scoring", nil ] ;
+			initWithObjects:@"Shape-only comparison",
+							@"Shape + detailed electrostatic comparison",
+							@"Shape + simple electrostatic comparison, molecule",
+							@"Shape + simple electrostatic receptor-based comparison", nil ] ;
 							
 							
 							
 							
 		classByRecognizedTag = [ [ NSArray alloc ] 
-			initWithObjects:[ NSNumber numberWithInt:(int)ONE_DIMENSIONAL_GLOBAL ],
-							[ NSNumber numberWithInt:(int)TWO_DIMENSIONAL_GLOBAL ],
-							[ NSNumber numberWithInt:(int)TWO_DIMENSIONAL_GLOBAL ],
-							[ NSNumber numberWithInt:(int)TWO_DIMENSIONAL_GLOBAL ],
-							[ NSNumber numberWithInt:(int)ONE_DIMENSIONAL_PARTITION ],
-							[ NSNumber numberWithInt:(int)TWO_DIMENSIONAL_PARTITION ],
-							[ NSNumber numberWithInt:(int)TWO_DIMENSIONAL_PARTITION ],
-							[ NSNumber numberWithInt:(int)TWO_DIMENSIONAL_PARTITION ],nil ] ;
+			initWithObjects:[ NSNumber numberWithInt:(int)ONE_DIMENSIONAL ],
+							[ NSNumber numberWithInt:(int)TWO_DIMENSIONAL ],
+							[ NSNumber numberWithInt:(int)TWO_DIMENSIONAL ],
+							[ NSNumber numberWithInt:(int)TWO_DIMENSIONAL ], nil ] ;
 		
 		return ;
 	}
-	
+/*	
 - (id) initWithRayTrace:(rayTrace *)rt tag:(NSString *)tg style:(histogramStyle)st fragment:(int)frag
 	{
 		self = [ super init ] ;
@@ -437,7 +428,8 @@ static NSArray *tagDescriptions ;
 		
 		return nil ;
 	}
-	
+*/
+
 - (void) dealloc
 	{
 		// A little sloppy - we assume that the connectToHistos array has already been release by the 
@@ -453,6 +445,130 @@ static NSArray *tagDescriptions ;
 		return ;
 	}
 		
+- (id) initWithBundle:(histogramBundle *)bndl fragmentIndices:(int []) indices 
+	{
+		self = [ super init ] ;
+		
+		hostBundle = bndl ;
+		
+		nBins = hostBundle->nBins ;		// Need to local copy of this for coding, decoding
+		
+		binCounts = (int *) malloc( nBins * sizeof( int ) ) ;
+		binProbs = (double *) malloc( nBins * sizeof( double ) ) ;
+		
+		int iBin ;
+		
+		for( iBin = 0 ; iBin < nBins ; ++iBin )
+			{
+				binCounts[iBin] = 0 ;
+				binProbs[iBin] = 0. ;
+			}
+			
+		segmentCount = 0 ;
+		segmentPairCount = 0 ;
+		
+		sortedFragmentKey = nil ;
+		
+		if( indices )
+			{
+				if( hostBundle->type = ONE_DIMENSIONAL )
+					{
+						fragments[0] = indices[0] ;
+						fragments[1] = indices[1] ;
+						fragments[2] = 0 ;
+					}
+				else
+					{
+						fragments[0] = indices[0] ;
+						fragments[1] = indices[1] ;
+						fragments[2] = indices[2] ;
+					}
+					
+				nFragments = hostBundle->sourceTree->nFragments ;
+			}
+		else
+			{
+				fragments[0] = 0 ;
+				fragments[1] = 0 ;
+				fragments[2] = 0 ;
+				
+				nFragments = 0 ;
+			}
+			
+		nFragments = hostBundle->sourceTree->nFragments ;
+		
+		connectToHistos = [ [ NSMutableSet alloc ] initWithCapacity:( nFrags * nFrags ) ] ;
+		
+		return self ;
+	}
+		
+- (void) dealloc
+	{
+		free( binCounts ) ;
+		free( binProbs ) ;
+		
+		if( sortedFragmentKey ) [ sortedFragmentKey release ] ;
+		
+		[ connectToHistos release ] ;
+		
+		[ super dealloc ] ;
+		
+		return ;
+	}
+	
+- (void) add2DSegmentPairAtLengthBin:(int)lenBin MEPBin:(int)MEPBin
+	{
+		int iBin = ( MEPBin * nLengthBins ) + lenBin ;
+		
+		++binCounts[iBin] ;
+		
+		++segmentPairCount ;
+		
+		return ;
+	}
+		
+		
+- (void) add1DSegmentAtLengthBin:(int)iBin 
+	{
+		++binCounts[iBin] ;
+		
+		++segmentCount ;
+		
+		return ;
+	}
+	
+- (void) normalize
+	{
+		int iBin ;
+		
+		int denom ;
+		
+		if( hostBundle->type == ONE_DIMENSIONAL )
+			{
+				denom = segmentCount ;
+			}
+		else
+			{
+				denom = segmentPairCount ;
+			}
+		
+		for( iBin = 0 ; iBin < nBins ; ++iBin )
+			{
+				binProbs[iBin] = (double)binCounts[iBin] / denom ;
+			}
+			
+		return ;
+	}
+	
+- (void) setSortedFragmentKey:(NSString *)key
+	{
+		if( sortedFragmentKey ) [ sortedFragmentKey release ] ;
+		
+		sortedFragmentKey = [ [ NSString alloc ] initWithString:key ] ;
+		
+		return ;
+	}
+
 - (double) scoreWithHistogram:(histogram *)target useCorrelation:(BOOL)useCorr
 	{
 		// Always tricky to do this, especially if we admit different "minMep" value for the second dimension.
@@ -1079,25 +1195,21 @@ static NSArray *tagDescriptions ;
 	}
 
 - (void) encodeWithCoder:(NSCoder *)coder
-	{
-		[ coder encodeValueOfObjCType:@encode(int) at:&type ] ;
+	{		
+		// NOTE that we can't encode the host bundle
 		
-		[ coder encodeObject:tag ] ;
-		
-		[ coder encodeValueOfObjCType:@encode(int) at:&partition ] ;
+		[ coder encodeObject:sortedFragmentKey ] ;
 		
 		[ coder encodeValueOfObjCType:@encode(int) at:&nBins ] ;
 		
-		[ coder encodeValueOfObjCType:@encode(int) at:&nLengthBins ] ;
+		[ coder encodeValueOfObjCType:@encode(int) at:&nFragments ] ;
+		[ coder encodeArrayOfObjCType:@encode(int) count:3 at:fragments ] ;
 		
-		[ coder encodeValueOfObjCType:@encode(double) at:&lengthDelta ] ;
-		
-		[ coder encodeValueOfObjCType:@encode(int) at:&nMEPBins ] ;
-		
-		[ coder encodeValueOfObjCType:@encode(double) at:&minMEP ] ;
-		[ coder encodeValueOfObjCType:@encode(double) at:&MEPDelta ] ;
 		
 		[ coder encodeValueOfObjCType:@encode(int) at:&segmentCount ] ;
+		
+		[ coder encodeValueOfObjCType:@encode(int) at:&segmentPairCount ] ;
+		
 		
 		[ coder encodeArrayOfObjCType:@encode(int) count:nBins at:binCounts ] ;
 		
@@ -1111,26 +1223,18 @@ static NSArray *tagDescriptions ;
 - (id) initWithCoder:(NSCoder *)coder
 	{
 		self = [ super init ] ;
-		
-		[ coder decodeValueOfObjCType:@encode(int) at:&type ] ;
-		
-		tag = [ [ coder decodeObject ] retain ] ;
-		
-		[ coder decodeValueOfObjCType:@encode(int) at:&partition ] ;
+				
+		sorted= [ [ coder decodeObject ] retain ] ;
 		
 		[ coder decodeValueOfObjCType:@encode(int) at:&nBins ] ;
 		
-		[ coder decodeValueOfObjCType:@encode(int) at:&nLengthBins ] ;
-		
-		[ coder decodeValueOfObjCType:@encode(double) at:&lengthDelta ] ;
-		
-		[ coder decodeValueOfObjCType:@encode(int) at:&nMEPBins ] ;
-		
-		[ coder decodeValueOfObjCType:@encode(double) at:&minMEP ] ;
-		[ coder decodeValueOfObjCType:@encode(double) at:&MEPDelta ] ;
+		[ coder decodeValueOfObjCType:@encode(int) at:&nFragments ] ;
+		[ coder decodeArrayOfObjCType:@encode(int) count:3 at:fragments ] ;
 		
 		[ coder decodeValueOfObjCType:@encode(int) at:&segmentCount ] ;
+		[ coder decodeValueOfObjCType:@encode(int) at:&segmentPairCount ] ;
 		
+	
 		binCounts = (int *) malloc( nBins * sizeof( int ) ) ;
 		binProbs = (double *) malloc( nBins * sizeof( double ) ) ;
 		

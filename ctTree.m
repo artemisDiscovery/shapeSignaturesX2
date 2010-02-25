@@ -966,7 +966,7 @@
 				// The whole thing is one big fragment
 				
 				fragment *theFragment = [ [ fragment alloc ] initWithBonds:[ NSSet setWithObjects:bonds count:nBonds ] 
-						andType:NONRING checkForNeighbors:NO inTree:self ] ;
+						andType:SUBSTITUENT checkForNeighbors:NO inTree:self ] ;
 										
 				[ treeFragments addObject:theFragment ] ;
 					
@@ -1217,7 +1217,7 @@
 													
 						[ remainingBonds minusSet:nonRingSet ] ;
 													
-						if( [ nextFragment->fragmentNodes count ] <= MAX_SUBST_SIZE )
+						if( [ nextFragment heavyAtomCount ] <= MAX_SUBST_SIZE )
 							{
 								// See if only one ring neighbor (if two substituents are connected to the ring, they can still
 								// see each other, so we need to check specifically for a ring neighbor)
@@ -1304,6 +1304,22 @@
 					{
 						nextFragment->neighborFragments = [ self neighborFragmentsTo:nextFragment ] ;
 						[ nextFragment adjustNodesByNeighbors ] ;
+					}
+					
+				// Adjust fragment types
+				
+				fragmentEnumerator = [ treeFragments objectEnumerator ] ;
+				
+				while( ( nextFragment = [ fragmentEnumerator nextObject ] ) )
+					{
+						[ nextFragment assignNonRingFragmentType ] ;
+					}
+				
+				fragmentEnumerator = [ treeFragments objectEnumerator ] ;
+				
+				while( ( nextFragment = [ fragmentEnumerator nextObject ] ) )
+					{
+						[ nextFragment assignRingFragmentType ] ;
 					}
 					
 				[ initialRemainder release ] ;
@@ -1400,6 +1416,7 @@
 		
 		return returnSet ;
 	}
+				
 		
 		
 - (NSArray *) neighborFragmentsTo:(fragment *)f

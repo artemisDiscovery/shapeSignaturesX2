@@ -72,8 +72,7 @@
 		
 		
 		
-		NSDictionary *theHistogramBundle = [ histogram histogramBundleForTag:tag withRayTrace:rt
-			andStyle:st ] ;
+		histogramBundle *theHistogramBundle = [ [ histogramBundle alloc ]  initWithRayTrace:(rayTrace *)rt tag:(NSString *)tag style:(histogramStyle)st  ] ;
 				
 		if( ! theHistogramBundle )
 			{
