@@ -3,8 +3,8 @@
 #import "flatSurface.h"
 #import "rayTrace.h"
 #import "ctTree.h"
-#import "XSignature.h"
-#import "hitListItem.h"
+#import "shapeSignatureX2.h"
+//#import "hitListItem.h"
 #include <math.h> 
 
 int main (int argc, const char * argv[]) {
@@ -849,7 +849,7 @@ int main (int argc, const char * argv[]) {
 							cullingEnabled:segmentCulling skipSelfIntersectingSurface:skipSelfIntersection 
 							insideTrace:insideTrace randomizationAngle:randomA ] ;						
 					
-					if( [ printOption isEqualToString:@"printRaytrace" ] == YES)
+					if( [ printOption isEqualToString:@"printRaytrace" ] == YES )
 						{
 							NSString *logFile = [ mol2Directory stringByAppendingString:mol2Root ] ;
 							logFile = [ logFile stringByAppendingString:@".log" ] ;
@@ -864,7 +864,7 @@ int main (int argc, const char * argv[]) {
 					//		forTagRoot:@"1DHISTO" andRayTrace:nextRayTrace 
 					//		withStyle:style  ] ;
 				
-					XSignature *nextSignature = [ [ XSignature alloc ] initForAllTagsUsingTree:nextTree 
+					X2Signature *nextSignature = [ [ X2Signature alloc ] initForAllTagsUsingTree:nextTree 
 																andRayTrace:nextRayTrace withStyle:style ] ;
 														
 					[ theSignatures addObject:nextSignature ] ;
@@ -888,7 +888,7 @@ int main (int argc, const char * argv[]) {
 			
 			if( [ NSArchiver archiveRootObject:theSignatures toFile:createDB ] == NO )
 				{
-					printf( "CREATION OF XSIGNATURE ARCHIVE FAILED! \n" ) ;
+					printf( "CREATION OF X2SIGNATURE ARCHIVE FAILED! \n" ) ;
 					exit(1) ;
 				}
 			

@@ -7,9 +7,9 @@
 //
 
 #import <Cocoa/Cocoa.h>
-#import "histogramBundle.h" 
+ 
 
-@class rayTrace ;
+@class histogramBundle ;
 
 
 @class X2SignatureMapping ;
@@ -26,7 +26,7 @@ typedef struct { double lengthDelta ; double MEPDelta ; } histogramStyle ;
 	// It can represent a global histogram, or a fragment histogram, either
 	// intra- or inter-fragment
 	
-	histogramBundle hostBundle ;
+	histogramBundle *hostBundle ;
 	
 	// Descriptive tag
 	

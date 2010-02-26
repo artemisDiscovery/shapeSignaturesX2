@@ -8,7 +8,6 @@
 
 #import <Cocoa/Cocoa.h>
 #import "flatSurface.h"
-#import "histogram.h"
 
 
 @interface rayTrace : NSObject 
@@ -49,8 +48,6 @@
 		
 - (double) addReflectionAtPosition:(double [])pos withMEP:(double)m inPartition:(int)p atStart:(BOOL)strt ;
 
-- (histogram *) global2DHistogramWithLengthDelta:(double)ldel andMEPDelta:(double)mepDel ;
-- (histogram *) global1DHistogramWithLengthDelta:(double)ldel  ;
 
 - (NSArray *) partition2DHistogramsWithLengthDelta:(double)ldel andMEPDelta:(double)mepDel ; 
 - (NSArray *) partition1DHistogramsWithLengthDelta:(double)ldel ;

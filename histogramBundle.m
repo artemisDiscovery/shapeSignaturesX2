@@ -8,6 +8,34 @@
 
 #import "histogramBundle.h"
 
+//#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+//#define MAX(a,b) (((a) > (b)) ? (a) : (b))
+
+int MIN3( int a , int b, int c )
+	{
+		if( a <= b && a <= c ) return a ;
+		if( b <= a && b <= c ) return b ;
+		if( c <= a && c <= b ) return c ;
+	}
+	
+int MAX3( int a, int b, int c )
+	{
+		if( a >= b && a >= c ) return a ;
+		if( b >= a && b >= c ) return b ;
+		if( c >= a && c >= b ) return c ;
+	}
+	
+int MED3( int a, int b, int c )
+	{
+		if( a <= b && b <= c ) return b ;
+		if( c <= b && b <= a ) return b ;
+		
+		if( a <= c && c <= b ) return c ;
+		if( b <= c && c <= a ) return c ;
+		
+		if( b <= a && a <= c ) return a ;
+		if( c <= a && a <= b ) return a ;
+	}
 
 @implementation histogramBundle
 
@@ -16,14 +44,14 @@
 	
 		self = [ super init ] ;
 		
-		sourceTree = tr->theSurface->theTree ;
+		sourceTree = rt->theSurface->theTree ;
 		
 		lengthDelta = st.lengthDelta ;
 		MEPDelta = st.MEPDelta ;
 		 
 		// We will use the tag to adjust the class
 		
-		if( [ recognizedTags containsObject:tag ] == NO )
+		if( [ [ histogram recognizedTags ] containsObject:tg ] == NO )
 			{
 				printf( "ERROR - UNRECOGNIZED HISTOGRAM TAG\n" ) ;
 				return nil ;
@@ -31,9 +59,9 @@
 			
 		tag = [ [ NSString alloc ] initWithString:tg ] ;
 			
-		int histoTagIndex = [ recognizedTags indexOfObject:tg ] ;
+		int histoTagIndex = [ [ histogram recognizedTags ] indexOfObject:tg ] ;
 		
-		type = (histogramClass) [ [ classByRecognizedTag objectAtIndex:histoTagIndex ] intValue ] ;
+		type = (histogramClass) [ [ [ histogram classByRecognizedTag ] objectAtIndex:histoTagIndex ] intValue ] ;
 		
 		// Length bins - 
 		
@@ -78,10 +106,11 @@
 				nMEPBins = 1 ;
 			}
 			
+		nBins = nLengthBins * nMEPBins ;
 		
 		// To map fragment keys to histograms
 		
-		int nFragments = theTree->nFragments ;
+		int nFragments = sourceTree->nFragments ;
 		
 		sortedFragmentsToHistogram = [ [ NSMutableDictionary alloc ] 
 			initWithCapacity:( nFragments * nFragments ) ] ;
@@ -90,21 +119,24 @@
 		// If 1D histo, we will always set first index to 0
 		
 		histogram ****fragmentIndicesToHistogram = ( histogram ****) malloc( 
-			( nFragments + 1 ) * sizeof( fragmentIndicesToHistogram *** ) ) ;
+			( nFragments + 1 ) * sizeof( histogram *** ) ) ;
 			
 		int i, j, k ;
 		
 		for( i = 0 ; i <= nFragments ; ++i )
 			{
 				fragmentIndicesToHistogram[i] = ( histogram *** ) malloc(
-					( nFragments + 1 ) * sizeof( fragmentIndicesToHistogram ** ) ) ;
+					( nFragments + 1 ) * sizeof( histogram ** ) ) ;
 				
 				for( j = 0 ; j <= nFragments ; ++j )
 					{
 						fragmentIndicesToHistogram[i][j] = ( histogram ** ) malloc(
-							( nFragments + 1 ) * sizeof( fragmentIndicesToHistogram * ) ) ;
+							( nFragments + 1 ) * sizeof( histogram * ) ) ;
 							
-						fragmentIndicesToHistogram[i][j][k] = nil ;
+						for( k = 0 ; k <= nFragments ; ++k )
+							{
+								fragmentIndicesToHistogram[i][j][k] = nil ;
+							}
 					}
 			}
 			
@@ -172,7 +204,7 @@
 						double d = sqrt( dx*dx + dy*dy + dz*dz ) ;
 						
 						
-						iBin = (int) floor( d / lengthDelta ) ;
+						int iBin = (int) floor( d / lengthDelta ) ;
 					
 						if( iBin < 0 || iBin >= nBins )
 							{
@@ -278,7 +310,7 @@
 						
 						
 						
-						iBin = ( MEPBin * nLengthBins ) + lenBin ;
+						int iBin = ( MEPBin * nLengthBins ) + lenBin ;
 					
 						if( iBin < 0 || iBin >= nBins )
 							{
@@ -394,7 +426,7 @@
 								MEPBin = 1 ;
 							}
 						
-						iBin = ( MEPBin * nLengthBins ) + lenBin ;
+						int iBin = ( MEPBin * nLengthBins ) + lenBin ;
 					
 						if( iBin < 0 || iBin >= nBins )
 							{
@@ -512,7 +544,7 @@
 								MEPBin = 0 ;
 							}
 						
-						iBin = ( MEPBin * nLengthBins ) + lenBin ;
+						int iBin = ( MEPBin * nLengthBins ) + lenBin ;
 					
 						if( iBin < 0 || iBin >= nBins )
 							{
@@ -582,7 +614,7 @@
 - (void) encodeWithCoder:(NSCoder *)coder
 	{
 		[ coder encodeValueOfObjCType:@encode(int) at:&type ] ;
-		[ coder encodeValueOfObjCType:@encode(style) at:&style ] ;
+		[ coder encodeValueOfObjCType:@encode(histogramStyle) at:&style ] ;
 		
 		[ coder encodeObject:tag ] ;
 		
@@ -606,7 +638,7 @@
 		self = [ super init ] ;
 		
 		[ coder decodeValueOfObjCType:@encode(int) at:&type ] ;
-		[ coder decodeValueOfObjCType:@encode(style) at:&style ] ;
+		[ coder decodeValueOfObjCType:@encode(histogramStyle) at:&style ] ;
 		
 		tag = [ [ coder decodeObject ] retain ] ;
 		sourceTree = [ [ coder decodeObject ] retain ] ;
@@ -621,10 +653,21 @@
 		
 		sortedFragmentsToHistogram = [ [ coder decodeObject ] retain ] ;
 		
+		// Need to set the parent bundle ID in all the child histograms
+		
+		NSEnumerator *histogramEnumerator = [ [ sortedFragmentsToHistogram allValues ] objectEnumerator ] ;
+		histogram *nextHisto ;
+		
+		while( ( nextHisto = [ histogramEnumerator nextObject ] ) )
+			{
+				nextHisto->hostBundle = self ;
+			}
+		
+		
 		return self ;
 	}
 		
-							
+
 		
 					
 @end

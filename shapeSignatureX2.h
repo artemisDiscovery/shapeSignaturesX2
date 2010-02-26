@@ -7,9 +7,10 @@
 //
 
 #import <Cocoa/Cocoa.h>
+#import "histogramBundle.h"
 
 
-@interface shapeSignatureX2 : NSObject 
+@interface X2Signature : NSObject 
 {
 	// This is the second incarnation of the new shape sig X object. 
 	// I am starting from scratch as I will now reatain both inter- and intra-
@@ -19,11 +20,21 @@
 	
 		ctTree *sourceTree ;
 		
+		BOOL segmentsWereCounted ;
+		BOOL segmentPairsWereCounted ;
+		
+		BOOL fragmentSegmentsWereCounted ;
+		BOOL fragmentSegmentPairsWereCounted ;
+		
+		
 		int totalSegments ;	    // For 1D histos
 		int totalSegmentPairs ; // For 2D histos
 		
 		int totalInterFragmentSegments ;	// 1D fragments
 		int totalInterFragmentSegmentPairs ;	// 2D fragments
+		
+		int totalIntraFragmentSegments ;	// 1D fragments
+		int totalIntraFragmentSegmentPairs ;	// 2D fragments
 		
 		// Signature bundles are represented by a tag - for example
 		// 1DHISTO, 2DMEPHISTO, 2DMEPREDUCEDHISTO, etc. 
@@ -41,8 +52,8 @@
 
 }
 
-- (id) initUsingTree:(ctTree *)tree forTag:(NSString *)tag andRayTrace:(rayTrace *)rt 
-			withStyle:(histogramStyle)st ;
+- (id) initForAllTagsUsingTree:(ctTree *)tree andRayTrace:(rayTrace *)rt withStyle:(histogramStyle)st ;
 			
+- (void) addHistogramsWithTag:(NSString *)tag forRayTrace:(rayTrace *)rt withStyle:(histogramStyle)st ;
 
 @end

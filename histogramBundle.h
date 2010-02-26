@@ -8,6 +8,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import "rayTrace.h"
+#import "histogram.h"
 
 
 @interface histogramBundle : NSObject 

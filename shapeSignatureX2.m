@@ -8,8 +8,9 @@
 
 #import "shapeSignatureX2.h"
 
+static NSString *version ;
 
-@implementation shapeSignatureX2
+@implementation X2Signature
 
 + (void) initialize
 	{
@@ -23,8 +24,7 @@
 		return version ;
 	}
 
-- (id) initUsingTree:(ctTree *)tree forTag:(NSString *)tag andRayTrace:(rayTrace *)rt 
-			withStyle:(histogramStyle)st
+- (id) initForAllTagsUsingTree:(ctTree *)tree andRayTrace:(rayTrace *)rt withStyle:(histogramStyle)st 
 	{
 		self = [ super init ] ;
 		
@@ -33,9 +33,16 @@
 		
 		totalInterFragmentSegments = 0 ;	// 1D fragments
 		totalInterFragmentSegmentPairs = 0 ;	// 2D fragments
-	
-		segmentsCounted = NO ;
 		
+		totalIntraFragmentSegments = 0 ;	// 1D fragments
+		totalIntraFragmentSegmentPairs = 0 ;	// 2D fragments
+	
+		segmentsWereCounted = NO ;
+		segmentPairsWereCounted = NO ;
+		
+		fragmentSegmentsWereCounted = NO ;
+		fragmentSegmentPairsWereCounted = NO ;
+				
 		// Histogram bundle dictionary
 		
 		histogramBundleForTag = [ [ NSMutableDictionary alloc ] 
@@ -47,7 +54,16 @@
 		
 		identifier = nil ;
 		
-		[ self addHistogramsWithTag:tag forRayTrace:rt withStyle:st ] ;
+		// For all tags
+		
+		NSEnumerator *tagEnumerator = [ [ histogram recognizedTags ] objectEnumerator ] ;
+		
+		NSString *nextTag ;
+		
+		while( ( nextTag = [ tagEnumerator nextObject ] ) )
+			{
+				[ self addHistogramsWithTag:nextTag forRayTrace:rt withStyle:st ] ;
+			}
 		
 				 
 		
@@ -68,7 +84,7 @@
 				return ;
 			}
 			
-		// Make the histrograms, add the bundle to our dictionary
+		// Make the histograms, add the bundle to our dictionary
 		
 		
 		
@@ -82,86 +98,161 @@
 			
 		[ histogramBundleForTag setObject:theHistogramBundle forKey:tag ] ;
 			
-		// THE STUFF BELOW NEEDS CHANGED!!!
+		// Check segments/segmentPairs
 		
-		if ( segmentsCounted == NO )
+		NSDictionary *histoDict = theHistogramBundle->sortedFragmentsToHistogram ;
+		
+		histogram *globalHisto = [ histoDict objectForKey:@"GLOBAL" ] ;
+		
+		if( theHistogramBundle->type == ONE_DIMENSIONAL )
 			{
-				totalSegments = globalHisto->segmentCount ;
-			}
-		
-				
-		// Add to our dictionary (just one item)
-		
-		[ globalHistogramsByTagRoot setObject:[ NSArray arrayWithObject:globalHisto ] 
-			forKey:root ] ;
-			
-		[ globalHisto release ] ;
-			
-		// Make the fragment histograms
-		
-		NSString *fragmentTag = [ [ root stringByAppendingString:@"FRAGMENT" ] uppercaseString ] ;
-		int iFragment ;
-		
-		// Make sure that the tag is available 
-		
-		if( [ histogram tagAvailable:fragmentTag ] == NO )
-			{
-				printf( "TAG %s NOT AVAILABLE, NOT ADDED!\n", [ fragmentTag cString ]  ) ;
-				return ;
-			}
-		
-		NSMutableArray *tempArray = [ [ NSMutableArray alloc ] initWithCapacity:5 ] ;
-		
-		int totalIntraFragmentSegmentsTmp = 0 ;
-		
-		for( iFragment = 1 ; iFragment <= sourceTree->nFragments ; ++iFragment )
-			{
-				histogram *fragmentHisto = [ [ histogram alloc ] initWithRayTrace:rt tag:fragmentTag 
-					style:st fragment:iFragment ] ;
-				
-				if( ! fragmentHisto )
+				if( segmentsWereCounted == NO )
 					{
-						printf( "HISTOGRAM FAILURE FOR FRAGMENT TAG %s , NOT ADDED!\n", [ fragmentTag cString ] ) ;
-						return  ;
+						totalSegments = globalHisto->segmentCount ;
+						segmentsWereCounted = YES ;
 					}
-					
-				[ tempArray addObject:fragmentHisto ] ;
-				
-				[ fragmentHisto release ] ;
-				
-				totalIntraFragmentSegmentsTmp += fragmentHisto->segmentCount ;
+				else if( totalSegments != globalHisto->segmentCount )
+					{
+						printf( "WARNING: TOTAL SEGMENTS DISAGREE (%d VS %d) FOR TAG %s\n",
+							globalHisto->segmentCount, totalSegments, [ tag cString ] ) ;
+					}
+			}
+		else
+			{
+				if( segmentPairsWereCounted == NO )
+					{
+						totalSegmentPairs = globalHisto->segmentPairCount ;
+						segmentPairsWereCounted = YES ;
+					}
+				else if( totalSegmentPairs != globalHisto->segmentPairCount )
+					{
+						printf( "WARNING: TOTAL SEGMENT PAIRS DISAGREE (%d VS %d) FOR TAG %s\n",
+							globalHisto->segmentPairCount, totalSegmentPairs, [ tag cString ] ) ;
+					}
 			}
 			
-		[ fragmentHistogramsByTagRoot setObject:[ NSArray arrayWithArray:tempArray ] 
-			forKey:root ] ;
+		// Check counts for non-global histos
+		
+		NSEnumerator *keyEnumerator = [ [ histoDict allKeys ] objectEnumerator ] ;
+		NSString *histoKey ;
 	
-		if( segmentsCounted == NO )
+		int tempIntraCount = 0 ;
+		int tempInterCount = 0 ;
+
+		
+		while( ( histoKey = [ keyEnumerator nextObject ] ) )
 			{
-				totalIntraFragmentSegments = totalIntraFragmentSegmentsTmp ;
-				segmentsCounted = YES ;
-			}
-		
-		// Determine connections between fragments
-		
-		// Do this simply, by enumerating the bonds and looking for fragment-fragment connections
-		
-		int iBond ;
-		
-		for( iBond = 0 ; iBond < sourceTree->nBonds ; ++iBond )
-			{
-				int fragIndex1 = sourceTree->bonds[iBond]->node1->fragmentIndex ;
-				int fragIndex2 = sourceTree->bonds[iBond]->node2->fragmentIndex ;
+				if( [ histoKey isEqualToString:@"GLOBAL" ] == YES ) continue ;
 				
-				 // Convert to indices in tempArray
-				 
-				 histogram *histo1 = [ tempArray objectAtIndex:(fragIndex1 - 1) ] ;
-				 histogram *histo2 = [ tempArray objectAtIndex:(fragIndex2 - 1) ] ;
-				 
-				 [ histo1 addConnectionToHistogram:histo2 ] ;
-				 [ histo2 addConnectionToHistogram:histo1 ] ;
+				histogram *nextHisto = [ histoDict objectForKey:histoKey ] ;
+				
+				// Different handling of 1D and 2D
+				
+				
+				if( theHistogramBundle->type == ONE_DIMENSIONAL )
+					{
+						 if( nextHisto->fragments[0] == nextHisto->fragments[1] )
+							{
+								// Intra
+								
+								if( fragmentSegmentsWereCounted == NO )
+									{
+										totalIntraFragmentSegments += nextHisto->segmentCount ;
+									}
+								else
+									{
+										tempIntraCount += nextHisto->segmentCount ;
+									}
+							}
+						else
+							{
+								// Inter
+								
+								if( fragmentSegmentsWereCounted == NO )
+									{
+										totalInterFragmentSegments += nextHisto->segmentCount ;
+									}
+								else
+									{
+										tempInterCount += nextHisto->segmentCount ;
+									}
+							}
+					}
+				else
+					{
+						 if( nextHisto->fragments[0] == nextHisto->fragments[1] &&
+								nextHisto->fragments[0] == nextHisto->fragments[2] )
+							{
+								// Intra
+								
+								if( fragmentSegmentPairsWereCounted == NO )
+									{
+										totalIntraFragmentSegmentPairs += nextHisto->segmentPairCount ;
+									}
+								else
+									{
+										tempIntraCount += nextHisto->segmentPairCount ;
+									}
+							}
+						else
+							{
+								// Inter
+								
+								if( fragmentSegmentPairsWereCounted == NO )
+									{
+										totalInterFragmentSegmentPairs += nextHisto->segmentPairCount ;
+									}
+								else
+									{
+										tempInterCount += nextHisto->segmentPairCount ;
+									}
+							}
+					}
 			}
 			
-		[ tempArray release ] ;
+		if( theHistogramBundle->type == ONE_DIMENSIONAL )
+			{
+				if( fragmentSegmentsWereCounted == NO )
+					{
+						fragmentSegmentsWereCounted = YES ;
+					}
+				else
+					{
+						if( totalIntraFragmentSegments != tempIntraCount )
+							{
+								printf( "WARNING: INTRAFRAGMENT SEGMENTS DISAGREE (%d VS %d) FOR TAG %s\n",
+									tempIntraCount, totalIntraFragmentSegments, [ tag cString ] ) ;
+							}
+							
+						if( totalInterFragmentSegments != tempInterCount )
+							{
+								printf( "WARNING: INTERFRAGMENT SEGMENTS DISAGREE (%d VS %d) FOR TAG %s\n",
+									tempInterCount, totalInterFragmentSegments, [ tag cString ] ) ;
+							}
+					}
+			}
+		else
+			{
+				if( fragmentSegmentPairsWereCounted == NO )
+					{
+						fragmentSegmentPairsWereCounted = YES ;
+					}
+				else
+					{
+						if( totalIntraFragmentSegmentPairs != tempIntraCount )
+							{
+								printf( "WARNING: INTRAFRAGMENT SEGMENT PAIRS DISAGREE (%d VS %d) FOR TAG %s\n",
+									tempIntraCount, totalIntraFragmentSegmentPairs, [ tag cString ] ) ;
+							}
+							
+						if( totalInterFragmentSegmentPairs != tempInterCount )
+							{
+								printf( "WARNING: INTERFRAGMENT SEGMENT PAIRS DISAGREE (%d VS %d) FOR TAG %s\n",
+									tempInterCount, totalInterFragmentSegmentPairs, [ tag cString ] ) ;
+							}
+					}
+			}
+			
 		
 		return ;
 	}

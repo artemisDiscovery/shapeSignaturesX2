@@ -8,6 +8,7 @@
 
 #import "histogram.h"
 #import "rayTrace.h"
+#import "histogramBundle.h"
 
 static NSArray *recognizedTags ;
 static NSArray *classByRecognizedTag ;
@@ -430,20 +431,6 @@ static NSArray *tagDescriptions ;
 	}
 */
 
-- (void) dealloc
-	{
-		// A little sloppy - we assume that the connectToHistos array has already been release by the 
-		// dealloc of the parent XSignature
-		
-		[ tag release ] ;
-		
-		free( binProbs ) ;
-		free( binCounts ) ;
-		
-		[ super dealloc ] ;
-		
-		return ;
-	}
 		
 - (id) initWithBundle:(histogramBundle *)bndl fragmentIndices:(int []) indices 
 	{
@@ -471,7 +458,7 @@ static NSArray *tagDescriptions ;
 		
 		if( indices )
 			{
-				if( hostBundle->type = ONE_DIMENSIONAL )
+				if( hostBundle->type == ONE_DIMENSIONAL )
 					{
 						fragments[0] = indices[0] ;
 						fragments[1] = indices[1] ;
@@ -495,7 +482,7 @@ static NSArray *tagDescriptions ;
 				nFragments = 0 ;
 			}
 			
-		nFragments = hostBundle->sourceTree->nFragments ;
+		int nFrags = hostBundle->sourceTree->nFragments ;
 		
 		connectToHistos = [ [ NSMutableSet alloc ] initWithCapacity:( nFrags * nFrags ) ] ;
 		
@@ -518,7 +505,7 @@ static NSArray *tagDescriptions ;
 	
 - (void) add2DSegmentPairAtLengthBin:(int)lenBin MEPBin:(int)MEPBin
 	{
-		int iBin = ( MEPBin * nLengthBins ) + lenBin ;
+		int iBin = ( MEPBin * hostBundle->nLengthBins ) + lenBin ;
 		
 		++binCounts[iBin] ;
 		
@@ -673,10 +660,10 @@ static NSArray *tagDescriptions ;
 		
 		// To match my spiel above:
 		
-		int LQ = nLengthBins - 1 ;
+		int LQ = hostBundle->nLengthBins - 1 ;
 		int BQ = nBins - 1 ;
 		
-		int LT = target->nLengthBins - 1 ;
+		int LT = target->hostBundle->nLengthBins - 1 ;
 		int BT = target->nBins - 1 ;
 		
 		int L = LQ > LT ? LQ : LT ;
@@ -685,15 +672,17 @@ static NSArray *tagDescriptions ;
 		
 		// Note that this object is defined as the "query"
 		
-		if( type == TWO_DIMENSIONAL_GLOBAL || type == TWO_DIMENSIONAL_PARTITION )
+		histogramClass type = hostBundle->type ;
+		
+		if( type == TWO_DIMENSIONAL )
 			{
 				// Do the hard one first
 				
-				int minMEPBinQ = (int) round( minMEP / MEPDelta ) ;
-				int minMEPBinT = (int) round( target->minMEP / target->MEPDelta ) ;
+				int minMEPBinQ = (int) round( hostBundle->minMEP / hostBundle->MEPDelta ) ;
+				int minMEPBinT = (int) round( target->hostBundle->minMEP / target->hostBundle->MEPDelta ) ;
 				
-				int MQ = nMEPBins  ;
-				int MT = target->nMEPBins  ;
+				int MQ = hostBundle->nMEPBins  ;
+				int MT = target->hostBundle->nMEPBins  ;
 				
 				int maxMEPBinQ = minMEPBinQ + MQ - 1 ;
 				int maxMEPBinT = minMEPBinT + MT - 1 ;
@@ -952,18 +941,18 @@ static NSArray *tagDescriptions ;
 	
 - (NSArray *) discretizeWithIncrement:(double)probInc
 	{
-		if( [ histogram isTag2D:tag ] == YES ) return nil ;
+		if( [ histogram isTag2D:hostBundle->tag ] == YES ) return nil ;
 		
-		NSMutableArray *returnArray = [ NSMutableArray arrayWithCapacity:nLengthBins ] ;
+		NSMutableArray *returnArray = [ NSMutableArray arrayWithCapacity:hostBundle->nLengthBins ] ;
 		
 		
 		int k ;
 		
-		if( nLengthBins < 2 || nLengthBins > 100 ) return nil ;
+		if( hostBundle->nLengthBins < 2 || hostBundle->nLengthBins > 100 ) return nil ;
 		
 		// Readjust length in case of trailing zeroes
 		
-		k = nLengthBins - 1 ;
+		k = hostBundle->nLengthBins - 1 ;
 		
 		while( binProbs[k] == 0. && k > 0 )
 			{
@@ -1168,8 +1157,7 @@ static NSArray *tagDescriptions ;
 		
 		if( idx == NSNotFound ) return NO ;
 		
-		if( [ classByRecognizedTag objectAtIndex:idx ] == TWO_DIMENSIONAL_GLOBAL || 
-			[ classByRecognizedTag objectAtIndex:idx ] == TWO_DIMENSIONAL_PARTITION )
+		if( [ classByRecognizedTag objectAtIndex:idx ] == TWO_DIMENSIONAL )
 			{
 				return YES ;
 			}
@@ -1224,7 +1212,6 @@ static NSArray *tagDescriptions ;
 	{
 		self = [ super init ] ;
 				
-		sorted= [ [ coder decodeObject ] retain ] ;
 		
 		[ coder decodeValueOfObjCType:@encode(int) at:&nBins ] ;
 		

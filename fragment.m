@@ -45,6 +45,9 @@
 				
 				neighborFragments = [ tr neighborFragmentsTo:self ] ;
 				
+				// Neighbor check will override type passed in!
+				
+				
 				// Subtract any common nodes
 				/*
 				NSEnumerator *neighborEnumerator = [ neighborFragments objectEnumerator ] ;
@@ -100,15 +103,36 @@
 
 				switch( type )
 					{
+						case RING_TERMINAL:
+							sprintf( label, "%s%d", "RT", idx ) ;
+							[ nextNode addPropertyValue:label forKey:"fragmentID" ] ;
+							break ;
+							
+						case RING_INTERIOR:
+							sprintf( label, "%s%d", "RI", idx ) ;
+							[ nextNode addPropertyValue:label forKey:"fragmentID" ] ;
+							break ;
+							
+						case BRIDGE:
+							sprintf( label, "%s%d", "B", idx ) ;
+							[ nextNode addPropertyValue:label forKey:"fragmentID" ] ;
+							break ;
+							
+						case SUBSTITUENT:
+							sprintf( label, "%s%d", "S", idx ) ;
+							[ nextNode addPropertyValue:label forKey:"fragmentID" ] ;
+							break ;
+						
 						case RING:
 							sprintf( label, "%s%d", "R", idx ) ;
 							[ nextNode addPropertyValue:label forKey:"fragmentID" ] ;
-							break ;
+							break ;	
 							
 						case NONRING:
 							sprintf( label, "%s%d", "NR", idx ) ;
 							[ nextNode addPropertyValue:label forKey:"fragmentID" ] ;
-							break ;
+							break ;	
+						
 					}
 			}
 			
@@ -121,7 +145,7 @@
 		
 		// If we are a ring, keep our nodes (only nonring fragments give up nodes)
 		
-		if( type == RING ) return ;
+		if( type == RING || type == RING_TERMINAL || type == RING_INTERIOR ) return ;
 		
 		NSEnumerator *neighborEnumerator = [ neighborFragments objectEnumerator ] ;
 		
@@ -135,5 +159,103 @@
 		return ;
 	}
 		
+- (int) heavyAtomCount
+	{
+		int j ;
+		
+		int hCount = 0 ;
+		
+		NSEnumerator *nodeEnumerator = [ fragmentNodes objectEnumerator ] ;
+		ctNode *theNode ;
+		
+		while( ( theNode = [ nodeEnumerator nextObject ] ) )
+			{
+				if( theNode->atomicNumber > 1 ) ++hCount ;
+			}
+			
+		return hCount ;
+	}
+	
+- (int) neighborRingCount 
+	{
+		if( ! neighborFragments ) return 0 ;
+		
+		NSEnumerator *neighborFragmentEnumerator = [ neighborFragments objectEnumerator ] ;
+		
+		fragment *nextNeighborFragment ;
+		
+		int ringCount = 0 ;
+		
+		while( ( nextNeighborFragment = [ neighborFragmentEnumerator nextObject ] ) )
+			{
+				if( nextNeighborFragment->type == RING || nextNeighborFragment->type == RING_INTERIOR ||
+					nextNeighborFragment->type == RING_TERMINAL ) ++ringCount ;
+			}
+			
+		return ringCount ;
+	}
+
+- (int) neighborBridgeCount
+	{
+		if( ! neighborFragments ) return 0 ;
+		
+		NSEnumerator *neighborFragmentEnumerator = [ neighborFragments objectEnumerator ] ;
+		
+		fragment *nextNeighborFragment ;
+		
+		int bridgeCount = 0 ;
+		
+		while( ( nextNeighborFragment = [ neighborFragmentEnumerator nextObject ] ) )
+			{
+				if( nextNeighborFragment->type == BRIDGE ) ++bridgeCount ;
+			}
+			
+		return bridgeCount ;
+	}
+
+
+- (void) assignNonRingFragmentType
+	{
+		// Skip if not a NONRING type
+		
+		if( type != NONRING ) return ;
+		
+		int neighborRingCount = [ self neighborRingCount ] ;
+		
+		if( neighborRingCount == 0 ) 
+			{
+				return ; // How did that happen?
+			}
+		 
+		if( neighborRingCount > 1 )
+			{
+				type = BRIDGE ;
+			}
+		else
+			{
+				type = SUBSTITUENT ;
+			}
+		
+		return ;
+	}
+	
+- (void) assignRingFragmentType
+	{
+		if( type != RING ) return ;
+		
+		int neighborBridgeCount = [ self neighborBridgeCount ] ;
+		
+		 
+		if( neighborBridgeCount <= 1 )
+			{
+				type = RING_TERMINAL ;
+			}
+		else
+			{
+				type = RING_INTERIOR ;
+			}
+		
+		return ;
+	}
 
 @end
