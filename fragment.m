@@ -20,7 +20,8 @@
 		
 		fragmentNodes = [ [ NSMutableSet alloc ] initWithCapacity:[ fragmentBonds count ] ] ;
 		
-		neighborFragments = nil ; ;
+		neighborFragments = nil ; 
+		neighborFragmentIndices = nil ;
 		
 		NSEnumerator *bondEnumerator = [ fragmentBonds objectEnumerator ] ;
 		
@@ -70,8 +71,9 @@
 		[ fragmentNodes release ] ;
 		
 		if( neighborFragments ) [ neighborFragments release ] ;
-		if( center ) [ center release ] ;
-		if( normal ) [ normal release ] ;
+		if( neighborFragmentIndices ) [ neighborFragmentIndices release ] ;
+		//if( center ) [ center release ] ;
+		//if( normal ) [ normal release ] ;
 		
 		[ super dealloc ] ;
 		
@@ -257,5 +259,59 @@
 		
 		return ;
 	}
+	
+- (void) assignNeighborFragmentIndices
+	{
+		if( ! neighborFragments ) return ;
+		
+		neighborFragmentIndices = [ [ NSMutableSet alloc ] initWithCapacity:[ neighborFragments count ] ] ;
+		
+		NSEnumerator *neighborFragmentEnumerator = [ neighborFragments objectEnumerator ] ;
+		
+		fragment *nextNeighborFragment ;
+		
+		while( ( nextNeighborFragment = [ neighborFragmentEnumerator nextObject ] ) )
+			{
+				fragment *neighbor = [ nextNeighborFragment objectAtIndex:0 ] ;
+				[ neighborFragmentIndices addObject:[ [ NSString stringWithFormat:@"%d",neighbor->index ] ] ] ;
+			}
+			
+		return ;
+	}
+				
+				
+	
+- (void) encodeWithCoder:(NSCoder *)coder
+	{
+
+		[ coder encodeValueOfObjCType:@encode(int) at:&index ] ;
+		[ coder encodeValueOfObjCType:@encode(fragmentType) at:&type ] ;
+		
+		[ coder encodeObject:fragmentNodes ] ;
+		[ coder encodeObject:fragmentBonds ] ;
+		
+		[ coder encodeObject:neighborFragments ] ;
+		
+		
+		return ;
+	}
+		
+- (id) initWithCoder:(NSCoder *)coder
+	{
+		self = [ super init ] ;
+		
+		[ coder decodeValueOfObjCType:@encode(int) at:&index ] ;
+		[ coder decodeValueOfObjCType:@encode(fragmentType) at:&type ] ;
+		
+		fragmentNodes = [ [ coder decodeObject ] retain ] ;
+		fragmentBonds = [ [ coder decodeObject ] retain ] ;
+		
+		neighborFragments = [ [ coder decodeObject ] retain ] ;
+		
+		
+		return self ;
+	}
+
+
 
 @end

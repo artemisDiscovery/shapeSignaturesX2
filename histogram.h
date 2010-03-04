@@ -45,8 +45,6 @@ typedef struct { double lengthDelta ; double MEPDelta ; } histogramStyle ;
 	int *binCounts ;
 	double *binProbs ;
 	
-	NSMutableSet *connectToHistos ;
-	
 
 }
 

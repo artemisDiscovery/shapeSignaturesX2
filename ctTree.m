@@ -1345,6 +1345,15 @@
 				++nFragments ;
 			}
 		
+		// For later convenience, we set a set of all the neighbor fragment indices, saved as strings
+		
+		fragmentEnumerator = [ treeFragments objectEnumerator ] ;
+		
+		while( ( nextFragment = [ fragmentEnumerator nextObject ] ) )
+			{
+				[ nextFragment assignNeighborFragmentIndices ] ;
+			}
+		
 				
 		return ;
 		

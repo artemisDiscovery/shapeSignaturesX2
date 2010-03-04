@@ -31,9 +31,11 @@ typedef enum { RING, RING_TERMINAL, RING_INTERIOR, NONRING, SUBSTITUENT, BRIDGE 
 	NSMutableSet *fragmentNodes ;
 	NSMutableSet *fragmentBonds ;
 	
-	MMVector3 *normal, *center ;
+	//MMVector3 *normal, *center ;
 	
 	NSArray *neighborFragments ;
+	
+	NSSet *neighborFragmentIndices ;
 
 }
 
@@ -55,5 +57,7 @@ typedef enum { RING, RING_TERMINAL, RING_INTERIOR, NONRING, SUBSTITUENT, BRIDGE 
 
 - (void) assignNonRingFragmentType ;
 - (void) assignRingFragmentType ;
+
+- (void) assignNeighborFragmentIndices ;
 
 @end

@@ -20,7 +20,6 @@
 @public
 
 	histogramClass type ;
-	histogramStyle style ;
 	NSString *tag ;
 	
 	ctTree *sourceTree ;

@@ -484,8 +484,6 @@ static NSArray *tagDescriptions ;
 			
 		int nFrags = hostBundle->sourceTree->nFragments ;
 		
-		connectToHistos = [ [ NSMutableSet alloc ] initWithCapacity:( nFrags * nFrags ) ] ;
-		
 		return self ;
 	}
 		
@@ -495,8 +493,6 @@ static NSArray *tagDescriptions ;
 		free( binProbs ) ;
 		
 		if( sortedFragmentKey ) [ sortedFragmentKey release ] ;
-		
-		[ connectToHistos release ] ;
 		
 		[ super dealloc ] ;
 		
@@ -852,7 +848,7 @@ static NSArray *tagDescriptions ;
 		return Score ;
 	}
 			
-		
+/*
 - (void) addConnectionToHistogram:(histogram *)h 
 	{
 		if( h == self ) return ;
@@ -864,6 +860,7 @@ static NSArray *tagDescriptions ;
 		return ;
 	}
 	
+*/
 /*
 - (NSString *) keyStringWithIncrement:(double)probInc
 	{
@@ -1202,9 +1199,7 @@ static NSArray *tagDescriptions ;
 		[ coder encodeArrayOfObjCType:@encode(int) count:nBins at:binCounts ] ;
 		
 		[ coder encodeArrayOfObjCType:@encode(double) count:nBins at:binProbs ] ;
-		
-		[ coder encodeObject:connectToHistos ] ;
-		
+				
 		return ;
 	}
 	
@@ -1229,9 +1224,6 @@ static NSArray *tagDescriptions ;
 		
 		[ coder decodeArrayOfObjCType:@encode(double) count:nBins at:binProbs ] ;
 		
-		connectToHistos = [ coder decodeObject ] ;
-		
-		[ connectToHistos retain ] ;
 		
 		return self ;
 	}

@@ -614,7 +614,6 @@ int MED3( int a, int b, int c )
 - (void) encodeWithCoder:(NSCoder *)coder
 	{
 		[ coder encodeValueOfObjCType:@encode(int) at:&type ] ;
-		[ coder encodeValueOfObjCType:@encode(histogramStyle) at:&style ] ;
 		
 		[ coder encodeObject:tag ] ;
 		
@@ -638,7 +637,6 @@ int MED3( int a, int b, int c )
 		self = [ super init ] ;
 		
 		[ coder decodeValueOfObjCType:@encode(int) at:&type ] ;
-		[ coder decodeValueOfObjCType:@encode(histogramStyle) at:&style ] ;
 		
 		tag = [ [ coder decodeObject ] retain ] ;
 		sourceTree = [ [ coder decodeObject ] retain ] ;

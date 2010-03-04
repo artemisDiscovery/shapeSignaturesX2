@@ -257,4 +257,70 @@ static NSString *version ;
 		return ;
 	}
 
+
+- (void) encodeWithCoder:(NSCoder *)coder
+	{		
+		if( identifier )
+			{
+				[ coder encodeObject:identifier ] ;
+			}
+		else
+			{
+				[ coder encodeObject:[ NSNull null ] ] ;
+			}
+			
+		[ coder encodeObject:sourceTree ] ;
+		
+		// The "wereCounted" variables are not encoded as we assume they are YES at time
+		// of coding
+		
+		[ coder encodeValueOfObjCType:@encode(int) at:&totalSegments ] ;
+		[ coder encodeValueOfObjCType:@encode(int) at:&totalSegmentPairs ] ;
+		[ coder encodeValueOfObjCType:@encode(int) at:&totalInterFragmentSegments ] ;
+		[ coder encodeValueOfObjCType:@encode(int) at:&totalInterFragmentSegmentPairs ] ;
+		[ coder encodeValueOfObjCType:@encode(int) at:&totalIntraFragmentSegments ] ;
+		[ coder encodeValueOfObjCType:@encode(int) at:&totalIntraFragmentSegmentPairs ] ;
+		
+		
+		[ coder encodeObject:histogramBundleForTag ] ;
+		
+		return ;
+	}
+	
+- (id) initWithCoder:(NSCoder *)coder
+	{
+		self = [ super init ] ;
+		
+		identifier = [ coder decodeObject ] ;
+		
+		if( identifier == [ NSNull null ] )
+			{
+				identifier = nil ;
+			}
+		else
+			{
+				[ identifier retain ] ;
+			}
+			
+		sourceTree = [ [ coder decodeObject ] retain ] ;
+			
+		segmentsWereCounted = YES ;
+		segmentPairsWereCounted = YES ;
+		
+		fragmentSegmentsWereCounted = YES ;
+		fragmentSegmentPairsWereCounted = YES ;
+		
+
+		[ coder decodeValueOfObjCType:@encode(int) at:&totalSegments ] ;
+		[ coder decodeValueOfObjCType:@encode(int) at:&totalSegmentPairs ] ;
+		[ coder decodeValueOfObjCType:@encode(int) at:&totalInterFragmentSegments ] ;
+		[ coder decodeValueOfObjCType:@encode(int) at:&totalInterFragmentSegmentPairs ] ;
+		[ coder decodeValueOfObjCType:@encode(int) at:&totalIntraFragmentSegments ] ;
+		[ coder decodeValueOfObjCType:@encode(int) at:&totalIntraFragmentSegmentPairs ] ;
+		
+		histogramBundleForTag = [ [ coder decodeObject ] retain ] ;
+		
+		return self ;
+	}
+
 @end
