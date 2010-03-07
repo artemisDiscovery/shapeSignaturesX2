@@ -438,6 +438,8 @@ static NSArray *tagDescriptions ;
 		
 		hostBundle = bndl ;
 		
+		connections = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
+		
 		nBins = hostBundle->nBins ;		// Need to local copy of this for coding, decoding
 		
 		binCounts = (int *) malloc( nBins * sizeof( int ) ) ;
@@ -1178,6 +1180,76 @@ static NSArray *tagDescriptions ;
 		
 		return NO ;
 	}
+	
+- (NSSet *) histogramsConnectedTo
+	{
+		NSMutableSet *returnSet = [ NSMutableSet setWithCapacity:10 ] ;
+		
+		NSEnumerator *connectionEnumerator = [ connections objectEnumerator ] ;
+		
+		histogramConnection *nextConnection ;
+		
+		while( ( nextConnection = [ connectionEnumerator nextObject ] ) )
+			{
+				[ returnSet unionSet:[ nextConnection linkedHistograms ] ] ;
+			}
+			
+		[ returnSet removeObject:self ] ;
+		
+		return returnSet ;
+	}
+	
+- (BOOL) isConnectedToHistogram:(histogram *)h 
+	{
+		NSEnumerator *connectionEnumerator = [ connections objectEnumerator ] ;
+		
+		histogramConnection *nextConnection ;
+		
+		while( ( nextConnection = [ connectionEnumerator nextObject ] ) )
+			{
+				if( [ nextConnection includes:h ] == YES )
+					{
+						return YES ;
+					}
+			}
+			
+		return NO ;
+	}
+- (void) registerConnection:(histogramConnection *)c 
+	{
+		if( [ connections containsObject:c ] == NO )
+			{
+				[ connections addObject:c ] ;
+			}
+			
+		return ;
+	}
+	
+- (void) clearConnectionToHistogram:(histogram *)h
+	{
+		NSEnumerator *connectionEnumerator = [ connections objectEnumerator ] ;
+		
+		histogramConnection *nextConnection ;
+		
+		while( ( nextConnection = [ connectionEnumerator nextObject ] ) )
+			{
+				if( [ nextConnection includes:h ] == YES )
+					{
+						[ connections removeObject:nextConnection ] ;
+						return ;
+					}
+			}
+		
+		return ;
+		
+	}
+	
+- (void) clearAllConnections
+	{
+		[ connections removeAllObjects ] ;
+		return ;
+	}
+
 
 - (void) encodeWithCoder:(NSCoder *)coder
 	{		
