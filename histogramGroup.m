@@ -76,6 +76,8 @@
 		
 		while( ( nextHisto = [ histoEnumerator nextObject ] ) )
 			{
+				if( [ nextHisto->sortedFragmentKey isEqualToString:@"GLOBAL" ] == YES ) continue ;
+				
 				NSArray *fragmentIndices = [ nextHisto->sortedFragmentKey componentsSeparatedByString:@"_" ] ;
 				
 				[ groupFragmentIndices addObjectsFromArray:fragmentIndices ] ;
@@ -89,6 +91,8 @@
 		
 		while( ( nextHisto =  [ histoEnumerator nextObject ] ) )
 			{
+				if( [ nextHisto->sortedFragmentKey isEqualToString:@"GLOBAL" ] == YES ) continue ;
+				
 				[ localSet removeAllObjects ] ;
 				NSArray *fragmentIndices = [ nextHisto->sortedFragmentKey componentsSeparatedByString:@"_" ] ;
 				[ localSet addObjectsFromArray:fragmentIndices ] ;

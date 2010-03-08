@@ -893,6 +893,13 @@ int main (int argc, const char * argv[]) {
 				}
 			
 		}
+	else if( mode == COMPAREMODE )
+		{
+			// Compare two databases of X2 signatures
+			
+			
+		
+		}
 
     [pool drain];
     return 0;

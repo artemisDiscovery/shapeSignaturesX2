@@ -191,6 +191,8 @@
 						
 						while( ( nextHistogram = [ histogramEnumerator nextObject ] ) )
 							{
+								if( [ nextHistogram->sortedFragmentKey isEqualToString:@"GLOBAL" ] == YES ) continue ;
+								
 								NSSet *nextIndexSet = 
 									[ NSSet setWithArray:[ nextHistogram->sortedFragmentKey componentsSeparatedByString:@"_" ] ] ;
 								
@@ -216,7 +218,7 @@
 				[ groupBundles addObject:nextBundle ] ;
 				[ nextBundle release ] ;
 					
-			} while( [ self advance:connections ] == YES )
+			} while( [ histogramGroupBundle advance:connections ] == YES )
 			
 		[ groupsToBundle release ] ;
 		[ fragmentSets release ] ;
