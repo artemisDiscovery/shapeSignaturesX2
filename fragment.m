@@ -22,6 +22,7 @@
 		
 		neighborFragments = nil ; 
 		neighborFragmentIndices = nil ;
+		connections = nil ;
 		
 		NSEnumerator *bondEnumerator = [ fragmentBonds objectEnumerator ] ;
 		
@@ -72,6 +73,7 @@
 		
 		if( neighborFragments ) [ neighborFragments release ] ;
 		if( neighborFragmentIndices ) [ neighborFragmentIndices release ] ;
+		if( connections ) [ connections release ] ;
 		//if( center ) [ center release ] ;
 		//if( normal ) [ normal release ] ;
 		
@@ -279,7 +281,36 @@
 		return ;
 	}
 				
+- (void) registerConnection:(fragmentConnection *)c
+	{
+		// If no connections, add this one
+		
+		if( ! connections )
+			{
+				connections = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
 				
+				[ connections addObject:c ] ;
+				
+				return ;
+			}
+			
+		NSEnumerator *connectionEnumerator = [ connections objectEnumerator ] ;
+		
+		fragmentConnection *nextConnection ;
+		
+		while( ( nextConnection = [ connectionEnumerator nextObject ] ) )
+			{
+				if( [ nextConnection isEqualTo:c ] == YES )
+					{
+						return ;
+					}
+			}
+			
+		[ connections addObject:c ] ;
+		
+		return ;
+	}
+		
 	
 - (void) encodeWithCoder:(NSCoder *)coder
 	{

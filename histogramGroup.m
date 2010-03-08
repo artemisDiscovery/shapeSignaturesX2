@@ -11,7 +11,7 @@
 
 @implementation histogramGroup
 
-- (id) initWithHistograms:(NSArray *)histos inBundle:(histogramBundle *)bndl
+- (id) initWithHistograms:(NSArray *)histos inBundle:(histogramBundle *)bndl 
 	{
 		self = [ super init ] ;
 		
@@ -22,7 +22,7 @@
 		nBins = hostBundle->nBins ;
 		
 		connectToGroups = [ [ NSMutableArray alloc ] initWithCapacity:[ hostBundle->sortedFragmentsToHistogram count ] ] ;
-		memberHistograms = [ [ NSArray alloc ] initWithArray:histos ] ;
+		memberHistograms = [ [ NSArray alloc ] initWithArray:histos  ] ;
 		
 		binProbs = (double *) malloc( nBins * sizeof( double ) ) ;
 		
@@ -119,7 +119,17 @@
 	}
 		
 		
-		
+- (void) addConnectionTo:(histogramGroup *)g
+	{
+		if( [ connectToGroups containsObject:g ] == YES )
+			{
+				[ connectToGroups addObject:g ] ;
+				// Assume symmetry
+				[ g->connectToGroups addObject:self ] ;
+			}
+			
+		return ;
+	}
 		
 
 

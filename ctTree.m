@@ -9,7 +9,9 @@
 #import "ctTree.h"
 //#import "ctPath.h"
 #include <math.h>
-#include "fragment.h"
+#import "fragment.h"
+#import "fragmentConnection.h"
+
 
 
 
@@ -31,6 +33,8 @@
 		maximalTreePaths = nil ;
 		
 		treeFragments = nil ;
+		
+		fragmentConnections = nil ;
 		
 		
 		normal = nil ;
@@ -1353,6 +1357,58 @@
 			{
 				[ nextFragment assignNeighborFragmentIndices ] ;
 			}
+			
+		// Again, for later generation of histogram groups, generate connection objects between fragments
+		
+		fragmentConnections = [ [ NSMutableArray alloc ] initWithCapacity:[ treeFragments count ] ] ;
+		
+		fragmentEnumerator = [ treeFragments objectEnumerator ] ;
+		
+		while( ( nextFragment = [ fragmentEnumerator nextObject ] ) )
+			{
+				NSEnumerator *neighborIndexEnumerator = 
+					[ nextFragment->neighborFragmentIndices objectEnumerator ] ;
+				
+				NSString *nextNeighborIndex ;
+				
+				while( ( nextNeighborIndex = [ neighborIndexEnumerator nextObject ] ) )
+					{
+						fragment *nextNeighborFragment = [ treeFragments 
+							objectAtIndex:( [ nextNeighborIndex intValue ] - 1 ) ] ;
+							
+						// Connection already?
+						
+						BOOL foundConnect = NO ;
+						
+						NSEnumerator *connectionEnumerator = [ fragmentConnections objectEnumerator ] ;
+						
+						fragmentConnection *nextConnection ;
+						
+						while( ( nextConnection = [ connectionEnumerator nextObject ] ) )
+							{
+								NSSet *frags = [ nextConnection linkedFragments ] ;
+								
+								if( [ frags member:nextFragment ] && [ frags member:nextNeighborFragment ] )
+									{
+										foundConnect = YES ;
+										break ;
+									}
+							}
+							
+						if( foundConnect == NO )
+							{
+								// Make new connection 
+								
+								fragmentConnection *newConnection = [ [ fragmentConnection alloc ]
+									initWithFirst:nextFragment second:nextNeighborFragment ] ;
+									
+								[ fragmentConnections addObject:newConnection ] ;
+							}
+					}
+							
+						
+			}
+		
 		
 				
 		return ;

@@ -56,6 +56,8 @@
 		
 		BOOL ring ;
 		MMVector3 *normal, *center  ;
+		
+		NSMutableArray *fragmentConnections ;
 
 
 }

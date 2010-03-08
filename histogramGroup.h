@@ -24,6 +24,8 @@
 	int nMEPBins ;
 	int nBins ;
 	
+	NSString *tag ;
+	
 	double *binProbs ;
 	
 	NSMutableSet *groupFragmentIndices ;
@@ -33,7 +35,8 @@
 	
 }
 
-- (id) initWithHistograms:(NSArray *)histos inBundle:(histogramBundle *)bndl  ;
+- (id) initWithHistograms:(NSArray *)histos inBundle:(histogramBundle *)bndl   ;
 
+- (void) addConnectionTo:(histogramGroup *)g ;
 
 @end
