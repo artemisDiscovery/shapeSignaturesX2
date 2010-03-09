@@ -7,6 +7,9 @@
 //
 
 #import "shapeSignatureX2.h"
+#import "histogramGroup.h"
+#import "histogramGroupBundle.h"
+#import "hitListItem.h"
 
 static NSString *version ;
 
@@ -88,7 +91,8 @@ static NSString *version ;
 		
 		
 		
-		histogramBundle *theHistogramBundle = [ [ histogramBundle alloc ]  initWithRayTrace:(rayTrace *)rt tag:(NSString *)tag style:(histogramStyle)st  ] ;
+		histogramBundle *theHistogramBundle = [ [ histogramBundle alloc ]  initWithRayTrace:(rayTrace *)rt tag:(NSString *)tag 
+			style:(histogramStyle)st  inSignature:self ] ;
 				
 		if( ! theHistogramBundle )
 			{
@@ -322,5 +326,332 @@ static NSString *version ;
 		
 		return self ;
 	}
+
++ (NSArray *) scoreQuerySignature:(X2Signature *)query againstTarget:(X2Signature *)target usingTag:(NSString *)tag 
+					withCorrelation:(BOOL)useCor useFragments:(BOOL)useFrag
+	{
+		// Critical method - compare two signatures and return an array of hit-list items
+		
+		// We return an array because in the case of fragment-based scoring we expect multiple mappings
+		
+		// We consider all possible intial mappings using a fragment of query and fragment of target as root
+		
+		NSInteger compareHistoGroupPair( id hA, id hB, void *ctxt ) ;
+		NSInteger compareMappingPair( id mA, id mB, void *ctxt ) ;
+		
+		X2SignatureMapping *theMapping ;
+		hitListItem *theItem ;
+		
+		histogram *nextQueryHisto, *nextTargetHisto ;
+		
+		histogramBundle *queryBundle = [ query->histogramBundleForTag objectForKey:tag ] ;
+		histogramBundle *targetBundle = [ target->histogramBundleForTag objectForKey:tag ] ;
+		
+		if( useFrag == NO )
+			{
+				nextQueryHisto = [ queryBundle->sortedFragmentsToHistogram objectForKey:@"GLOBAL" ] ; 
+				
+				nextTargetHisto = [ targetBundle->sortedFragmentsToHistogram objectForKey:@"GLOBAL" ] ;
+				
+				// This is going to be a little slow, but I am sticking to the logic laid down. :-(
+				
+				histogramGroup *queryGroup = [ [ histogramGroup alloc ] 
+					initWithHistograms:[ NSArray arrayWithObject:nextQueryHisto ] inBundle:queryBundle ] ;
+					
+				histogramGroupBundle *queryGroupBundle = [ [ histogramGroupBundle alloc ]
+					initWithGroups:[ NSArray arrayWithObject:queryGroup ] inHistogramBundle:queryBundle ] ;
+					
+				histogramGroup *targetGroup = [ [ histogramGroup alloc ] 
+					initWithHistograms:[ NSArray arrayWithObject:nextTargetHisto ] inBundle:targetBundle ] ;
+					
+				histogramGroupBundle *targetGroupBundle = [ [ histogramGroupBundle alloc ]
+					initWithGroups:[ NSArray arrayWithObject:targetGroup ] inHistogramBundle:targetBundle ] ;
+					
+				theMapping = [ [ X2SignatureMapping alloc ] 
+					initWithQuery:queryGroupBundle andTarget:targetGroupBundle ] ;
+					
+				[ theMapping  addMatchBetweenQueryHistoGroup:queryGroup andTargetHistoGroup:targetGroup ] ;
+				
+				theItem = [ [ hitListItem alloc ] initWithMapping:theMapping ] ;
+				[ theMapping release ] ;
+				
+				[ theItem addScoresWithCorrelation:useCor ] ;
+				
+				NSArray *returnArray = [ [ NSArray alloc ] initWithObjects:theItem,nil ] ;
+				[ theItem release ] ;
+				
+				return returnArray ;
+			}
+		else
+			{
+				NSArray *queryGroupBundles = [ histogramGroupBundle 
+					allGroupBundlesFromHistogramBundle:queryBundle ] ;
+					
+				NSArray *targetGroupBundles = [ histogramGroupBundle 
+					allGroupBundlesFromHistogramBundle:targetBundle ] ;
+					
+				NSEnumerator *queryGroupBundleEnumerator = 
+					[ queryGroupBundles objectEnumerator ] ;
+				
+				NSEnumerator *targetGroupBundleEnumerator ;
+				
+				NSMutableArray *returnArray = [ [ NSMutableArray alloc ] initWithCapacity:50 ] ;
+				
+				NSMutableArray *accumMappings = [ [ NSMutableArray alloc ] initWithCapacity:50 ] ;
+				
+				histogramGroupBundle *nextQueryGroupBundle, *nextTargetGroupBundle ;
+				
+				while( ( nextQueryGroupBundle = [ queryGroupBundleEnumerator nextObject ] ) )
+					{
+						targetGroupBundleEnumerator = 
+							[ targetGroupBundles objectEnumerator ] ;
+						
+						while( ( nextTargetGroupBundle = [ targetGroupBundleEnumerator nextObject ] ) )
+							{
+							
+								// Need to make all possible initial mappings where the a histo group of the 
+								// query is mapped to any histo group of the target. Necessary to do this as some
+								// optimal mappings may NOT include a particular group
+								
+								NSEnumerator *queryHistoGroupEnumerator = 
+									[ nextQueryGroupBundle->memberGroups objectEnumerator ] ;
+									
+								NSEnumerator *targetHistoGroupEnumerator ;
+								
+								histogramGroup *nextQueryHistoGroup, *nextTargetHistoGroup ;
+								
+								while( ( nextQueryHistoGroup = [ queryHistoGroupEnumerator nextObject ] ) )
+									{
+										targetHistoGroupEnumerator = [ nextTargetGroupBundle->memberGroups objectEnumerator ] ;
+										
+										while( ( nextTargetHistoGroup = [ targetHistoGroupEnumerator nextObject ] ) )
+											{
+												theMapping = [ [ X2SignatureMapping alloc ] 
+													initWithQuery:nextQueryGroupBundle andTarget:nextTargetGroupBundle  ] ;
+													
+												[ theMapping  addMatchBetweenQueryHistoGroup:nextQueryHistoGroup
+													andTargetHistoGroup:nextTargetHistoGroup ] ;
+								
+												NSMutableArray *mappings = [ [ NSMutableArray alloc ] initWithObjects:theMapping,nil ] ;
+												[ theMapping release ] ;
+								
+												mappings = [ X2SignatureMapping expandMappings:mappings ] ;
+								
+												[ accumMappings addObjectsFromArray:mappings ] ;
+								
+												[ mappings release ] ;
+											}
+									}
+									
+							}
+					}
+								
+				// Sort the histoGroup pairs in each mapping
+				
+				NSEnumerator *mappingEnumerator = [ accumMappings objectEnumerator ] ;
+				X2SignatureMapping *nextMapping ;
+
+				while( ( nextMapping = [ mappingEnumerator nextObject ] ) )
+					{
+						[ nextMapping->histoGroupPairs sortUsingFunction:compareHistoGroupPair context:nil ] ;
+					}
+					
+				// Now that histo pairs are sorted WITHIN mappings, sort the mappings
+				
+				[ accumMappings sortUsingFunction:compareMappingPair context:nil ] ;
+				
+				// Remove duplicates - 
+				
+				int j = 0 ;
+				
+				while( j < [ accumMappings count ] )
+					{
+						int k = j + 1 ; 
+						
+						while( k < [ accumMappings count ] )
+							{
+								if( [ [ accumMappings objectAtIndex:j ] isEqualToMapping:[ accumMappings objectAtIndex:k ] ] )
+									{
+										[ accumMappings removeObjectAtIndex:k ] ;
+									}
+								else
+									{
+										break ;
+									}
+							}
+							
+						++j ;
+					}
+				  
+				
+				// Convert mappings into scored hitListItems
+				
+				mappingEnumerator = [ accumMappings objectEnumerator ] ;
+				
+				nextMapping ;
+				
+				while( ( nextMapping = [ mappingEnumerator nextObject ] ) )
+					{
+						theItem = [ [ hitListItem alloc ] initWithMapping:nextMapping ] ;
+						[ theItem addScoresWithCorrelation:useCor ] ;
+						
+						[ returnArray addObject:theItem ] ;
+						[ theItem release ] ;
+					}
+					
+				return returnArray ;
+			}
+					
+				
+			
+		return nil ;
+	}
+	
+NSInteger compareHistoGroupPair( id pairA, id pairB, void *ctxt )
+	{
+		NSInteger indexCompare2( id , id , void * ) ;
+		
+		NSArray *arrayA = pairA ;
+		NSArray *arrayB = pairB ;
+		
+		histogramGroup *hA = [ arrayA objectAtIndex:0 ] ;
+		histogramGroup *hB = [ arrayB objectAtIndex:0 ] ;
+		
+		// First check number of fragment indices in each group
+		
+		if( [ hA->groupFragmentIndices count ] <  [ hB->groupFragmentIndices count ] )
+			{
+				return NSOrderedAscending ;
+			}
+		else if( [ hA->groupFragmentIndices count ] > [ hB->groupFragmentIndices count ] )
+			{
+				return NSOrderedDescending ;
+			}
+			
+		// Check sorted fragment indices
+		
+		NSMutableArray *sortedAIndices = [ NSMutableArray arrayWithArray:[ hA->groupFragmentIndices allObjects ] ] ;
+		
+		[ sortedAIndices sortUsingFunction:indexCompare2 context:nil ] ;
+		
+		NSMutableArray *sortedBIndices = [ NSMutableArray arrayWithArray:[ hB->groupFragmentIndices allObjects ] ] ;
+		
+		[ sortedBIndices sortUsingFunction:indexCompare2 context:nil ] ;
+		
+		int k ;
+		
+		for( k = 0 ; k < [ sortedAIndices count ] ; ++k )
+			{
+				if( [ [ sortedAIndices objectAtIndex:k ] intValue ] < 
+					[ [ sortedBIndices objectAtIndex:k ] intValue ] )
+					{
+						return NSOrderedAscending ;
+					}
+				else if( [ [ sortedAIndices objectAtIndex:k ] intValue ] > 
+					[ [ sortedBIndices objectAtIndex:k ] intValue ] )
+					{
+						return NSOrderedDescending ;
+					}
+			}
+			
+		// Everything same for A, B, now check C, D 
+		
+		histogramGroup *hC = [ arrayA objectAtIndex:1 ] ;
+		histogramGroup *hD = [ arrayB objectAtIndex:1 ] ;
+		
+		if( [ hC->groupFragmentIndices count ] <  [ hD->groupFragmentIndices count ] )
+			{
+				return NSOrderedAscending ;
+			}
+		else if( [ hC->groupFragmentIndices count ] > [ hD->groupFragmentIndices count ] )
+			{
+				return NSOrderedDescending ;
+			}
+			
+		// Check sorted fragment indices
+		
+		NSMutableArray *sortedCIndices = [ NSMutableArray arrayWithArray:[ hC->groupFragmentIndices allObjects ] ] ;
+		
+		[ sortedCIndices sortUsingFunction:indexCompare2 context:nil ] ;
+		
+		NSMutableArray *sortedDIndices = [ NSMutableArray arrayWithArray:[ hD->groupFragmentIndices allObjects ] ] ;
+		
+		[ sortedDIndices sortUsingFunction:indexCompare2 context:nil ] ;
+		
+		for( k = 0 ; k < [ sortedCIndices count ] ; ++k )
+			{
+				if( [ [ sortedCIndices objectAtIndex:k ] intValue ] < 
+					[ [ sortedDIndices objectAtIndex:k ] intValue ] )
+					{
+						return NSOrderedAscending ;
+					}
+				else if( [ [ sortedCIndices objectAtIndex:k ] intValue ] > 
+					[ [ sortedDIndices objectAtIndex:k ] intValue ] )
+					{
+						return NSOrderedDescending ;
+					}
+			}
+
+		// All checks match - these must be identical
+			
+		return NSOrderedSame ;
+	}
+	
+NSInteger indexCompare2( id A, id B, void *ctxt )
+	{
+		NSString *sA = (NSString *) A ;
+		NSString *sB = (NSString *) B ;
+		
+		if( [ sA intValue ] < [ sB intValue ] )
+			{
+				return NSOrderedAscending ;
+			}
+		else if( [ sA intValue ] > [ sB intValue ] )
+			{
+				return NSOrderedDescending ;
+			}
+			
+		return NSOrderedSame ;
+	}
+
+								
+NSInteger compareMappingPair( id A, id B, void *ctxt )
+	{
+		// Really simple - more histopairs take precendence over fewer, 
+		// if identical that use histo pair comparison already in place
+		
+		X2SignatureMapping *mapA = (X2SignatureMapping *) A ;
+		X2SignatureMapping *mapB = (X2SignatureMapping *) B ;
+		
+		if( [ mapA->histoGroupPairs count ] < [ mapB->histoGroupPairs count ] )
+			{
+				return NSOrderedAscending ;
+			}
+		else if( [ mapA->histoGroupPairs count ] > [ mapB->histoGroupPairs count ] )
+			{
+				return NSOrderedDescending ;
+			}
+		else
+			{
+				// Move to histogroup group pair comparison
+				
+				int j ;
+				
+				for( j = 0 ; j < [ mapA->histoGroupPairs count ] ; ++j )
+					{
+						NSArray *pairA = [ mapA->histoGroupPairs objectAtIndex:j ] ;
+						NSArray *pairB = [ mapB->histoGroupPairs objectAtIndex:j ] ;
+						
+						NSComparisonResult order = compareHistoGroupPair(pairA, pairB, nil ) ;
+						
+						if( order != NSOrderedSame ) return order ;
+					}
+				
+			}
+			
+		return NSOrderedSame ;
+	}
+		
+
 
 @end

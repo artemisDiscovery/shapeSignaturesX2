@@ -14,6 +14,8 @@
 
 @interface fragmentConnection : NSObject 
 {
+@public
+
 	BOOL active ;
 
 	fragment *first ;

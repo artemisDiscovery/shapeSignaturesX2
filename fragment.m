@@ -7,6 +7,7 @@
 //
 
 #import "fragment.h"
+#import "fragmentConnection.h"
 
 
 @implementation fragment
@@ -165,7 +166,6 @@
 		
 - (int) heavyAtomCount
 	{
-		int j ;
 		
 		int hCount = 0 ;
 		
@@ -270,12 +270,12 @@
 		
 		NSEnumerator *neighborFragmentEnumerator = [ neighborFragments objectEnumerator ] ;
 		
-		fragment *nextNeighborFragment ;
+		NSArray *nextNeighborFragment ;
 		
 		while( ( nextNeighborFragment = [ neighborFragmentEnumerator nextObject ] ) )
 			{
 				fragment *neighbor = [ nextNeighborFragment objectAtIndex:0 ] ;
-				[ neighborFragmentIndices addObject:[ [ NSString stringWithFormat:@"%d",neighbor->index ] ] ] ;
+				[ neighborFragmentIndices addObject:[ NSString stringWithFormat:@"%d",neighbor->index ] ] ;
 			}
 			
 		return ;

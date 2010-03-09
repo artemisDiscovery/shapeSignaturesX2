@@ -24,7 +24,8 @@
 	int nMEPBins ;
 	int nBins ;
 	
-	NSString *tag ;
+	int segmentCount ;
+	int segmentPairCount ;
 	
 	double *binProbs ;
 	
@@ -38,5 +39,9 @@
 - (id) initWithHistograms:(NSArray *)histos inBundle:(histogramBundle *)bndl   ;
 
 - (void) addConnectionTo:(histogramGroup *)g ;
+
+- (NSArray *) sortedFragmentIndices ;
+
+- (double) scoreWithHistogramGroup:(histogramGroup *)target useCorrelation:(BOOL)useCorr ;
 
 @end

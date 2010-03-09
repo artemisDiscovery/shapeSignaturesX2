@@ -10,6 +10,7 @@
  
 
 @class histogramBundle ;
+@class histogramConnection ;
 
 
 @class X2SignatureMapping ;
@@ -72,6 +73,7 @@ typedef struct { double lengthDelta ; double MEPDelta ; } histogramStyle ;
 
 - (void) addConnectionToHistogram:(histogram *)h ;
 
++ (NSArray *) tagDescriptions ;
 + (BOOL) tagAvailable:(NSString *)tag ;
 
 + (NSString *) descriptionForTag:(NSString *)t ;

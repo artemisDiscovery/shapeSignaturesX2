@@ -26,6 +26,13 @@
 		return self ;
 		
 	}
+	
+- (void) dealloc
+	{
+		[ super dealloc ] ;
+		
+		return ;
+	}
 
 
 - (NSSet *) linkedFragments 

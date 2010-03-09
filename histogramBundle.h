@@ -10,6 +10,8 @@
 #import "rayTrace.h"
 #import "histogram.h"
 
+@class X2Signature ;
+
 
 @interface histogramBundle : NSObject 
 {
@@ -23,6 +25,8 @@
 	NSString *tag ;
 	
 	ctTree *sourceTree ;
+	
+	X2Signature *sourceSignature ;
 	
 	rayTrace *theTrace ;
 	
@@ -43,6 +47,6 @@
 
 }
 
-- (id) initWithRayTrace:(rayTrace *)rt tag:(NSString *)tg style:(histogramStyle)st ;
+- (id) initWithRayTrace:(rayTrace *)rt tag:(NSString *)tg style:(histogramStyle)st inSignature:(X2Signature *)sig  ;
 
 @end

@@ -7,6 +7,8 @@
 //
 
 #import "histogramGroupBundle.h"
+#import "fragmentConnection.h"
+#include <math.h>
 
 
 @implementation histogramGroupBundle
@@ -19,7 +21,9 @@
 		
 		memberGroups = [ [ NSArray alloc ] initWithArray:grps ] ;
 		
-		ctTree *sourceTree = hBundle->sourceTree ;
+		
+		hostBundle = hBundle ;
+		
 		
 		int j, k ;
 		
@@ -55,6 +59,15 @@
 			
 		return self ;
 	}
+	
+- (void) dealloc
+	{
+		[ memberGroups release ] ;
+		
+		[ super dealloc ] ;
+		
+		return ;
+	}
 			
 		
 + (NSArray *) allGroupBundlesFromHistogramBundle:(histogramBundle *)hBundle 
@@ -62,10 +75,10 @@
 		// Strategy - for each possible set of fragmentConnection "activations", assemble
 		// groups 
 		
-		NSArray *connections = hBundle->sourceTree->connections ;
+		NSArray *connections = hBundle->sourceTree->fragmentConnections ;
 		
 		NSMutableArray *groupBundles = [ [ NSMutableArray alloc ] 
-			initWithCapacity:pow( 2, [ connections, count ] ) ] ; 
+			initWithCapacity:pow( [ connections count ], 2 ) ] ; 
 			
 		NSMutableArray *groupsToBundle = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
 		NSMutableArray *fragmentSets = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
@@ -218,11 +231,11 @@
 				[ groupBundles addObject:nextBundle ] ;
 				[ nextBundle release ] ;
 					
-			} while( [ histogramGroupBundle advance:connections ] == YES )
+			} while( [ histogramGroupBundle advance:connections ] == YES ) ;
 			
 		[ groupsToBundle release ] ;
 		[ fragmentSets release ] ;
-		[ activeConnections release ] 
+		[ activeConnections release ] ;
 		[ allFragments release ] ;
 		[ histogramsToGroup release ] ;
 		[ fragmentSetIndices release ] ;
@@ -239,7 +252,7 @@
 		// This utility method takes an array of connection objects and performs a "binary advance" - 
 		// Let the state of each connection (active/inactive) be represented [ s1, s2, ..., sN ] , 
 		// where sJ = 0/1 . Then this function converts [ 0, 0, 1, 1 ] to [ 0, 1, 0, 0 ] (returning YES) 
-		// and [ 1, 1, 1, 1 ] to [ 0, 0, 0, 0 ] (returning NO) 
+		// and [ 1, 1, 1, 1 ] to [ 0, 0, 0, 0 ] (returning NO for rollover detection ) 
 		
 		int j ;
 		

@@ -14,7 +14,9 @@
 {
 	// This is the second incarnation of the new shape sig X object. 
 	// I am starting from scratch as I will now reatain both inter- and intra-
-	// fragment information. 
+	// fragment information.
+	
+@public
 	
 		NSString *identifier ;
 	
@@ -55,5 +57,11 @@
 - (id) initForAllTagsUsingTree:(ctTree *)tree andRayTrace:(rayTrace *)rt withStyle:(histogramStyle)st ;
 			
 - (void) addHistogramsWithTag:(NSString *)tag forRayTrace:(rayTrace *)rt withStyle:(histogramStyle)st ;
+
++ (NSArray *) scoreQuerySignature:(X2Signature *)query againstTarget:(X2Signature *)target usingTag:(NSString *)tag
+				withCorrelation:(BOOL)useCor useFragments:(BOOL)useFrag ;
+
++ (NSString *) version ;
+
 
 @end

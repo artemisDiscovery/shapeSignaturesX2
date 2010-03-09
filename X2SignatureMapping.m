@@ -1,0 +1,262 @@
+//
+//  XSignatureMapping.m
+//  shapeSignaturesX
+//
+//  Created by Randy Zauhar on 10/16/09.
+//  Copyright 2009 __MyCompanyName__. All rights reserved.
+//
+
+#import "X2SignatureMapping.h"
+
+
+@implementation X2SignatureMapping
+
+- (id) initWithQuery:(histogramGroupBundle *)q andTarget:(histogramGroupBundle *)t
+	{
+		self = [ super init ] ;
+		
+		query = q ;
+		target = t ;
+		
+		isMaximal = NO ;
+		
+		unpairedQueryHistoGroups = [ [ NSMutableSet alloc ] 
+					initWithArray:query->memberGroups ] ;
+		unpairedTargetHistoGroups = [ [ NSMutableSet alloc ] 
+					initWithArray:target->memberGroups ] ;
+		
+				
+				
+		histoGroupPairs = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
+		
+		return self ;
+	}
+	
+- (id) initWithMapping:(X2SignatureMapping *)map
+	{
+		self = [ super init ] ;
+		
+		query = map->query ;
+		target = map->target ;
+		
+		histoGroupPairs = [ [ NSMutableArray alloc ] initWithArray:map->histoGroupPairs ] ;
+		
+		unpairedQueryHistoGroups = [ [ NSMutableSet alloc ] initWithSet:map->unpairedQueryHistoGroups ] ;
+		unpairedTargetHistoGroups = [ [ NSMutableSet alloc ] initWithSet:map->unpairedTargetHistoGroups ] ;
+		
+		isMaximal = map->isMaximal ;
+		
+		return self ;
+	}
+	
+- (void) dealloc
+	{
+		[ histoGroupPairs release ] ;
+		
+		[ unpairedQueryHistoGroups release ] ;
+		[ unpairedTargetHistoGroups release ] ;
+		
+		[ super dealloc ] ;
+		
+		return ;
+	}
+	
+- (BOOL) addMatchBetweenQueryHistoGroup:(histogramGroup *)q andTargetHistoGroup:(histogramGroup *)t 
+	{
+		// The histogram groups must be initially unpaired
+		
+		if( [ unpairedQueryHistoGroups member:q ] && [ unpairedTargetHistoGroups member:t ] )
+			{
+				NSMutableArray *addArray = [ NSMutableArray arrayWithCapacity:5 ] ;
+				[ addArray addObject:q ] ;
+				[ addArray addObject:t ] ;
+				[ histoGroupPairs addObject:addArray ] ;
+				
+				[ unpairedQueryHistoGroups removeObject:q ] ;
+				[ unpairedTargetHistoGroups removeObject:t ] ;
+			
+				return YES ;
+			}
+			
+		return NO ;
+	}
+		
++ (NSMutableArray *) expandMappings:(NSMutableArray *)mappings 
+	{
+		// Strategy: 
+		//
+		// initialize empty expandedMappings array
+		//
+		//	while( TRUE)
+		//
+		// change = FALSE 
+		//
+		// foreach mapping m in mappings:
+		//
+		//		if m is maximal (could not be expanded) continue 
+		//
+		//		set m as maximal
+		//
+		//		foreach histo pair (hQa,hTb) in m
+		//			find childrenQ = hQa(children) intersect mQueryUnmatched
+		//			find childrenT = hTb(children) intersect mTargetUnmatched
+		//		
+		//			if( no childrenQ || no children T ) continue
+		//
+		//			foreach qcH in childrenQ
+		//				foreach tcH in childrenT
+		//
+		//					newMapping = copy of m
+		//					newMapping add connection qcH to tcH
+		//					set m submaximal
+		//					add newMapping to newMappings 
+		//
+		//					change = TRUE
+		//
+		//				end
+		//			end
+		//		end
+		//
+		//		if( m maximal) add m to newMappings
+		//
+		//		release mappings
+		//
+		//		if( change == FALSE ) return newMappings
+		//
+		//		mappings = newMappings
+		//
+		//	end
+		//
+		// end
+		//
+		//
+		//		
+		
+		while( TRUE )
+			{
+				BOOL change = NO ;
+				
+				NSMutableArray *newMappings = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
+				
+				NSEnumerator *mappingEnumerator = [ mappings objectEnumerator ] ;
+		
+				X2SignatureMapping *nextMapping ;
+				
+				
+				while( ( nextMapping = [ mappingEnumerator nextObject ] ) )
+					{
+						if( nextMapping->isMaximal == YES )
+							{
+								[ newMappings addObject:nextMapping ] ;
+								continue ;
+							}
+							
+						nextMapping->isMaximal = YES ;
+						
+						NSEnumerator *histoGroupPairEnumerator = [ nextMapping->histoGroupPairs objectEnumerator ] ;
+						NSArray *nextHistoGroupPair ;
+
+						while( ( nextHistoGroupPair = [ histoGroupPairEnumerator nextObject ] ) )
+							{
+								histogramGroup *queryParent = [ nextHistoGroupPair objectAtIndex:0 ] ;
+								histogramGroup *targetParent = [ nextHistoGroupPair objectAtIndex:1 ] ;
+								
+								// Want query and target children that are not already used 
+						
+								NSMutableSet *queryChildren = [ NSMutableSet setWithSet:queryParent->connectToGroups ] ;
+								
+								// Any unused?
+								
+								[ queryChildren intersectSet:nextMapping->unpairedQueryHistoGroups ] ;
+								
+								if( [ queryChildren count ] == 0 ) continue ;
+								
+								NSMutableSet *targetChildren = [ NSMutableSet setWithSet:targetParent->connectToGroups ] ;
+								
+								// Any unused?
+								
+								[ targetChildren intersectSet:nextMapping->unpairedTargetHistoGroups ] ;
+								
+								if( [ targetChildren count ] == 0 ) continue ;
+								
+								NSEnumerator *queryChildrenEnumerator = [ queryChildren objectEnumerator ] ;
+								
+								histogramGroup *nextQueryChild ;
+								
+								while( ( nextQueryChild = [ queryChildrenEnumerator nextObject ] ) )
+									{
+										NSEnumerator *targetChildrenEnumerator = [ targetChildren objectEnumerator ] ;
+										
+										histogramGroup *nextTargetChild ;
+										
+										while( ( nextTargetChild = [ targetChildrenEnumerator nextObject ] ) )
+											{
+												nextMapping->isMaximal = NO ;
+												
+												X2SignatureMapping *newMapping = [ [ X2SignatureMapping alloc ]
+																					initWithMapping:nextMapping ] ;
+												[ newMapping addMatchBetweenQueryHistoGroup:nextQueryChild 
+														andTargetHistoGroup:nextTargetChild ] ;
+														
+												[ newMappings addObject:newMapping ] ;
+												[ newMapping release ] ;
+												
+												change = YES ;
+											}
+									}
+								// Next histo pair
+							}
+							
+						// Is our current mapping maximal?
+						
+						if( nextMapping->isMaximal == YES )
+							{
+								[ newMappings addObject:nextMapping ] ;
+							}
+					}
+							
+				[ mappings release ] ;
+						
+				if( change == NO ) return newMappings ;
+						
+				mappings = newMappings ;
+				
+				// Try to expand again
+			}
+			
+		// Should never reach here!
+		
+		return nil ;
+	}
+	
+- (BOOL) isEqualToMapping:(X2SignatureMapping *)targetMap
+	{
+		// Equality if all histopairs are equal (they should already be sorted at this point)
+		
+		if( query != targetMap->query ) return NO ;
+		if( target != targetMap->target ) return NO ;
+					
+		if( [ histoGroupPairs count ] != [ targetMap->histoGroupPairs count ] ) return NO ;
+		
+		int j ;
+		
+		for( j = 0 ; j < [ histoGroupPairs count ] ; ++j )
+			{
+				NSArray *myHistoGroupPair = [ histoGroupPairs objectAtIndex:j ] ;
+				NSArray *targetHistoGroupPair = [ targetMap->histoGroupPairs objectAtIndex:j ] ;
+				
+				int k ;
+				
+				for( k = 0 ; k < 2 ; ++k )
+					{
+						if(  [ myHistoGroupPair objectAtIndex:k ] != [ targetHistoGroupPair objectAtIndex:k ] ) return NO ;
+					}
+			}
+			
+		return YES ;
+	}
+						
+						
+				
+				
+@end

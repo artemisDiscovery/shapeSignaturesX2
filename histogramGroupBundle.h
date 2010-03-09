@@ -14,11 +14,19 @@
 
 @interface histogramGroupBundle : NSObject 
 {
+@public
 	NSMutableArray *memberGroups ;
+	
+	histogramBundle *hostBundle ;
 
 }
 
 - (id) initWithGroups:(NSArray *)grps inHistogramBundle:(histogramBundle *)hBundle  ;
 
 + (NSArray *) allGroupBundlesFromHistogramBundle:(histogramBundle *)hBundle ;
+
++ (BOOL) advance:(NSArray *)conn ;
+
+
+
 @end

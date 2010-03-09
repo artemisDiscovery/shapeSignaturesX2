@@ -39,12 +39,14 @@ int MED3( int a, int b, int c )
 
 @implementation histogramBundle
 
-- (id) initWithRayTrace:(rayTrace *)rt tag:(NSString *)tg style:(histogramStyle)st
+- (id) initWithRayTrace:(rayTrace *)rt tag:(NSString *)tg style:(histogramStyle)st inSignature:(X2Signature *)sig ;
 	{
 	
 		self = [ super init ] ;
 		
 		sourceTree = rt->theSurface->theTree ;
+		
+		sourceSignature = sig ;
 		
 		lengthDelta = st.lengthDelta ;
 		MEPDelta = st.MEPDelta ;

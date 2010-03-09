@@ -7,6 +7,7 @@
 //
 
 #import "histogramGroup.h"
+#import "fragment.h"
 
 
 @implementation histogramGroup
@@ -20,6 +21,9 @@
 		nLengthBins = hostBundle->nLengthBins ;
 		nMEPBins = hostBundle->nMEPBins ;
 		nBins = hostBundle->nBins ;
+		
+		segmentCount = 0 ;
+		segmentPairCount = 0 ;
 		
 		connectToGroups = [ [ NSMutableArray alloc ] initWithCapacity:[ hostBundle->sortedFragmentsToHistogram count ] ] ;
 		memberHistograms = [ [ NSArray alloc ] initWithArray:histos  ] ;
@@ -46,10 +50,12 @@
 				if( hostBundle->type == ONE_DIMENSIONAL )
 					{
 						histoSegments = nextHisto->segmentCount ;
+						segmentCount += histoSegments ;
 					}
 				else
 					{
 						histoSegments = nextHisto->segmentPairCount ;
+						segmentPairCount += histoSegments ;
 					}
 					
 				segmentSum += histoSegments ;
@@ -82,7 +88,7 @@
 				
 				[ groupFragmentIndices addObjectsFromArray:fragmentIndices ] ;
 			}
-			
+						
 		neighborFragmentIndices = [ [ NSMutableSet alloc ] initWithCapacity:[ histos count ] ] ;
 		
 		histoEnumerator = [ histos objectEnumerator ] ;
@@ -121,7 +127,319 @@
 			
 		return self ;
 	}
+	
+- (void) dealloc
+	{
+		[ memberHistograms release ] ;
 		
+		free( binProbs ) ;
+		
+		[ groupFragmentIndices release ] ;
+		[ neighborFragmentIndices release ] ;
+		
+		[ connectToGroups release ] ;
+		
+		[ super dealloc ] ;
+		
+		return ;
+	}
+
+- (double) scoreWithHistogramGroup:(histogramGroup *)target useCorrelation:(BOOL)useCorr
+	{
+		// Always tricky to do this, especially if we admit different "minMep" value for the second dimension.
+		
+		// For a 1D histo, with Q[i], T[j], Max i = I, Max j = J 
+		//
+		// Score = 0. ;
+		// 
+		//	for( k = 0 ; k <= MAX( I, J ) )
+		//		{
+		//			if( k <= I && k <= J )
+		//				{
+		//					Score += abs( Q[k] - T[k] ) ;
+		//				}
+		//			else if( k <= I )
+		//				{
+		//					Score += abs( Q[k] )
+		//				}
+		//			else
+		//				{
+		//					Score += abs( T[k] )
+		//				}
+		// 
+		//
+		// For a 2D Histo, with Q, T, Max Q = BQ, Max T = BT
+		// nLengthBins : LQ, LT
+		// nMEPBins: MQ, MT
+		//
+		// We will use "signed" implicit bins for the MEP for making comparisons, so we can have
+		// a unified bin scheme for the overlapping histos
+		//
+		// Define	minMEPBinQ = round( minMEPQ / deltaMEP ) (typically these are < 0 )
+		//			minMEPBinT = round( minMEPT / deltaMEP )
+		//			maxMEPBinQ = minMEPBinQ + nMEPBinsQ
+		//			maxMEPBinT = minMEPBinT + nMEPBinsT
+		//
+		// for( m = MIN(minMEPBinQ,minMEPBinT) ; m <= MAX( maxMEPBinQ, maxMEPBinT ) )
+		//	{
+		//		Entry points for Q and T:
+		//		eQ = (m - minMEPBinQ)*LQ
+		//		eT = (m - minMEPBinT)*LT
+		//
+		//		if( m >= minMEPBinQ && m <= maxMEPBinQ )
+		//			MEPINQ = TRUE
+		//		else
+		//			MEPINQ = FALSE 
+		//
+		//		if( m >= minMEPBinT && m <= maxMEPBinT )
+		//			MEPINT = TRUE
+		//		else
+		//			MEPINT = FALSE 
+		
+		//
+		//
+		//		if( MEPINQ && MEPINT  )
+		//			{
+		//				in mep range of Q AND T
+		//
+		//						for( l = 0 ; l <= MAX(LQ,LT) )
+		//							{
+		//								if( l <= LQ && l <= LT )
+		//									{
+		//										bQ = eQ + l ;
+		//										bT = eT + l ;
+		//										Score += abs( Q[bQ] - T[bT] ) 
+		//									}
+		//								else if( l <= LQ )
+		//									{
+		//										Score += Q[bQ] 
+		//									}
+		//								else
+		//									{
+		//										Score += T[bT]
+		//									}
+		//							}
+		//		else if( MEPINQ && !MEPINT )
+		//			{
+		//						for( l = 0 ; l <= LQ )
+		//							{
+		//								bQ = eQ + l
+		//								Score += Q[bQ] 
+		//							}
+		//			}
+		//		else if( !MEPINQ && MEPINT )
+		//			{
+		//						for( l = 0 ; l <= LT )
+		//							{
+		//								bT = eT + l
+		//								Score +=  T[bQ] 
+		//							}
+		//			}
+		//		else (both out of MEP range)
+		//			{
+		//			} (NO SCORE CONTRIBUTION)
+		//					
+		//	
+		
+		double Score = 0. ;
+		
+		double *TProb = target->binProbs ;
+		double *QProb = binProbs ;
+		
+		// To match my spiel above:
+		
+		int LQ = hostBundle->nLengthBins - 1 ;
+		int BQ = nBins - 1 ;
+		
+		int LT = target->hostBundle->nLengthBins - 1 ;
+		int BT = target->nBins - 1 ;
+		
+		int L = LQ > LT ? LQ : LT ;
+		
+		int l ;
+		
+		// Note that this object is defined as the "query"
+		
+		histogramClass type = hostBundle->type ;
+		
+		if( type == TWO_DIMENSIONAL )
+			{
+				// Do the hard one first
+				
+				int minMEPBinQ = (int) round( hostBundle->minMEP / hostBundle->MEPDelta ) ;
+				int minMEPBinT = (int) round( target->hostBundle->minMEP / target->hostBundle->MEPDelta ) ;
+				
+				int MQ = hostBundle->nMEPBins  ;
+				int MT = target->hostBundle->nMEPBins  ;
+				
+				int maxMEPBinQ = minMEPBinQ + MQ - 1 ;
+				int maxMEPBinT = minMEPBinT + MT - 1 ;
+				
+				int maxMEPBin = maxMEPBinQ > maxMEPBinT ? maxMEPBinQ : maxMEPBinT ;
+				int minMEPBin = minMEPBinQ < minMEPBinT ? minMEPBinQ : minMEPBinT ;
+				
+				int m ;
+				
+				for( m = minMEPBin ; m <= maxMEPBin ; ++m )
+					{
+						int eQ = (m - minMEPBinQ)*LQ ;
+						int eT = (m - minMEPBinT)*LT ;
+						
+						int bQ, bT ;
+						
+						BOOL MEPINQ, MEPINT ;
+						
+						if( m >= minMEPBinQ && m <= maxMEPBinQ )
+							MEPINQ = YES ;
+						else
+							MEPINQ = NO ; 
+							
+						if( m >= minMEPBinT && m <= maxMEPBinT )
+							MEPINT = YES ;
+						else
+							MEPINT = NO ;
+							
+						if( MEPINQ && MEPINT )
+							{
+								for( l = 0 ; l <= L ; ++l )
+									{
+										bQ = eQ + l ;
+										bT = eT + l ;
+										
+										if( l <= LQ && l <= LT )
+											{
+												Score += fabs( QProb[bQ] - TProb[bT] ) ;
+											}
+										else if( l <= LQ )
+											{
+												Score += QProb[bQ] ;
+											}
+										else
+											{
+												Score += TProb[bT] ;
+											}
+									}
+							}
+						else if( MEPINQ && !MEPINT )
+							{
+								for( l = 0 ; l <= LQ ; ++l )
+									{
+										bQ = eQ + l ;
+										Score += QProb[bQ] ;
+									}
+							}
+						else if( !MEPINQ && MEPINT )
+							{
+								for( l = 0 ; l <= LT ; ++l )
+									{
+										bT = eT + l ;
+										Score += TProb[bT] ;
+									}
+							}
+						else
+							{
+								// This is possible if rare - do nothing (no score contribution)
+								// No overlap between histograms
+							}
+					}
+			}
+		else
+			{
+				// Easy 1D case!
+				
+				if( useCorr == NO )
+					{
+						for( l = 0 ; l <= L ; ++l )
+							{
+								if( l <= LQ && l <= LT )
+									{
+										Score += fabs( QProb[l] - TProb[l] ) ;
+									}
+								else if( l <= LQ )
+									{
+										Score += QProb[l] ;
+									}
+								else
+									{
+										Score += TProb[l] ;
+									}
+							}
+					}
+				else
+					{
+						// Do correlation scoring
+						
+						// Adjust LQ and LT to be highest non-zero bin, L to be 
+						// max of those
+						
+						while( QProb[LQ] == 0. )
+							{
+								--LQ ;
+							}
+							
+						while( TProb[LT] == 0. )
+							{
+								--LT ;
+							}
+							
+						L = LQ > LT ? LQ : LT ;
+						
+						double aveQProb = 0. ;
+						double aveTProb = 0. ;
+						double SDQ = 0. ;
+						double SDT = 0. ; ;
+						double corrSum = 0. ;
+						
+						for( l = 0 ; l <= L ; ++l )
+							{
+								if( l <= LQ ) aveQProb += QProb[l] ;
+								if( l <= LT ) aveTProb += TProb[l] ;
+							}
+							
+						aveQProb /= (L + 1) ;
+						aveTProb /= (L + 1) ;
+						
+						for( l = 0 ; l <= L ; ++l )
+							{
+								double delQ, delT ;
+								
+								if( l <= LQ )
+									{
+										delQ = QProb[l] - aveQProb ;
+									}
+								else
+									{
+										delQ = -aveQProb ;
+									}
+									
+								if( l <= LT )
+									{
+										delT = TProb[l] - aveTProb ;
+									}
+								else
+									{
+										delT = -aveTProb ;
+									}
+									
+								corrSum += delQ * delT ;
+								
+								SDQ += delQ*delQ ;
+								SDT += delT*delT ;
+							}
+							
+						SDQ = sqrt( SDQ / L ) ;
+						SDT = sqrt( SDT / L ) ;
+						
+						Score = 1. - ( corrSum / ( SDQ * SDT * L ) ) ;
+					}
+												
+											
+								
+			}
+			
+		return Score ;
+	}
+
 		
 - (void) addConnectionTo:(histogramGroup *)g
 	{
@@ -135,6 +453,33 @@
 		return ;
 	}
 		
+- (NSArray *) sortedFragmentIndices
+	{
+		NSInteger indexCompare( id , id , void * ) ;
+		
+		NSMutableArray *returnArray = [ NSMutableArray arrayWithArray:[ groupFragmentIndices allObjects ] ] ;
+		
+		[ returnArray sortUsingFunction:indexCompare context:nil ] ;
+		
+		return returnArray ;
+	}
+		
 
+NSInteger indexCompare( id A, id B, void *ctxt )
+	{
+		NSString *sA = (NSString *) A ;
+		NSString *sB = (NSString *) B ;
+		
+		if( [ sA intValue ] < [ sB intValue ] )
+			{
+				return NSOrderedAscending ;
+			}
+		else if( [ sA intValue ] > [ sB intValue ] )
+			{
+				return NSOrderedDescending ;
+			}
+			
+		return NSOrderedSame ;
+	}
 
 @end

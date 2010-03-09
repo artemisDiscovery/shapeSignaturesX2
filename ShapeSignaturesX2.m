@@ -4,7 +4,7 @@
 #import "rayTrace.h"
 #import "ctTree.h"
 #import "shapeSignatureX2.h"
-//#import "hitListItem.h"
+#import "hitListItem.h"
 #include <math.h> 
 
 int main (int argc, const char * argv[]) {
@@ -897,8 +897,230 @@ int main (int argc, const char * argv[]) {
 		{
 			// Compare two databases of X2 signatures
 			
-			
+			if( ! queryDB || ! targetDB )
+				{
+					printf( "FATAL ERROR - Exit!\n" ) ;
+					exit(1) ;
+				}
 		
+			// Can't use correlation score with a 2D histo
+		
+			if( ([compareTag rangeOfString:@"2D"]).location == 0
+					&& useCorrelationScoring == YES )
+				{
+					printf("CAN'T USE CORRELATION SCORING WITH 2D SIGNATURE - Exit!\n");
+					exit(1) ;
+				}
+				
+			// Do we have full or relative paths?
+			
+			NSString *currentDirectory = [ [ NSFileManager defaultManager ] currentDirectoryPath ] ;
+			NSString *tempPath ;
+			
+			NSRange rangeOfSlash = [ queryDB rangeOfString:@"/" options:NSLiteralSearch ] ;
+			
+			if( rangeOfSlash.location != 0 )
+				{
+					tempPath = [ currentDirectory stringByAppendingString:@"/" ] ;
+					
+					queryDB = [ [ tempPath stringByAppendingString:queryDB ] retain ] ;
+				}
+				
+			rangeOfSlash = [ targetDB rangeOfString:@"/" options:NSLiteralSearch ] ;
+			
+			if( rangeOfSlash.location != 0 )
+				{
+					tempPath = [ currentDirectory stringByAppendingString:@"/" ] ;
+					
+					targetDB = [ [ tempPath stringByAppendingString:targetDB ] retain ] ;
+				}
+				
+
+			// Need to read in the query and target databases
+			
+			NSArray *querySignatures = [ NSUnarchiver unarchiveObjectWithFile:queryDB ] ;
+			NSArray *targetSignatures = [ NSUnarchiver unarchiveObjectWithFile:targetDB ] ;
+			
+			NSString *queryDBName = [ [ [ queryDB pathComponents ] lastObject ] retain ] ;
+			NSString *targetDBName = [ [ [ targetDB pathComponents ] lastObject ] retain ] ;
+			
+						
+			// Open the hits file 
+			
+			FILE *hitFILE = fopen( [ hitsFile cString ], "w" ) ;
+			
+			if( ! hitFILE )
+				{
+					printf( "COULD NOT OPEN HIT FILE FOR WRITING - Exit!\n" ) ;
+					exit(1) ;
+				}
+				
+			
+			if( fragmentScoring == NO )
+				{
+					//tagToUse = [ [ compareTag stringByAppendingString:@"GLOBAL" ] retain ] ;
+					
+					// Non-fragment looks like this:
+					// <version string>
+					// QUERY: <name of query DB>\t\tPATH: <path to query DB>
+					// TAG: <tag>
+					// DESCRIPTION: <tag annotation>
+					// NUMBER OF TARGET DATABASES: <#; can be > 1 if merged>
+					// TARGET: <name of target DB>\t\tPATH: <path to target DB>
+					//	[ can repeat for multiple targets - used with merged hit lists ]
+					// ****HITS FOR QUERY MOLECULE:<name>
+					// RANK\tTARGET MOL\tTARGET DB\tSCORE
+					//<#>\t<name>\t<db name>\t<score>
+					//		(repeat for all hits for query, repeat for all queries)
+					
+					
+					
+					
+					
+				}
+			else
+				{
+				
+					// Fragment version looks like this:
+					// <version string>
+					// QUERY: <name of query DB>\t\tPATH: <path to query DB>
+					// TAG: <tag>
+					// DESCRIPTION: <tag annotation>
+					// NUMBER OF TARGET DATABASES: <#; can be > 1 if merged>
+					// TARGET: <name of target DB>\t\tPATH: <path to target DB>
+					//	[ can repeat for multiple targets - used with merged hit lists ]
+					// ****HITS FOR QUERY MOLECULE:<name>
+					// RANK\tTARGET MOL\tTARGET DB\tWEIGHTED SCORE\tMIN SCORE\tMAX SCORE\t%UNMATCHED QUERY\t%UNMATCHED TARGET\tMAPPING
+					
+					//tagToUse = [ [ compareTag stringByAppendingString:@"FRAGMENT" ] retain ] ;
+				}
+				
+			
+			fprintf( hitFILE, "%s\n", [ [ X2Signature version ] cString ] ) ;
+					
+			fprintf( hitFILE, "QUERY:%s\tPATH:%s\n", [ queryDBName cString ], [ queryDB cString ] ) ;
+			fprintf( hitFILE, "TAG:%s\n", [ compareTag cString ] ) ;
+			fprintf( hitFILE, "DESCRIPTION:%s\n", [ [ histogram descriptionForTag:compareTag ] cString ] ) ;
+			fprintf( hitFILE, "NUMBER OF TARGET DATABASES:1\n" ) ;
+			fprintf( hitFILE, "TARGET:%s\tPATH:%s\n", [ targetDBName cString ], [ targetDB cString ] ) ;
+			
+			// Compare all the queries against signatures
+			
+			NSMutableArray *hits = [ [ NSMutableArray alloc ] initWithCapacity:maxHits ] ;
+			
+			NSEnumerator *queryEnumerator = [ querySignatures objectEnumerator ] ;
+			
+			X2Signature *nextQuery, *nextTarget ;
+			
+			while( ( nextQuery = [ queryEnumerator nextObject ] ) )
+				{
+					NSAutoreleasePool * localPool = [[NSAutoreleasePool alloc] init];
+					
+					[ hits removeAllObjects ] ;
+					
+					NSEnumerator *targetEnumerator = [ targetSignatures objectEnumerator ] ;
+					
+					while( ( nextTarget = [ targetEnumerator nextObject ] ) )
+						{
+							NSArray *queryHits = [ X2Signature scoreQuerySignature:nextQuery againstTarget:nextTarget
+													usingTag:compareTag withCorrelation:useCorrelationScoring
+													useFragments:fragmentScoring ] ;
+													
+							// Merge into hit list
+							
+							[ hitListItem merge:queryHits intoHitList:hits withMaxScore:maxScore 
+									maxPercentQueryUnmatched:maxPercentQueryUnmatched
+									maxPercentTargetUnmatched:maxPercentTargetUnmatched ] ;
+									
+							[ queryHits release ] ;
+									
+							
+						}
+						
+					[ hitListItem sortHits:hits useWeightedScore:sortByFragmentWeightedScore
+							retainHits:maxHits  ] ;
+							
+					// Write out hits
+					
+					NSEnumerator *hitListEnumerator = [ hits objectEnumerator ] ;
+					
+					hitListItem *nextHit ;
+					int count = 1 ;
+					
+					fprintf( hitFILE, "*****HITS FOR QUERY MOLECULE:%s DB:%s\n", [ nextQuery->sourceTree->treeName cString ],
+						[ queryDBName cString ] ) ;
+					
+					while( ( nextHit = [ hitListEnumerator nextObject ] ) )
+						{
+							if( fragmentScoring == YES )
+								{
+									// Rank, target name, target DB, mean score, min score, max score, %query unmatched,
+									//				%target unmatched
+									
+									fprintf( hitFILE, "%d\t%s\t%s\t%f\t%f\t%f\t%f\t%f\t", 
+										count, [ nextHit->mapping->target->hostBundle->sourceTree->treeName cString ],
+										[ targetDBName cString ], nextHit->weightedScore, nextHit->minimumScore, 
+										nextHit->maximumScore, nextHit->percentQueryUnmatched, 
+										nextHit->percentTargetUnmatched ) ;
+										
+									NSEnumerator *histoMatchEnumerator = [ nextHit->mapping->histoGroupPairs objectEnumerator ] ;
+									
+									NSArray *nextHistoGroupPair ;
+									
+									while( ( nextHistoGroupPair = [ histoMatchEnumerator nextObject ] ) )
+										{
+											// Histo-histo score should have been added as third element of the
+											// histogram pair by call to scoreQuerySignature...
+											
+											histogramGroup *histoGroup1 = [ nextHistoGroupPair objectAtIndex:0 ] ;
+											histogramGroup *histoGroup2 = [ nextHistoGroupPair objectAtIndex:1 ] ;
+											
+											printf( "[(" ) ;
+											
+											NSArray *groupFragments = [ histoGroup1 sortedFragmentIndices ] ;
+											
+											int k ;
+											
+											for( k = 0 ; k < [ groupFragments count ] ; ++k )
+												{
+													printf( "%s", [ [ groupFragments objectAtIndex:k ] cString ] ) ;
+													if( k < [ groupFragments count ] - 1 ) printf( "," ) ;
+												}
+												
+											printf( ")-(" ) ;
+											
+											groupFragments = [ histoGroup2 sortedFragmentIndices ] ;
+											
+											for( k = 0 ; k < [ groupFragments count ] ; ++k )
+												{
+													printf( "%s", [ [ groupFragments objectAtIndex:k ] cString ] ) ;
+													if( k < [ groupFragments count ] - 1 ) printf( "," ) ;
+												}
+												
+											printf( "):%f] ", [ [ nextHistoGroupPair objectAtIndex:2 ] doubleValue ] ) ;
+											
+										}
+										
+									fprintf( hitFILE, "\n" ) ;
+								}
+							else
+								{
+									// Rank, target name, target DB, mean score
+									
+									fprintf( hitFILE, "%d\t%s\t%s\t%f\n", 
+										count, [ nextHit->mapping->target->hostBundle->sourceTree->treeName cString ],
+										[ targetDBName cString ], nextHit->weightedScore ) ;
+								}
+								
+							++count ;
+						}
+					[ localPool drain ] ;
+				}
+		
+		}
+	else
+		{
+			printf( "SORRY, only create and compare modes supported right now!\n" ) ;
 		}
 
     [pool drain];
