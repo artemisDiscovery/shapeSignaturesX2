@@ -616,11 +616,12 @@ int MED3( int a, int b, int c )
 
 - (void) encodeWithCoder:(NSCoder *)coder
 	{
-		[ coder encodeValueOfObjCType:@encode(int) at:&type ] ;
+		[ coder encodeValueOfObjCType:@encode(histogramClass) at:&type ] ;
 		
 		[ coder encodeObject:tag ] ;
 		
-		[ coder encodeObject:sourceTree ] ;
+		// Source tree set from X2Signature decode
+		//[ coder encodeObject:sourceTree ] ;
 		
 		[ coder encodeValueOfObjCType:@encode(int) at:&nBins ] ;
 		[ coder encodeValueOfObjCType:@encode(int) at:&nLengthBins ] ;
@@ -639,10 +640,10 @@ int MED3( int a, int b, int c )
 	{
 		self = [ super init ] ;
 		
-		[ coder decodeValueOfObjCType:@encode(int) at:&type ] ;
+		[ coder decodeValueOfObjCType:@encode(histogramClass) at:&type ] ;
 		
 		tag = [ [ coder decodeObject ] retain ] ;
-		sourceTree = [ [ coder decodeObject ] retain ] ;
+		// sourceTree = [ [ coder decodeObject ] retain ] ;
 		
 		[ coder decodeValueOfObjCType:@encode(int) at:&nBins ] ;
 		[ coder decodeValueOfObjCType:@encode(int) at:&nLengthBins ] ;

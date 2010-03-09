@@ -20,6 +20,9 @@
 
 	fragment *first ;
 	fragment *second ;
+	
+	int firstIndex ;
+	int secondIndex ;
 
 
 }

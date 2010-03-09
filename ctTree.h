@@ -80,6 +80,8 @@
 
 - (void) assignNodesToFragments ;
 
+- (void) makeFragmentConnections ;
+
 //- (ctTree *) subTreeWithNodes:(NSSet *)n ;
 
 //- (ctTree *) extendSubTree:(ctTree *)t toIncludeSubstituentsNoBiggerThan:(int)max ;

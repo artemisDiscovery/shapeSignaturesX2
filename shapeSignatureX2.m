@@ -324,6 +324,16 @@ static NSString *version ;
 		
 		histogramBundleForTag = [ [ coder decodeObject ] retain ] ;
 		
+		NSEnumerator *histogramBundleEnumerator = [ histogramBundleForTag objectEnumerator ] ;
+		
+		histogramBundle *nextBundle ;
+		
+		while( ( nextBundle = [ histogramBundleEnumerator nextObject ] ) )
+			{
+				nextBundle->sourceTree = sourceTree ;
+				nextBundle->sourceSignature = self ;
+			}
+		
 		return self ;
 	}
 

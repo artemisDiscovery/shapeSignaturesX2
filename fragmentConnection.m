@@ -20,6 +20,9 @@
 		first = f ;
 		second = s ;
 		
+		firstIndex = f->index ;
+		secondIndex = s->index ;
+		
 		[ f registerConnection:self ] ;
 		[ s registerConnection:self ] ;
 				

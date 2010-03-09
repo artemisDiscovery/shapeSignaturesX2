@@ -1415,6 +1415,7 @@
 		
 	}
 	
+	
 				
 + (NSSet *) connectedSetFromBond:(ctBond *)seed usingBondSet:(NSMutableSet *)bSet excludeNodes:(NSSet *)excl
 	{
