@@ -123,6 +123,8 @@
 		
 		[ neighborFragmentIndices minusSet:groupFragmentIndices ] ;
 		
+		[ localSet release ] ;
+		
 				
 			
 		return self ;
@@ -443,11 +445,9 @@
 		
 - (void) addConnectionTo:(histogramGroup *)g
 	{
-		if( [ connectToGroups containsObject:g ] == YES )
+		if( [ connectToGroups containsObject:g ] == NO )
 			{
 				[ connectToGroups addObject:g ] ;
-				// Assume symmetry
-				[ g->connectToGroups addObject:self ] ;
 			}
 			
 		return ;

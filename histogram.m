@@ -1281,6 +1281,8 @@ static NSArray *tagDescriptions ;
 - (id) initWithCoder:(NSCoder *)coder
 	{
 		self = [ super init ] ;
+		
+		sortedFragmentKey = [ [ coder decodeObject ] retain ] ;
 				
 		
 		[ coder decodeValueOfObjCType:@encode(int) at:&nBins ] ;

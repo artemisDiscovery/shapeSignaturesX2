@@ -1075,7 +1075,7 @@ int main (int argc, const char * argv[]) {
 											histogramGroup *histoGroup1 = [ nextHistoGroupPair objectAtIndex:0 ] ;
 											histogramGroup *histoGroup2 = [ nextHistoGroupPair objectAtIndex:1 ] ;
 											
-											printf( "[(" ) ;
+											fprintf(hitFILE,  "[(" ) ;
 											
 											NSArray *groupFragments = [ histoGroup1 sortedFragmentIndices ] ;
 											
@@ -1083,21 +1083,21 @@ int main (int argc, const char * argv[]) {
 											
 											for( k = 0 ; k < [ groupFragments count ] ; ++k )
 												{
-													printf( "%s", [ [ groupFragments objectAtIndex:k ] cString ] ) ;
-													if( k < [ groupFragments count ] - 1 ) printf( "," ) ;
+													fprintf( hitFILE, "%s", [ [ groupFragments objectAtIndex:k ] cString ] ) ;
+													if( k < [ groupFragments count ] - 1 ) fprintf(hitFILE,  "," ) ;
 												}
 												
-											printf( ")-(" ) ;
+											fprintf( hitFILE, ")-(" ) ;
 											
 											groupFragments = [ histoGroup2 sortedFragmentIndices ] ;
 											
 											for( k = 0 ; k < [ groupFragments count ] ; ++k )
 												{
-													printf( "%s", [ [ groupFragments objectAtIndex:k ] cString ] ) ;
-													if( k < [ groupFragments count ] - 1 ) printf( "," ) ;
+													fprintf( hitFILE, "%s", [ [ groupFragments objectAtIndex:k ] cString ] ) ;
+													if( k < [ groupFragments count ] - 1 ) fprintf(hitFILE,  "," ) ;
 												}
 												
-											printf( "):%f] ", [ [ nextHistoGroupPair objectAtIndex:2 ] doubleValue ] ) ;
+											fprintf( hitFILE, "):%f] ", [ [ nextHistoGroupPair objectAtIndex:2 ] doubleValue ] ) ;
 											
 										}
 										

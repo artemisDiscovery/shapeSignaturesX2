@@ -2806,6 +2806,11 @@
 			
 		treeName = [ [ coder decodeObject ] retain ] ;
 		
+		// Build fragment connections (don't think I can properly encode these, as only 
+		// weak references are involved)
+		
+		[ self makeFragmentConnections ] ;
+		
 		return self ;
 	}
 		

@@ -171,6 +171,8 @@ int MED3( int a, int b, int c )
 				
 				histogram *globalHistogram = [ [ histogram alloc ] initWithBundle:self 
 										fragmentIndices:nil ] ;
+										
+				[ globalHistogram setSortedFragmentKey:@"GLOBAL" ] ;
 				
 				
 				for( iReflect = 0 ; iReflect < rt->nReflections - 1 ; ++iReflect )
@@ -257,6 +259,8 @@ int MED3( int a, int b, int c )
 				
 				histogram *globalHistogram = [ [ histogram alloc ] initWithBundle:self 
 										fragmentIndices:nil ] ;
+										
+				[ globalHistogram setSortedFragmentKey:@"GLOBAL" ] ;
 				
 				for( iReflect = 0 ; iReflect < rt->nReflections - 2 ; ++iReflect )
 					{
@@ -321,6 +325,7 @@ int MED3( int a, int b, int c )
 							}
 							
 						[ currentHistogram add2DSegmentPairAtLengthBin:lenBin MEPBin:MEPBin ] ;
+						[ globalHistogram add2DSegmentPairAtLengthBin:lenBin MEPBin:MEPBin ] ;
 						
 					}
 		
@@ -364,6 +369,8 @@ int MED3( int a, int b, int c )
 				
 				histogram *globalHistogram = [ [ histogram alloc ] initWithBundle:self 
 										fragmentIndices:nil ] ;
+										
+				[ globalHistogram setSortedFragmentKey:@"GLOBAL" ] ;
 				
 				for( iReflect = 0 ; iReflect < rt->nReflections - 2 ; ++iReflect )
 					{
@@ -437,6 +444,7 @@ int MED3( int a, int b, int c )
 							}
 						
 						[ currentHistogram add2DSegmentPairAtLengthBin:lenBin MEPBin:MEPBin ] ;
+						[ globalHistogram add2DSegmentPairAtLengthBin:lenBin MEPBin:MEPBin ] ;
 						
 					}
 			
@@ -483,6 +491,8 @@ int MED3( int a, int b, int c )
 				
 				histogram *globalHistogram = [ [ histogram alloc ] initWithBundle:self 
 										fragmentIndices:nil ] ;
+										
+				[ globalHistogram setSortedFragmentKey:@"GLOBAL" ] ;
 				
 				for( iReflect = 0 ; iReflect < rt->nReflections - 2 ; ++iReflect )
 					{
@@ -555,6 +565,7 @@ int MED3( int a, int b, int c )
 							}
 						
 						[ currentHistogram add2DSegmentPairAtLengthBin:lenBin MEPBin:MEPBin ] ;
+						[ globalHistogram add2DSegmentPairAtLengthBin:lenBin MEPBin:MEPBin ] ;
 					
 					}
 				

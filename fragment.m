@@ -323,6 +323,8 @@
 		
 		[ coder encodeObject:neighborFragments ] ;
 		
+		[ coder encodeObject:neighborFragmentIndices ] ;
+		
 		
 		return ;
 	}
@@ -338,6 +340,10 @@
 		fragmentBonds = [ [ coder decodeObject ] retain ] ;
 		
 		neighborFragments = [ [ coder decodeObject ] retain ] ;
+		
+		neighborFragmentIndices = [ [ coder decodeObject ] retain ] ;
+		
+		connections = nil ;
 		
 		
 		return self ;

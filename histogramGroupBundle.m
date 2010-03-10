@@ -33,17 +33,17 @@
 				
 				for( k = j + 1 ; k < [ memberGroups count ] ; ++k )
 					{
-						histogramGroup *kGroup = [ memberGroups objectAtIndex:j ] ;
+						histogramGroup *kGroup = [ memberGroups objectAtIndex:k ] ;
 						
 						// Two groups neighbor each other if the neighborFragmentIndices set
 						// of one intersect the groupFragmentIndicesSet of the other. 
 						
-						if( [ jGroup->neighborFragmentIndices 
+						if( [ jGroup->groupFragmentIndices 
 							intersectsSet:kGroup->neighborFragmentIndices ] == YES )
 							{
 								// Test other way (sanity)
 								
-								if( [ kGroup->neighborFragmentIndices 
+								if( [ kGroup->groupFragmentIndices 
 									intersectsSet:jGroup->neighborFragmentIndices ] == NO )
 									{
 										printf( "BROKEN NEIGHBOR RELATIONSHIP BETWEEN GROUPS!\n" ) ;
@@ -181,8 +181,7 @@
 				while( ( nextFragmentSet = [ fragmentSetEnumerator nextObject ] ) )
 					{
 						[ histogramsToGroup removeAllObjects ] ;
-						
-						
+						[ fragmentSetIndices removeAllObjects ] ;
 						
 						NSEnumerator *fragmentEnumerator = [ nextFragmentSet objectEnumerator ] ;
 						
