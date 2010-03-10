@@ -46,7 +46,7 @@ typedef struct { double lengthDelta ; double MEPDelta ; } histogramStyle ;
 	int *binCounts ;
 	double *binProbs ;
 	
-	NSMutableArray *connections ;
+	//NSMutableArray *connections ;
 	
 
 }
@@ -71,7 +71,7 @@ typedef struct { double lengthDelta ; double MEPDelta ; } histogramStyle ;
 + (NSArray *) classByRecognizedTag ;
 
 
-- (void) addConnectionToHistogram:(histogram *)h ;
+//- (void) addConnectionToHistogram:(histogram *)h ;
 
 + (NSArray *) tagDescriptions ;
 + (BOOL) tagAvailable:(NSString *)tag ;
@@ -86,6 +86,7 @@ typedef struct { double lengthDelta ; double MEPDelta ; } histogramStyle ;
 
 + (double) lowerBoundOnDistanceBetweenKey:(NSString *)key1 andKey:(NSString *)key2 usingProbabilityIncrement:(double)pInc ;
 
+/*
 - (BOOL) isConnectedToHistogram:(histogram *)h ;
 
 - (NSSet *) histogramsConnectedTo ;
@@ -93,5 +94,5 @@ typedef struct { double lengthDelta ; double MEPDelta ; } histogramStyle ;
 - (void) registerConnection:(histogramConnection *)c ;
 - (void) clearConnectionToHistogram:(histogram *)h ;
 - (void) clearAllConnections ;
-
+*/
 @end

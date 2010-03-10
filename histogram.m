@@ -439,7 +439,7 @@ static NSArray *tagDescriptions ;
 		
 		hostBundle = bndl ;
 		
-		connections = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
+		//connections = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
 		
 		nBins = hostBundle->nBins ;		// Need to local copy of this for coding, decoding
 		
@@ -1181,7 +1181,7 @@ static NSArray *tagDescriptions ;
 		
 		return NO ;
 	}
-	
+/*
 - (NSSet *) histogramsConnectedTo
 	{
 		NSMutableSet *returnSet = [ NSMutableSet setWithCapacity:10 ] ;
@@ -1216,6 +1216,8 @@ static NSArray *tagDescriptions ;
 			
 		return NO ;
 	}
+	
+
 - (void) registerConnection:(histogramConnection *)c 
 	{
 		if( [ connections containsObject:c ] == NO )
@@ -1250,7 +1252,7 @@ static NSArray *tagDescriptions ;
 		[ connections removeAllObjects ] ;
 		return ;
 	}
-
+*/
 
 - (void) encodeWithCoder:(NSCoder *)coder
 	{		
