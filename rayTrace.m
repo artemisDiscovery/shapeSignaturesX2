@@ -56,6 +56,8 @@
 		
 		reflectAtStart = (BOOL *) malloc( nAlloc * sizeof( BOOL ) ) ;
 		
+		[ flatSurface resizeTestIntersect:surf->nElements ] ;
+		
 		nReflections = 0 ;
 		nSegments = 0 ;
 		

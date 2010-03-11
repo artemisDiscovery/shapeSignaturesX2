@@ -12,8 +12,25 @@ static int partitionForVote[10] ;
 static int votesForPartition[10] ;
 static int nPartitionsForVote ;
 
+static short *testIntersect = NULL ;
 
 @implementation flatSurface
+
++ (void) resizeTestIntersect:(int) n 
+	{
+		if( ! testIntersect )
+			{
+				testIntersect = (short *) malloc( n * sizeof( short ) ) ;
+			}
+		else
+			{
+				free( testIntersect ) ;
+			
+				testIntersect = (short *) malloc( n * sizeof( short ) ) ;
+			}
+			
+		return ;
+	}
 
 - (id) initWithFlatFile: (NSString *)f andTree: (ctTree *) t andSiteFile:(NSString *) s andGridSpacing:(double)del
     {
@@ -810,7 +827,7 @@ static int nPartitionsForVote ;
 		
         
         int i ; 
-        static short *testIntersect = NULL ;
+        
         double TOL ;
         double currentX, currentY, currentZ ;
 		double startX, startY, startZ ;

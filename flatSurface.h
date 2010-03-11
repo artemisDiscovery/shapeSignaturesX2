@@ -100,4 +100,6 @@ typedef enum {CONTACT, REENTRANT, SADDLE } elemType ;
 
 + (double) determinant:(double *[3][3])mat ;
 
++ (void) resizeTestIntersect:(int)n ;
+
 @end
