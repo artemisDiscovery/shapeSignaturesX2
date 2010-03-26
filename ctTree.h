@@ -56,9 +56,8 @@
 		
 		BOOL ring ;
 		MMVector3 *normal, *center  ;
-		
-		NSMutableArray *fragmentConnections ;
 
+		NSMutableArray *fragmentConnections ;
 
 }
 
@@ -78,7 +77,7 @@
 
 - (int) ringClosureIndexForNode:(ctNode *)n1 andNode:(ctNode *)n2 ;
 
-- (void) assignNodesToFragments ;
+- (void) assignNodesToFragmentsByMergingNeighborRings:(BOOL)merge ;
 
 - (void) makeFragmentConnections ;
 

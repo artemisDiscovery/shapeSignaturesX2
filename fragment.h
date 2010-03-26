@@ -10,11 +10,11 @@
 #import "vector3.h"
 #import "ctTree.h"
 
-@class fragmentConnection ;
-
 // NONRING_SUBSTITUENT is a component that is too large to be merged with a ring, but
 // is not connected to any other ring. A NONRING_BRIDGE is a non-ring component that 
 // joins two or more rings. 
+
+@class fragmentConnection ;
 
 typedef enum { RING, RING_TERMINAL, RING_INTERIOR, NONRING, SUBSTITUENT, BRIDGE } fragmentType ;
 
@@ -33,15 +33,13 @@ typedef enum { RING, RING_TERMINAL, RING_INTERIOR, NONRING, SUBSTITUENT, BRIDGE 
 	NSMutableSet *fragmentNodes ;
 	NSMutableSet *fragmentBonds ;
 	
-	//MMVector3 *normal, *center ;
+	MMVector3 *normal, *center ;
 	
 	NSArray *neighborFragments ;
 	
 	NSMutableSet *neighborFragmentIndices ;
 	
 	NSMutableArray *connections ;
-	
-	
 
 }
 

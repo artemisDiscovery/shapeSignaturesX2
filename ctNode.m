@@ -620,4 +620,13 @@ static NSDictionary *atomicWeightForElement ;
 		return self ;
 	}
 		
+		
+- (NSString *) description
+	{
+		NSString *returnString = [ NSString stringWithFormat:@"ctNode: %x %d %@",
+			self, index, [ self returnPropertyForKey:@"atomName" ] ] ;
+			
+		return returnString ;
+	}
+	
 @end

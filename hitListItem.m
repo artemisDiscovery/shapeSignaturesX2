@@ -71,14 +71,14 @@
 				int qCount = queryHistoGroup->segmentCount + queryHistoGroup->segmentPairCount ;
 				int tCount = targetHistoGroup->segmentCount + targetHistoGroup->segmentPairCount ;
 				
-				weightedScore += ( qCount ) * score ;
+				weightedScore += ( qCount + tCount ) * score ;
 				cumQuerySegments += qCount ;
 				
 				cumTargetSegments += tCount ;
 				
 			}
 			
-		weightedScore /= cumQuerySegments ;
+		weightedScore /= ( cumQuerySegments + cumTargetSegments ) ;
 		
 		int QTOT, TTOT ;
 		

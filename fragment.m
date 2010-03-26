@@ -22,6 +22,7 @@
 		fragmentNodes = [ [ NSMutableSet alloc ] initWithCapacity:[ fragmentBonds count ] ] ;
 		
 		neighborFragments = nil ; 
+		
 		neighborFragmentIndices = nil ;
 		connections = nil ;
 		
@@ -75,8 +76,8 @@
 		if( neighborFragments ) [ neighborFragments release ] ;
 		if( neighborFragmentIndices ) [ neighborFragmentIndices release ] ;
 		if( connections ) [ connections release ] ;
-		//if( center ) [ center release ] ;
-		//if( normal ) [ normal release ] ;
+		if( center ) [ center release ] ;
+		if( normal ) [ normal release ] ;
 		
 		[ super dealloc ] ;
 		
@@ -166,6 +167,7 @@
 		
 - (int) heavyAtomCount
 	{
+		int j ;
 		
 		int hCount = 0 ;
 		
@@ -245,12 +247,14 @@
 	
 - (void) assignRingFragmentType
 	{
-		if( type != RING ) return ;
+		if( type != RING && type != RING_TERMINAL && type != RING_INTERIOR ) return ;
 		
 		int neighborBridgeCount = [ self neighborBridgeCount ] ;
 		
+		int neighborRingCount = [ self neighborRingCount ] ;
+		
 		 
-		if( neighborBridgeCount <= 1 )
+		if( neighborBridgeCount + neighborRingCount <= 1 )
 			{
 				type = RING_TERMINAL ;
 			}
@@ -265,39 +269,50 @@
 - (void) assignNeighborFragmentIndices
 	{
 		if( ! neighborFragments ) return ;
-		
+ 
 		neighborFragmentIndices = [ [ NSMutableSet alloc ] initWithCapacity:[ neighborFragments count ] ] ;
-		
+ 
 		NSEnumerator *neighborFragmentEnumerator = [ neighborFragments objectEnumerator ] ;
-		
+ 
 		NSArray *nextNeighborFragment ;
-		
+ 
 		while( ( nextNeighborFragment = [ neighborFragmentEnumerator nextObject ] ) )
 			{
 				fragment *neighbor = [ nextNeighborFragment objectAtIndex:0 ] ;
 				[ neighborFragmentIndices addObject:[ NSString stringWithFormat:@"%d",neighbor->index ] ] ;
 			}
-			
+ 
 		return ;
 	}
-				
+ 
+- (NSString *) description
+	{
+		NSString *returnString ;
+		
+		returnString = [ NSString 
+		stringWithFormat:@"fragment %x\nNODES:\n%@\nBONDS:\n%@",
+			self, fragmentNodes, fragmentBonds ] ;
+			
+		return returnString ;
+	}
+
 - (void) registerConnection:(fragmentConnection *)c
 	{
 		// If no connections, add this one
-		
+ 
 		if( ! connections )
 			{
 				connections = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
-				
+ 
 				[ connections addObject:c ] ;
-				
+ 
 				return ;
 			}
-			
+ 
 		NSEnumerator *connectionEnumerator = [ connections objectEnumerator ] ;
-		
+ 
 		fragmentConnection *nextConnection ;
-		
+ 
 		while( ( nextConnection = [ connectionEnumerator nextObject ] ) )
 			{
 				if( [ nextConnection isEqualTo:c ] == YES )
@@ -305,50 +320,49 @@
 						return ;
 					}
 			}
-			
+ 
 		[ connections addObject:c ] ;
-		
+ 
 		return ;
 	}
-		
-	
+ 
+
 - (void) encodeWithCoder:(NSCoder *)coder
 	{
-
+ 
 		[ coder encodeValueOfObjCType:@encode(int) at:&index ] ;
 		[ coder encodeValueOfObjCType:@encode(fragmentType) at:&type ] ;
-		
+ 
 		[ coder encodeObject:fragmentNodes ] ;
 		[ coder encodeObject:fragmentBonds ] ;
-		
+ 
 		[ coder encodeObject:neighborFragments ] ;
-		
+ 
 		[ coder encodeObject:neighborFragmentIndices ] ;
-		
-		
+ 
+ 
 		return ;
 	}
-		
+ 
 - (id) initWithCoder:(NSCoder *)coder
 	{
 		self = [ super init ] ;
-		
+ 
 		[ coder decodeValueOfObjCType:@encode(int) at:&index ] ;
 		[ coder decodeValueOfObjCType:@encode(fragmentType) at:&type ] ;
-		
+ 
 		fragmentNodes = [ [ coder decodeObject ] retain ] ;
 		fragmentBonds = [ [ coder decodeObject ] retain ] ;
-		
+ 
 		neighborFragments = [ [ coder decodeObject ] retain ] ;
-		
+ 
 		neighborFragmentIndices = [ [ coder decodeObject ] retain ] ;
-		
+ 
 		connections = nil ;
-		
-		
+ 
+ 
 		return self ;
 	}
-
-
-
+ 
+ 
 @end

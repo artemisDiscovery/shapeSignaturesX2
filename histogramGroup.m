@@ -464,7 +464,26 @@
 		return returnArray ;
 	}
 		
-
+- (BOOL) isEqualTo:(histogramGroup *)comp
+	{
+		if( [ groupFragmentIndices count ] != [ comp->groupFragmentIndices count ] ) return NO ;
+		
+		NSArray *myIndices = [ self sortedFragmentIndices ] ;
+		NSArray *compIndices = [ comp sortedFragmentIndices ] ;
+		
+		int k ;
+		
+		for( k = 0 ; k < [ myIndices count ] ; ++k )
+			{
+				NSString *myIndex = [ myIndices objectAtIndex:k ] ;
+				NSString *compIndex = [ compIndices objectAtIndex:k ] ;
+				
+				if( [ myIndex isEqualToString:compIndex ] == NO ) return NO ;
+			}
+			
+		return YES ;
+	}
+		
 NSInteger indexCompare( id A, id B, void *ctxt )
 	{
 		NSString *sA = (NSString *) A ;

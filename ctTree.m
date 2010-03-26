@@ -9,11 +9,10 @@
 #import "ctTree.h"
 //#import "ctPath.h"
 #include <math.h>
-#import "fragment.h"
-#import "fragmentConnection.h"
+#include "fragment.h"
+#include "fragmentConnection.h"
 
-
-
+//#define FRAGMENT_DEBUG
 
 @implementation ctTree
 
@@ -33,8 +32,6 @@
 		maximalTreePaths = nil ;
 		
 		treeFragments = nil ;
-		
-		fragmentConnections = nil ;
 		
 		
 		normal = nil ;
@@ -945,7 +942,7 @@
 */
 
 
-- (void) assignNodesToFragments
+- (void) assignNodesToFragmentsByMergingNeighborRings:(BOOL)merge
 	{
 	
 #define MAX_SUBST_SIZE 5
@@ -989,12 +986,22 @@
 				NSMutableArray *fragmentPaths = [ [ NSMutableArray alloc ] initWithCapacity:nBonds ] ;
 				NSMutableArray *removePaths = [ [ NSMutableArray alloc ] initWithCapacity:nBonds ] ;
 				NSMutableArray *addPaths = [ [ NSMutableArray alloc ] initWithCapacity:nBonds ] ;
+
+#ifdef FRAGMENT_DEBUG
+				printf( "FIND FRAGMENTS ITERATIVELY:\n" ) ;
+#endif
 				
 				for( j = 0 ; j < nOutputRingClosures ; ++j )
 					{
+#ifdef FRAGMENT_DEBUG
+						printf( "RING CLOSURE:%d\n", j ) ;
+#endif
+						
 						// I am going to implement an iterative approach here. I will seed an array with initial bond paths using 
-						// the bonds at the ends of the ring closure. These paths will be extended until they hit bonds already in
-						// fragments or include the ring closure
+						// the bonds at the ends of the ring closure. These paths will be extended until they 
+						//	a) hit bonds already in fragments
+						//  b) include the ring closure (i.e. we made a closed path)
+						//	c) there are no bonds available to extend with
 						
 						[ activePaths removeAllObjects ] ;
 						[ fragmentPaths removeAllObjects ] ;
@@ -1005,11 +1012,20 @@
 						
 						ctBond *ringClosureBond = [ outputRingClosure[j][0]  returnBondWithNode:outputRingClosure[j][1] ] ;
 						
+#ifdef FRAGMENT_DEBUG
+						NSLog( @"CLOSURE BOND:%@\n", [ ringClosureBond description ] ) ;
+#endif
+						
 						for( k = 0 ; k < ringClosureBond->node2->nBonds ; ++k )
 							{
 								ctBond *nextBond = ringClosureBond->node2->bonds[k] ;
 								
 								if( nextBond == ringClosureBond ) continue ;
+								
+								// If one of the atoms is hydrogen, skip
+								
+								if( nextBond->node1->atomicNumber == 1 ||
+									nextBond->node2->atomicNumber == 1 ) continue ;
 								
 								if( [ fragmentBonds member:nextBond ] )
 									{
@@ -1025,6 +1041,10 @@
 								[ activePaths addObject:newPath ] ;
 								[ newPath release ] ;
 							}
+							
+#ifdef FRAGMENT_DEBUG
+						NSLog( @"INITIAL PATHS:%@\n", [ activePaths description ] ) ;
+#endif
 							
 						// Now extend paths
 						
@@ -1054,10 +1074,17 @@
 													{
 														// Made a complete path!
 														
-														[ fragmentPaths addObject:nextPath ] ;
-														[ removePaths addObject:nextPath ] ;
+														hadExtend = YES ;
 														
-														break ;
+														bondPath *fragmentPath = [ [ bondPath alloc ]
+															initWithBondPath:nextPath ] ;
+															
+														[ fragmentPath addBond:nextCandidate rootNode:[ fragmentPath endNode ] ] ;
+														[ fragmentPaths addObject:fragmentPath ] ;
+														[ fragmentPath release ] ;
+														
+														[ keepCandidates removeObject:nextCandidate ] ;
+														
 													}
 												else if( [ fragmentBonds member:nextCandidate ] )
 													{
@@ -1067,39 +1094,28 @@
 											
 										// Any candidates left?
 										
-										if( [ keepCandidates count ] == 0 )
+										if( [ keepCandidates count ] > 0 )
 											{
-												// Mark for deletion
-												
-												[ removePaths addObject:nextPath ] ;
-											}
-										else
-											{
-												// Create new paths based on first candidates, use
-												// last candidate to extend current path
+												// Create new paths based on candidates
 												
 												hadExtend = YES ;
-										
+												
 												for( k = 0 ; k < [ keepCandidates count ] ; ++k )
 													{
-														if( k < [ keepCandidates count ] - 1 )
-															{
-																bondPath *newPath = 
-																	[ [ bondPath alloc ] initWithBondPath:nextPath ] ;
-																	
-																[ newPath addBond:[ keepCandidates objectAtIndex:k ]
-																	rootNode:[ nextPath endNode ] ] ;
-																	
-																[ addPaths addObject:newPath ] ;
-																[ newPath release ] ;
-															}
-														else
-															{
-																[ nextPath addBond:[ keepCandidates objectAtIndex:k ]
-																	rootNode:[ nextPath endNode ] ] ;
-															}
+														bondPath *newPath = 
+															[ [ bondPath alloc ] initWithBondPath:nextPath ] ;
+															
+														[ newPath addBond:[ keepCandidates objectAtIndex:k ]
+															rootNode:[ nextPath endNode ] ] ;
+															
+														[ addPaths addObject:newPath ] ;
+														[ newPath release ] ;
 													}
+																							
+										
 											}
+											
+										[ removePaths addObject:nextPath ] ;
 									}
 													
 								// Update active paths
@@ -1110,6 +1126,10 @@
 								[ removePaths removeAllObjects ] ;
 								[ addPaths removeAllObjects ] ;
 							}
+							
+#ifdef FRAGMENT_DEBUG
+						NSLog( @"PATHS AFTER EXTENSION:%@\n", [ fragmentPaths description ] ) ;
+#endif
 							
 						// Create new fragment based on bonds in fragmentPaths paths
 						
@@ -1145,7 +1165,7 @@
 								
 				fragment *removeFragment = nil ;
 			
-				// Check if rings neighbor each other - if yes, combine into one fragment
+				// Check if rings share common atom - if yes, combine into one fragment
 				
 				BOOL haveJoin = YES ;
 				
@@ -1186,6 +1206,9 @@
 				// Those that are smaller than or equal in size to MAX_SUBST_SIZE and neighbor only one fragment will
 				// be incorporated as substituents - otherwise add as non-ring fragment
 				
+				// Take additional care - two rings may be connected by a single bond, in which case that bond does 
+				// not form a new fragment
+				
 				// Need set of all nodes currently assigned to fragments
 				
 				NSMutableSet *currentNodes = [ [ NSMutableSet alloc ] initWithCapacity:nNodes ] ;
@@ -1201,6 +1224,10 @@
 				
 				NSSet *initialRemainder = [ [ NSSet alloc ] initWithSet:remainingBonds ] ;
 				
+#ifdef FRAGMENT_DEBUG				
+				NSLog( @"REMAINING BONDS: %@", [ remainingBonds description ] ) ;
+#endif
+				
 				ctBond *nextBond ;
 				
 				NSEnumerator *bondEnumerator = [ initialRemainder objectEnumerator ] ;
@@ -1209,9 +1236,17 @@
 					{
 						if( ! [ remainingBonds member:nextBond ] ) continue ;
 						
+#ifdef FRAGMENT_DEBUG
+						NSLog( @"Process unassigned bond %@\n", [ nextBond description ] ) ;
+#endif
+												
 													
 						NSSet *nonRingSet = [ ctTree connectedSetFromBond:nextBond usingBondSet:remainingBonds
 							excludeNodes:currentNodes ] ;
+							
+#ifdef FRAGMENT_DEBUG
+						NSLog( @"Expand to form set %@", [ nonRingSet description ] ) ;
+#endif
 						
 						if( [ nonRingSet count ] == 0 ) continue ;
 								
@@ -1242,16 +1277,24 @@
 												++neighborRingCount ;
 											}
 									}
-								
-								
+#ifdef FRAGMENT_DEBUG
+								printf( "Number of rings neighbors this set = %d",
+									  neighborRingCount ) ;
+#endif
 																
 								if( neighborRingCount == 1 )
 									{
 										[ lastNeighborRing mergeFragment:nextFragment ] ;
+#ifdef FRAGMENT_DEBUG
+										NSLog( @"Merge into fragment %@", [ lastNeighborRing description ] ) ;
+#endif										
 									}
 								else
 									{
 										[ treeFragments addObject:nextFragment ] ;
+#ifdef FRAGMENT_DEBUG										
+										NSLog( @"Add new fragment %@", [ nextFragment description ] ) ;
+#endif										
 									}
 							}
 						else
@@ -1265,40 +1308,67 @@
 					
 				// Now assign fragment neighbors
 				
-				haveJoin = YES ;
 				
-				while( haveJoin == YES )
+				// There is a choice here - merge rings that are connected by a 1-bond (empty) fragment, or 
+				// just remove the empty fragment. 'merge' parameter controls this
+				
+				// If one-bond neighbor rings are NOT merged, we need a special operation to detect 
+				// neighbors - this will be done using the one-bond fragments we removed
+				
+				NSMutableArray *oneBondFragments = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
+				
+				if( merge == YES )
 					{
-						haveJoin = NO ;
-				
+						haveJoin = YES ;
+						
+						while( haveJoin == YES )
+							{
+								haveJoin = NO ;
+						
+								fragmentEnumerator = [ treeFragments objectEnumerator ] ;
+								
+								fragment *mergeRing, *removeRing ;
+						
+								while( ( nextFragment = [ fragmentEnumerator nextObject ] ) )
+									{
+										if( [ nextFragment->fragmentBonds count ] == 1 )
+											{
+												haveJoin = YES ;
+												
+												NSArray *rings = [ self neighborFragmentsTo:nextFragment ] ;
+												
+												// Must be two fragments
+												
+												mergeRing = [ [ rings objectAtIndex:0 ] objectAtIndex:0 ] ;
+												removeRing = [ [ rings objectAtIndex:1 ] objectAtIndex:0 ] ;
+												
+												break ;
+											}
+									}
+									
+								if( haveJoin == YES )
+									{
+										[ mergeRing mergeFragment:removeRing ] ;
+										[ treeFragments removeObject:removeRing ] ;
+										[ treeFragments removeObject:nextFragment ] ;
+									}
+							}
+					}
+				else
+					{
 						fragmentEnumerator = [ treeFragments objectEnumerator ] ;
 						
-						fragment *mergeRing, *removeRing ;
-				
 						while( ( nextFragment = [ fragmentEnumerator nextObject ] ) )
 							{
-								if( [ nextFragment->fragmentBonds count ] == 1 )
+								if( [ nextFragment->fragmentBonds  count ] == 1 )
 									{
-										haveJoin = YES ;
-										
-										NSArray *rings = [ self neighborFragmentsTo:nextFragment ] ;
-										
-										// Must be two fragments
-										
-										mergeRing = [ [ rings objectAtIndex:0 ] objectAtIndex:0 ] ;
-										removeRing = [ [ rings objectAtIndex:1 ] objectAtIndex:0 ] ;
-										
-										break ;
+										[ oneBondFragments addObject:nextFragment ] ;
 									}
 							}
 							
-						if( haveJoin == YES )
-							{
-								[ mergeRing mergeFragment:removeRing ] ;
-								[ treeFragments removeObject:removeRing ] ;
-								[ treeFragments removeObject:nextFragment ] ;
-							}
+						[ treeFragments removeObjectsInArray:oneBondFragments ] ;
 					}
+					
 					
 				// Now assign all neighbors
 				
@@ -1309,6 +1379,61 @@
 						nextFragment->neighborFragments = [ self neighborFragmentsTo:nextFragment ] ;
 						[ nextFragment adjustNodesByNeighbors ] ;
 					}
+					
+				// Use any entries of oneBondFragments to add neighbor relationships
+				
+				fragmentEnumerator = [ oneBondFragments objectEnumerator ] ;
+				fragment *nextOneBondFragment ;
+
+				
+				while( ( nextOneBondFragment = [ fragmentEnumerator nextObject ] ) )
+					{
+						fragment *fOne = nil ;
+						ctNode *nodeOne = nil ;
+						fragment *fTwo = nil ;
+						ctNode *nodeTwo = nil ;
+						
+						NSEnumerator *targetFragmentEnumerator = [ treeFragments objectEnumerator ] ;
+						
+						fragment *nextTargetFragment ;
+						
+						while( ( nextTargetFragment = [ targetFragmentEnumerator nextObject ] ) )
+							{
+								if( [ nextOneBondFragment->fragmentNodes 
+									intersectsSet:nextTargetFragment->fragmentNodes ] == YES )
+									{
+										if( ! fOne ) 
+											{
+												fOne = nextTargetFragment ;
+												NSMutableSet *testSet = [ NSMutableSet setWithSet:nextOneBondFragment->fragmentNodes ] ;
+												[ testSet intersectSet:nextTargetFragment->fragmentNodes ] ;
+												nodeOne = [ testSet anyObject ] ;
+											}
+										else if( ! fTwo )
+											{
+												fTwo = nextTargetFragment ;
+												NSMutableSet *testSet = [ NSMutableSet setWithSet:nextOneBondFragment->fragmentNodes ] ;
+												[ testSet intersectSet:nextTargetFragment->fragmentNodes ] ;
+												nodeTwo = [ testSet anyObject ] ;
+											}
+										else
+											{
+												printf( "ERROR ASSIGNING NEIGHBOR FRAGMENT FROM ONE-BOND FRAGMENT!\n" ) ;
+											}
+									}
+							}
+									
+						if( fOne && fTwo )
+							{
+								[ fOne->neighborFragments addObject:[ NSArray 
+									arrayWithObjects:fTwo, [ NSSet setWithObject:nodeOne ], nil ] ] ;
+								[ fTwo->neighborFragments addObject:[ NSArray 
+									arrayWithObjects:fOne, [ NSSet setWithObject:nodeTwo ], nil ] ] ;
+							}
+					}
+					
+				[ oneBondFragments release ] ;
+					
 					
 				// Adjust fragment types
 				
@@ -1325,6 +1450,7 @@
 					{
 						[ nextFragment assignRingFragmentType ] ;
 					}
+					
 					
 				[ initialRemainder release ] ;
 				[ remainingBonds release ] ;
@@ -1350,82 +1476,79 @@
 			}
 		
 		// For later convenience, we set a set of all the neighbor fragment indices, saved as strings
-		
+ 
 		fragmentEnumerator = [ treeFragments objectEnumerator ] ;
-		
+ 
 		while( ( nextFragment = [ fragmentEnumerator nextObject ] ) )
 			{
 				[ nextFragment assignNeighborFragmentIndices ] ;
 			}
-			
+ 
 		// For later generation of histogram groups, generate connection objects between fragments
-		
-		[ self makeFragmentConnections ] ;
-		
-				
+ 
+		[ self makeFragmentConnections ] ;				
 		return ;
 		
 	}
 	
+	
 - (void) makeFragmentConnections
 	{
-	
+ 
 		fragmentConnections = [ [ NSMutableArray alloc ] initWithCapacity:[ treeFragments count ] ] ;
-	
+ 
 		NSEnumerator *fragmentEnumerator = [ treeFragments objectEnumerator ] ;
-		
+ 
 		fragment *nextFragment ;
-	
+ 
 		while( ( nextFragment = [ fragmentEnumerator nextObject ] ) )
 			{
 				NSEnumerator *neighborIndexEnumerator = 
 					[ nextFragment->neighborFragmentIndices objectEnumerator ] ;
-		
+ 
 				NSString *nextNeighborIndex ;
-		
+ 
 				while( ( nextNeighborIndex = [ neighborIndexEnumerator nextObject ] ) )
 					{
 						fragment *nextNeighborFragment = [ treeFragments 
 								objectAtIndex:( [ nextNeighborIndex intValue ] - 1 ) ] ;
-			
+ 
 						// Connection already?
-			
+ 
 						BOOL foundConnect = NO ;
-			
+ 
 						NSEnumerator *connectionEnumerator = [ fragmentConnections objectEnumerator ] ;
-			
+ 
 						fragmentConnection *nextConnection ;
-			
+ 
 						while( ( nextConnection = [ connectionEnumerator nextObject ] ) )
 							{
 								NSSet *frags = [ nextConnection linkedFragments ] ;
-				
+ 
 								if( [ frags member:nextFragment ] && [ frags member:nextNeighborFragment ] )
 									{
 										foundConnect = YES ;
 										break ;
 									}
 							}
-			
+ 
 						if( foundConnect == NO )
 							{
 								// Make new connection 
-				
+ 
 								fragmentConnection *newConnection = [ [ fragmentConnection alloc ]
 									initWithFirst:nextFragment second:nextNeighborFragment ] ;
-				
+ 
 								[ fragmentConnections addObject:newConnection ] ;
 							}
 					}
-		
-		
+ 
+ 
 			}
-	
-		
+ 
+ 
 		return ;
 	}
-		
-	
 				
 + (NSSet *) connectedSetFromBond:(ctBond *)seed usingBondSet:(NSMutableSet *)bSet excludeNodes:(NSSet *)excl
 	{
@@ -2805,9 +2928,6 @@
 		treeFragments = [ [ coder decodeObject ] retain ] ;
 			
 		treeName = [ [ coder decodeObject ] retain ] ;
-		
-		// Build fragment connections (don't think I can properly encode these, as only 
-		// weak references are involved)
 		
 		[ self makeFragmentConnections ] ;
 		

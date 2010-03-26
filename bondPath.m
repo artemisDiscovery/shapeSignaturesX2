@@ -145,4 +145,34 @@
 			
 		return lastBond->node1 ;
 	}
+	
+- (NSString *) description
+	{
+		NSMutableString *returnString = [ NSMutableString stringWithFormat:@"PATH: " ] ;
+		
+		int k ;
+		
+		for( k = 0 ; k < [ bonds count ] ; ++k )
+			{
+				ctBond *nextBond = [ bonds objectAtIndex:k ] ;
+				
+				if( [ [ bondOrientations objectAtIndex:k ] boolValue ] == YES )
+					{
+						[ returnString appendString:[ NSString stringWithFormat:@"%s ",
+							[ [ nextBond->node1 returnPropertyForKey:@"atomName" ] cString ] ] ] ;
+					}
+				else
+					{
+						[ returnString appendString:[ NSString stringWithFormat:@"%s ",
+							[ [ nextBond->node2 returnPropertyForKey:@"atomName" ] cString ] ] ] ;
+					}
+					
+			}
+			
+		[ returnString appendString:[ NSString stringWithFormat:@"%s", 
+			[ [ [ self endNode ] returnPropertyForKey:@"atomName" ] cString ] ] ] ;
+			
+		return returnString ;
+	}
+					
 @end

@@ -24,7 +24,8 @@ int main (int argc, const char * argv[]) {
 							SEGMENTCULLING, RESTARTRATE, SEED, PRINTOPTION, ORIENTATION, 
 							SKIPSELFINTERSECTION, SCALE, COMPARETAG, NUMBEROFHITS, MAXHITS, MAXSCORE, FRAGSCORE,
 							SORTBYWEIGHTEDSCORE, MAXPERCENTQUERYUNMATCHED, MAXPERCENTTARGETUNMATCHED,
-							CORRELATIONSCORING, PROBABILITYINCREMENT, KEYTYPE, NEIGHBORLOWERBOUNDTOEXCLUDE } ;
+							CORRELATIONSCORING, PROBABILITYINCREMENT, KEYTYPE, NEIGHBORLOWERBOUNDTOEXCLUDE,
+							MERGENEIGHBORRINGS } ;
 							
 	
 	enum { CREATEMODE, COMPAREMODE, INFOMODE, KEYSMODE, KMEANSMODE, CHECKMODE, UNDEFINED } mode ;
@@ -42,6 +43,7 @@ int main (int argc, const char * argv[]) {
 	int numSegments = 100000 ;
 	BOOL segmentCulling = NO ;
 	BOOL skipSelfIntersection = NO ;
+	BOOL mergeNeighborRings = NO ;
 	double scaleFactor = 1.0 ;
 	double gridSpacing = 0.5 ;
 		
@@ -110,6 +112,7 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-orient <orientation (inside|outside); default = IN>\n" ) ;
 			printf( "\t-skipSelf <skip self intersecting surface (yes|no); default = YES>\n" ) ;
 			printf( "\t-scale <scale factor for ray-trace; default = 1.0>\n" ) ;
+			printf( "\t-mergeRings <merge rings separated by one bond (yes|no); default = NO \n" ) ;
 			printf( "\t-printon <enable print option (raytrace|histogram)> \n" ) ;
 			printf( "-compare flags:\n" ) ;
 			printf( "\t-tag <histogram tag to use; default = 1DShape> \n" ) ;
@@ -261,6 +264,10 @@ int main (int argc, const char * argv[]) {
 							else if( strcasestr( &argv[i][1], "neigh" ) )
 								{
 									flagType = NEIGHBORLOWERBOUNDTOEXCLUDE ;
+								}
+							else if( strcasestr( &argv[i][1], "mergeR" ) )
+								{
+									flagType = MERGENEIGHBORRINGS ;
 								}
 							else
 								{
@@ -451,6 +458,23 @@ int main (int argc, const char * argv[]) {
 								else
 									{
 										segmentCulling = NO ;
+									}
+								
+								break ;
+								
+							case MERGENEIGHBORRINGS:
+								if( mode != CREATEMODE )
+									{
+										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+										exit(1) ;
+									}
+								if( argv[i][0] == 'y' || argv[i][0] == 'Y' )
+									{
+										mergeNeighborRings = YES ;
+									}
+								else
+									{
+										mergeNeighborRings = NO ;
 									}
 								
 								break ;
@@ -793,7 +817,7 @@ int main (int argc, const char * argv[]) {
 						
 					// Assign atoms to fragments
 					
-					[ nextTree assignNodesToFragments ] ;
+					[ nextTree assignNodesToFragmentsByMergingNeighborRings:mergeNeighborRings ] ;
 						
 					// Sites file?
 					
@@ -1000,6 +1024,16 @@ int main (int argc, const char * argv[]) {
 					
 			fprintf( hitFILE, "QUERY:%s\tPATH:%s\n", [ queryDBName cString ], [ queryDB cString ] ) ;
 			fprintf( hitFILE, "TAG:%s\n", [ compareTag cString ] ) ;
+			
+			if( fragmentScoring == YES )
+				{
+					fprintf( hitFILE, "FRAGMENTSCORING:YES\n" ) ;
+				}
+			else
+				{
+					fprintf( hitFILE, "FRAGMENTSCORING:NO\n" ) ;
+				}
+				
 			fprintf( hitFILE, "DESCRIPTION:%s\n", [ [ histogram descriptionForTag:compareTag ] cString ] ) ;
 			fprintf( hitFILE, "NUMBER OF TARGET DATABASES:1\n" ) ;
 			fprintf( hitFILE, "TARGET:%s\tPATH:%s\n", [ targetDBName cString ], [ targetDB cString ] ) ;

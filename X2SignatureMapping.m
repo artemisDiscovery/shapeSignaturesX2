@@ -232,10 +232,7 @@
 - (BOOL) isEqualToMapping:(X2SignatureMapping *)targetMap
 	{
 		// Equality if all histopairs are equal (they should already be sorted at this point)
-		
-		if( query != targetMap->query ) return NO ;
-		if( target != targetMap->target ) return NO ;
-					
+							
 		if( [ histoGroupPairs count ] != [ targetMap->histoGroupPairs count ] ) return NO ;
 		
 		int j ;
@@ -249,7 +246,15 @@
 				
 				for( k = 0 ; k < 2 ; ++k )
 					{
-						if(  [ myHistoGroupPair objectAtIndex:k ] != [ targetHistoGroupPair objectAtIndex:k ] ) return NO ;
+						histogramGroup *myGroup = [ myHistoGroupPair objectAtIndex:k ] ;
+						histogramGroup *targetGroup = [ targetHistoGroupPair objectAtIndex:k ] ;
+						
+						if( [ myGroup isEqualTo:targetGroup ] == NO )
+							{
+								return NO ;
+							}
+						
+						//if(  [ myHistoGroupPair objectAtIndex:k ] != [ targetHistoGroupPair objectAtIndex:k ] ) return NO ;
 					}
 			}
 			
@@ -257,6 +262,76 @@
 	}
 						
 						
+- (NSString *) description
+	{
+		NSInteger stringIndexCompare(id, id, void *) ;
+		
+		NSEnumerator *histoGroupPairEnumerator = [ histoGroupPairs objectEnumerator ] ;
+		
+		NSArray *nextGroupPair ;
+		
+		NSMutableString *returnString = [ NSMutableString stringWithCapacity:100 ] ;
+		
+		[ returnString appendString:@"[" ] ;
+						
+		while( ( nextGroupPair = [ histoGroupPairEnumerator nextObject ] ) )
+			{
+
 				
+				histogramGroup *Q = [ nextGroupPair objectAtIndex:0 ] ;
+				histogramGroup *T = [ nextGroupPair objectAtIndex:1 ] ;
+								
+				NSMutableArray *qIndices = [ NSMutableArray arrayWithArray:[ Q->groupFragmentIndices allObjects ] ] ;
+				[ qIndices sortUsingFunction:stringIndexCompare context:nil ] ;
 				
+				NSMutableArray *tIndices = [ NSMutableArray arrayWithArray:[ T->groupFragmentIndices allObjects ] ] ;
+				[ tIndices sortUsingFunction:stringIndexCompare context:nil ] ;
+				
+				[ returnString appendString:@" (" ] ;
+				
+				NSEnumerator *indexEnumerator = [ qIndices objectEnumerator ] ;
+				NSString *nextIndex ;
+				
+				while( ( nextIndex = [ indexEnumerator nextObject ] ) )
+					{
+						[ returnString appendString:nextIndex ] ;
+						[ returnString appendString:@" " ] ;
+					}
+					
+				[ returnString appendString:@")-( " ] ;
+				
+				indexEnumerator = [ tIndices objectEnumerator ] ;
+				
+				while( ( nextIndex = [ indexEnumerator nextObject ] ) )
+					{
+						[ returnString appendString:nextIndex ] ;
+						[ returnString appendString:@" " ] ;
+					}
+				
+				[ returnString appendString:@") " ] ;
+			}
+			
+		[ returnString appendString:@"]" ] ;
+		
+		return returnString ;
+	}
+				
+
+NSInteger stringIndexCompare( id A, id B, void *ctxt )
+	{
+		NSString *sA = (NSString *) A ;
+		NSString *sB = (NSString *) B ;
+		
+		if( [ sA intValue ] < [ sB intValue ] )
+			{
+				return NSOrderedAscending ;
+			}
+		else if( [ sA intValue ] > [ sB intValue ] )
+			{
+				return NSOrderedDescending ;
+			}
+			
+		return NSOrderedSame ;
+	}
+
 @end

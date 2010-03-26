@@ -195,5 +195,13 @@
 		return self ;
 	}
 		
-
+- (NSString *) description
+	{
+		NSString *returnString = [ NSString 
+			stringWithFormat:@"ctBond: %x \nnode1: %@ node2: %@",
+			self, node1, node2 ] ;
+			
+		return returnString ;
+	}
+	
 @end

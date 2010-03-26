@@ -346,6 +346,8 @@ static NSString *version ;
 		
 		// We consider all possible intial mappings using a fragment of query and fragment of target as root
 		
+		NSLog( @"***SCORE %@ AGAINST %@ \n", query->sourceTree->treeName, target->sourceTree->treeName ) ;
+		
 		NSInteger compareHistoGroupPair( id hA, id hB, void *ctxt ) ;
 		NSInteger compareMappingPair( id mA, id mB, void *ctxt ) ;
 		
@@ -460,15 +462,25 @@ static NSString *version ;
 				
 				NSEnumerator *mappingEnumerator = [ accumMappings objectEnumerator ] ;
 				X2SignatureMapping *nextMapping ;
+				
 
 				while( ( nextMapping = [ mappingEnumerator nextObject ] ) )
 					{
+						//NSLog( @"Next Mapping before sort:" ) ;
+						//NSLog( @"%@", [ nextMapping description ] ) ;
 						[ nextMapping->histoGroupPairs sortUsingFunction:compareHistoGroupPair context:nil ] ;
+						//NSLog( @"After Mapping of group pairs:" ) ;
+						//NSLog( @"%@", [ nextMapping description ] ) ;
 					}
 					
+
 				// Now that histo pairs are sorted WITHIN mappings, sort the mappings
 				
 				[ accumMappings sortUsingFunction:compareMappingPair context:nil ] ;
+				
+				//NSLog( @"**MAPPINGS AFTER MAPPING SORT:" ) ;
+				
+				//NSLog( @"%@", [ accumMappings description ] ) ;
 				
 				// Remove duplicates - 
 				
@@ -476,18 +488,24 @@ static NSString *version ;
 				
 				while( j < [ accumMappings count ] )
 					{
+						X2SignatureMapping *jMapping =  [ accumMappings objectAtIndex:j ] ;
+						
 						int k = j + 1 ; 
+						
 						
 						while( k < [ accumMappings count ] )
 							{
-								if( [ [ accumMappings objectAtIndex:j ] isEqualToMapping:[ accumMappings objectAtIndex:k ] ] )
+								if( [ jMapping isEqualToMapping:[ accumMappings objectAtIndex:k ] ] )
 									{
 										[ accumMappings removeObjectAtIndex:k ] ;
+										continue ;
 									}
-								else
-									{
-										break ;
-									}
+								//else
+								//	{
+								//		break ;
+								//	}
+									
+								++k ;
 							}
 							
 						++j ;
