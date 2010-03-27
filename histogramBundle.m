@@ -7,6 +7,7 @@
 //
 
 #import "histogramBundle.h"
+#import "fragment.h"
 
 //#define MIN(a,b) (((a) < (b)) ? (a) : (b))
 //#define MAX(a,b) (((a) > (b)) ? (a) : (b))
@@ -624,6 +625,54 @@ int MED3( int a, int b, int c )
 		return ;
 	}
 	
+- ( NSString *) keyStringsForBundleWithIncrement:(double) inc
+	{
+		NSMutableString *returnString = [ [ NSMutableString alloc ] initWithCapacity:100 ] ;
+		
+		// For now only do 1DHISTO
+		
+		if( [ tag isEqualToString:@"1DHISTO" ] == NO ) return nil ;
+		
+		// Go through all keys, only use type "x_x" 
+		
+		NSEnumerator *fragmentKeyEnumerator = [ [ sortedFragmentsToHistogram allKeys ] objectEnumerator ] ;
+		
+		NSString *nextFragmentKey ;
+		
+		while( ( nextFragmentKey = [ fragmentKeyEnumerator nextObject ] ) )
+			{
+				if( [ nextFragmentKey isEqualToString:@"GLOBAL" ] ) continue ;
+				
+				NSArray *fragmentComponents = [ nextFragmentKey componentsSeparatedByString:@"_" ] ;
+				
+				// Must be two
+				
+				NSString *fragmentString = [ fragmentComponents objectAtIndex:0 ] ;
+				
+				if( [ fragmentString isEqualToString:[fragmentComponents objectAtIndex:1 ] ] == NO )
+					{
+						continue ;
+					}
+					
+				int fragmentIndex = [ fragmentString intValue ] - 1 ;
+				
+				fragment *theFragment = [ sourceTree->treeFragments objectAtIndex:fragmentIndex ] ;
+					
+				histogram *theHisto = [ sortedFragmentsToHistogram objectForKey:nextFragmentKey ] ;
+				
+				[ returnString appendString:@"@frag:" ] ;
+				[ returnString appendString:fragmentString ] ;
+				[ returnString appendString:@"\n@size:" ] ;
+				[ returnString appendString:[ NSString stringWithFormat:@"%d", [ theFragment->fragmentNodes count ] ] ] ;
+				[ returnString appendString:@"\n@key:" ] ;
+				[ returnString appendString:[ theHisto keyStringWithIncrement:inc ] ] ;
+				[ returnString appendString:@"\n" ] ;
+			}
+			
+		return returnString ;
+	}
+				
+				
 
 - (void) encodeWithCoder:(NSCoder *)coder
 	{

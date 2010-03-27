@@ -49,4 +49,6 @@
 
 - (id) initWithRayTrace:(rayTrace *)rt tag:(NSString *)tg style:(histogramStyle)st inSignature:(X2Signature *)sig  ;
 
+- ( NSString *) keyStringsForFragmentWithIncrement:(double) inc ;
+
 @end

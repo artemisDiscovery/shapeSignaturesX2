@@ -24,7 +24,7 @@ int main (int argc, const char * argv[]) {
 							SEGMENTCULLING, RESTARTRATE, SEED, PRINTOPTION, ORIENTATION, 
 							SKIPSELFINTERSECTION, SCALE, COMPARETAG, NUMBEROFHITS, MAXHITS, MAXSCORE, FRAGSCORE,
 							SORTBYWEIGHTEDSCORE, MAXPERCENTQUERYUNMATCHED, MAXPERCENTTARGETUNMATCHED,
-							CORRELATIONSCORING, PROBABILITYINCREMENT, KEYTYPE, NEIGHBORLOWERBOUNDTOEXCLUDE,
+							CORRELATIONSCORING, KEYTYPE, KEYINCREMENT, NEIGHBORLOWERBOUNDTOEXCLUDE,
 							MERGENEIGHBORRINGS } ;
 							
 	
@@ -59,7 +59,7 @@ int main (int argc, const char * argv[]) {
 	double maxPercentTargetUnmatched = 100. ;
 	
 	BOOL keysWithFragments = YES ;
-	double probabilityIncrement = 0.05 ;
+	double keyIncrement = 0.05 ;
 	BOOL doNeighbors = NO ;
 	double neighborLowerBoundToExclude = 0.1 ;
 	
@@ -114,6 +114,7 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-scale <scale factor for ray-trace; default = 1.0>\n" ) ;
 			printf( "\t-mergeRings <merge rings separated by one bond (yes|no); default = NO \n" ) ;
 			printf( "\t-printon <enable print option (raytrace|histogram)> \n" ) ;
+			printf( "\t-keyIncrement <key discretization increment; default = 0.05>\n" ) ;
 			printf( "-compare flags:\n" ) ;
 			printf( "\t-tag <histogram tag to use; default = 1DShape> \n" ) ;
 			printf( "\t-fragscore <use fragment-based scoring (yes|no); default = NO>\n" ) ;
@@ -123,10 +124,10 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-sortBy <how to sort signatures; (minFrag | weightedFrag); default = weightedFrag> \n" ) ;
 			printf( "\t-maxQueryUnmatched <max. %% query unmatched ; default = 100. (no constraint)> \n" ) ;
 			printf( "\t-maxTargetUnmatched <max. %% target unmatched ; default = 100. (no constraint)> \n" ) ;
-			printf( "-keys flags:\n" ) ;
-			printf( "\t-probIncrement <division for discretizing; default = 0.05> \n" ) ;
-			printf( "\t-keyType <(g)lobal or (f)fragment histos; default = fragment> \n" ) ;
-			printf( "\t-neighbors <probability lower bound to exclude> \n" ) ;
+			//printf( "-keys flags:\n" ) ;
+			//printf( "\t-probIncrement <division for discretizing; default = 0.05> \n" ) ;
+			//printf( "\t-keyType <(g)lobal or (f)fragment histos; default = fragment> \n" ) ;
+			//printf( "\t-neighbors <probability lower bound to exclude> \n" ) ;
 			printf( "-info :\n" ) ;
 			printf( "\t<provide information on atom assignment to fragments, and print all histograms>\n" ) ;
 			
@@ -253,9 +254,9 @@ int main (int argc, const char * argv[]) {
 								{
 									flagType = CORRELATIONSCORING ;
 								}
-							else if( strcasestr( &argv[i][1], "probIncre" ) )
+							else if( strcasestr( &argv[i][1], "keyIncre" ) )
 								{
-									flagType = PROBABILITYINCREMENT ;
+									flagType = KEYINCREMENT ;
 								}
 							else if( strcasestr( &argv[i][1], "keyt" ) )
 								{
@@ -613,13 +614,13 @@ int main (int argc, const char * argv[]) {
 								scaleFactor = atof( argv[i] ) ;
 								break ;
 								
-							case PROBABILITYINCREMENT:
-								if( mode != KEYSMODE )
+							case KEYINCREMENT:
+								if( mode != CREATEMODE )
 									{
 										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 										exit(1) ;
 									}
-								probabilityIncrement = atof( argv[i] ) ;
+								keyIncrement = atof( argv[i] ) ;
 								break ;
 								
 							case PRINTOPTION:
@@ -851,6 +852,7 @@ int main (int argc, const char * argv[]) {
 								[ surfaceRoot cString ], [ mol2Root cString ] ) ;
 						}
 					
+					printf( "@mol:%s\n", [ mol2Root cString ] ) ;
 					
 					// Assume file name of form <name>.mol2 (obviously)
 					
@@ -892,6 +894,16 @@ int main (int argc, const char * argv[]) {
 																andRayTrace:nextRayTrace withStyle:style ] ;
 														
 					[ theSignatures addObject:nextSignature ] ;
+					
+					// Print the fragment keys
+					
+					histogramBundle *keyBundle = [ nextSignature->histogramBundleForTag objectForKey:@"1DHISTO" ] ;
+					
+					NSString *keyString = [ keyBundle keyStringsForBundleWithIncrement:keyIncrement ] ;
+					
+					printf( "%s", [ keyString cString ] ) ;
+					
+					[ keyString release ] ;
 					
 					
 					// Every 100 molecules, clear autorelease pool
