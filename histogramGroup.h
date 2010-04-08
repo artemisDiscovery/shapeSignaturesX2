@@ -36,7 +36,7 @@
 	
 }
 
-- (id) initWithHistograms:(NSArray *)histos inBundle:(histogramBundle *)bndl   ;
+- (id) initWithHistograms:(NSArray *)histos inBundle:(histogramBundle *)bndl withFragmentIndices:(NSSet *)indices   ;
 
 - (void) addConnectionTo:(histogramGroup *)g ;
 

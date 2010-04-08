@@ -176,7 +176,7 @@
 				
 				NSSet *nextFragmentSet ;
 				
-				
+				BOOL hadEmptyGroup = NO ;
 				
 				while( ( nextFragmentSet = [ fragmentSetEnumerator nextObject ] ) )
 					{
@@ -216,16 +216,35 @@
 							
 						// Make the group
 						
+						if( [ histogramsToGroup count ] == 0 )
+							{
+								hadEmptyGroup = YES ;
+								break ;
+							}
+						
 						histogramGroup *nextGroup = [ [ histogramGroup alloc ] initWithHistograms:histogramsToGroup 
-							inBundle:hBundle ] ;
+							inBundle:hBundle withFragmentIndices:fragmentSetIndices ] ;
 							
 						[ groupsToBundle addObject:nextGroup ] ;
+					}
+					
+				if( hadEmptyGroup == YES )
+					{
+						// Skip this bundle
+						
+						continue ;
 					}
 					
 				// Have all the histogram groups, make the group bundle
 				
 				histogramGroupBundle *nextBundle = [ [ histogramGroupBundle alloc ]
 					initWithGroups:groupsToBundle inHistogramBundle:hBundle ] ;
+					
+				if( ! nextBundle )
+					{
+						printf( "ERROR - skipping this grouping\n" ) ;
+						continue ;
+					}
 				
 				[ groupBundles addObject:nextBundle ] ;
 				[ nextBundle release ] ;
@@ -253,6 +272,9 @@
 		// where sJ = 0/1 . Then this function converts [ 0, 0, 1, 1 ] to [ 0, 1, 0, 0 ] (returning YES) 
 		// and [ 1, 1, 1, 1 ] to [ 0, 0, 0, 0 ] (returning NO for rollover detection ) 
 		
+		// Since this is only used for fragment-based scoring, we will disallow all fragment connections turned
+		// on - if that is detected we will not advance and will return NO . 
+		
 		int j ;
 		
 		for( j = [ conn count ] - 1  ; j >= 0 ; --j )
@@ -271,9 +293,24 @@
 					}
 			}
 			
-		if( j >= 0 ) return YES ;
+		if( j < 0 ) return NO ; // Wrap-around - should no longer have this condition
+			
+		BOOL allActive = YES ;
 		
-		return NO ;
+		for( j = 0 ; j < [ conn count ] ; ++j )
+			{
+				fragmentConnection *thisConnect = [ conn objectAtIndex:j ] ;
+				
+				if( thisConnect->active == NO )
+					{
+						allActive = NO ;
+						break ;
+					}
+			}
+			
+		if( allActive == YES ) return NO ;
+		
+		return YES ;
 	}
 		
 		

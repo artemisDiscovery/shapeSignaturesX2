@@ -105,7 +105,7 @@
 
 //- (void) adjustCoalescedTreeFragmentIndex:(int) idx ;
 
-- (NSArray *) neighborFragmentsTo:(fragment *)f ;
+- (NSArray *) neighborFragmentsTo:(fragment *)f   ;
 
 + (NSSet *) connectedSetFromBond:(ctBond *)seed usingBondSet:(NSMutableSet *)bSet excludeNodes:(NSSet *)excl ;
 

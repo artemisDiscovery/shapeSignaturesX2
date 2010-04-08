@@ -611,6 +611,7 @@ int MED3( int a, int b, int c )
 		free( fragmentIndicesToHistogram ) ;
 		
 		[ allHistograms release ] ;
+		
 				
 		
 		return self ;

@@ -1181,7 +1181,7 @@
 						
 						while( ( nextRing = [ ringEnumerator nextObject ] ) )
 							{
-								NSArray *neighborRings = [ self neighborFragmentsTo:nextRing ] ;
+								NSArray *neighborRings = [ self neighborFragmentsTo:nextRing  ] ;
 								
 								if( [ neighborRings count ] > 0 )
 									{
@@ -1558,9 +1558,17 @@
 		
 		NSMutableSet *nodeSet = [ [ NSMutableSet alloc ] initWithCapacity:[ bSet count ]  ] ;
 		
+		if( ! [ excl member:seed->node1 ] )
+			{
+				[ nodeSet addObject:seed->node1 ] ;
+			}
 		
-		[ nodeSet addObject:seed->node1 ] ;
-		[ nodeSet addObject:seed->node2 ] ;
+		if( ! [ excl member:seed->node2 ] )
+			{
+				[ nodeSet addObject:seed->node2 ] ;
+			}
+		
+		
 		
 		NSMutableSet *addSet = [ [ NSMutableSet alloc ] initWithCapacity:[ bSet count ] ] ;
 		
@@ -1623,6 +1631,9 @@
 		// Return all fragments in current tree list that neighbor argument 
 		// For each neighbor return an array [ fragment *neighbor, NSSet *commonNodes ]
 		
+		// Note that it is possible for two non-ring fragments to share the same connection atom
+		// to a ring fragment. We will NOT allow non-ring fragments to be neighbors of each other!
+		
 		NSEnumerator *fragmentEnumerator = [ treeFragments objectEnumerator ] ;
 		
 		fragment *nextFragment ;
@@ -1634,6 +1645,8 @@
 		while( ( nextFragment = [ fragmentEnumerator nextObject ] ) )
 			{	
 				if( nextFragment == f ) continue ;
+				
+				if( f->type != RING && nextFragment->type != RING ) continue ;
 				
 				[ testSet removeAllObjects ] ;
 				

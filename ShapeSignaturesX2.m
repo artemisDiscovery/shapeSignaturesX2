@@ -25,7 +25,7 @@ int main (int argc, const char * argv[]) {
 							SKIPSELFINTERSECTION, SCALE, COMPARETAG, NUMBEROFHITS, MAXHITS, MAXSCORE, FRAGSCORE,
 							SORTBYWEIGHTEDSCORE, MAXPERCENTQUERYUNMATCHED, MAXPERCENTTARGETUNMATCHED,
 							CORRELATIONSCORING, KEYTYPE, KEYINCREMENT, NEIGHBORLOWERBOUNDTOEXCLUDE,
-							MERGENEIGHBORRINGS } ;
+							MERGENEIGHBORRINGS, TARGETISDIRECTORY } ;
 							
 	
 	enum { CREATEMODE, COMPAREMODE, INFOMODE, KEYSMODE, KMEANSMODE, CHECKMODE, UNDEFINED } mode ;
@@ -36,6 +36,8 @@ int main (int argc, const char * argv[]) {
 	int restartRate = 100000 ;
 	
 	BOOL insideTrace = YES ;
+	
+	BOOL targetIsDirectory = NO ;
 	
 	double lengthDelta = 0.5 ;
 	double MEPDelta = 0.05 ;
@@ -96,7 +98,7 @@ int main (int argc, const char * argv[]) {
 	if( argc < 3 )
 		{
 			printf( "USAGE: shapeSigX -create [ flags ] <input directory> <output DB> \n" ) ;
-			printf( "USAGE: shapeSigX -compare [ flags ] <query DB> <target DB> <hits file> \n" ) ;
+			printf( "USAGE: shapeSigX -compare [ flags ] <query DB> <target DB/directory> <hits file> \n" ) ;
 			printf( "USAGE: shapeSigX -info <query DB> \n" ) ;
 			printf( "USAGE: shapeSigX -keys [ flags ] <input directory> \n" ) ;
 			printf( "USAGE: shapeSigX -check [ flags ] <input directory> <output directory> \n" ) ;
@@ -116,6 +118,7 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-printon <enable print option (raytrace|histogram)> \n" ) ;
 			printf( "\t-keyIncrement <key discretization increment; default = 0.05>\n" ) ;
 			printf( "-compare flags:\n" ) ;
+			printf( "\t-targetdir <target DB is a directory (yes|no); default = NO >\n" ) ;
 			printf( "\t-tag <histogram tag to use; default = 1DShape> \n" ) ;
 			printf( "\t-fragscore <use fragment-based scoring (yes|no); default = NO>\n" ) ;
 			printf( "\t-corrscore <use correlation scoring (yes|no); default = NO>\n" ) ;
@@ -269,6 +272,10 @@ int main (int argc, const char * argv[]) {
 							else if( strcasestr( &argv[i][1], "mergeR" ) )
 								{
 									flagType = MERGENEIGHBORRINGS ;
+								}
+							else if( strcasestr( &argv[i][1], "targetdir" ) )
+								{
+									flagType = TARGETISDIRECTORY ;
 								}
 							else
 								{
@@ -459,6 +466,23 @@ int main (int argc, const char * argv[]) {
 								else
 									{
 										segmentCulling = NO ;
+									}
+								
+								break ;
+								
+							case TARGETISDIRECTORY:
+								if( mode != COMPAREMODE )
+									{
+										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+										exit(1) ;
+									}
+								if( argv[i][0] == 'y' || argv[i][0] == 'Y' )
+									{
+										targetIsDirectory = YES ;
+									}
+								else
+									{
+										targetIsDirectory = NO ;
 									}
 								
 								break ;
@@ -812,8 +836,8 @@ int main (int argc, const char * argv[]) {
 					
 					if( ! nextTree )
 						{
-							printf( "ERROR IMPORTING MOLECULE %s - Exit!\n", [ nextMol2File cString ] ) ;
-							exit(1) ;
+							printf( "ERROR IMPORTING MOLECULE %s - Skipping!\n", [ nextMol2File cString ] ) ;
+							continue ;
 						}
 						
 					// Assign atoms to fragments
@@ -863,8 +887,9 @@ int main (int argc, const char * argv[]) {
 					
 					if( ! nextSurface )
 						{
-							printf( "ERROR IMPORTING SURFACE %s - Exit!\n", [ nextSurfaceFile cString ] ) ;
-							exit(1) ;
+							printf( "ERROR IMPORTING SURFACE %s - Skipping!\n", [ nextSurfaceFile cString ] ) ;
+							[ nextTree release ] ;
+							continue ;
 						}
 						
 					// Create the raytrace
@@ -933,6 +958,9 @@ int main (int argc, const char * argv[]) {
 		{
 			// Compare two databases of X2 signatures
 			
+			// We permit the option that the target may be a directory of X2 signatures - it must 
+			// contain nothing but!
+			
 			if( ! queryDB || ! targetDB )
 				{
 					printf( "FATAL ERROR - Exit!\n" ) ;
@@ -974,9 +1002,54 @@ int main (int argc, const char * argv[]) {
 
 			// Need to read in the query and target databases
 			
-			NSArray *querySignatures = [ NSUnarchiver unarchiveObjectWithFile:queryDB ] ;
-			NSArray *targetSignatures = [ NSUnarchiver unarchiveObjectWithFile:targetDB ] ;
 			
+			NSArray *querySignatures = [ NSUnarchiver unarchiveObjectWithFile:queryDB ] ;
+			
+			NSArray *targetSignatures ;
+			
+			if( targetIsDirectory == NO )
+				{
+					targetSignatures = [ NSUnarchiver unarchiveObjectWithFile:targetDB ] ;
+				}
+			else
+				{
+					NSFileManager *fileManager = [ NSFileManager defaultManager ] ;
+			
+					NSError *fileError ;
+					
+					NSArray *files = [ fileManager contentsOfDirectoryAtPath:targetDB error:&fileError ] ;
+					
+					if( ! files )
+						{
+							printf( "DIRECTORY DOES NOT EXIST - Exit!\n" ) ;
+							exit(1) ;
+						}
+						
+					if( [ files count ] == 0 )
+						{
+							printf( "EMPTY DIRECTORY - Exit!\n" ) ;
+							exit(1) ;
+						}
+				
+				
+					// Collect all DB files
+					
+					NSArray *DBFiles =  [ files filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF endswith 'DB'" ] ] ;
+					
+					targetSignatures = [ [ NSMutableArray alloc ] initWithCapacity:[ DBFiles count ] ] ;
+					
+					NSEnumerator *fileEnumerator = [ DBFiles objectEnumerator ] ;
+					
+					NSString *nextFile ;
+					NSString *pathRoot = [ targetDB stringByAppendingString:@"/" ] ;
+					
+					while( ( nextFile = [ fileEnumerator nextObject ] ) )
+						{
+							NSString *nextPath = [ pathRoot stringByAppendingString:nextFile ] ;
+							[ targetSignatures addObjectsFromArray:[ NSUnarchiver unarchiveObjectWithFile:nextPath ] ] ;
+						}
+				}
+						
 			NSString *queryDBName = [ [ [ queryDB pathComponents ] lastObject ] retain ] ;
 			NSString *targetDBName = [ [ [ targetDB pathComponents ] lastObject ] retain ] ;
 			
@@ -1060,14 +1133,19 @@ int main (int argc, const char * argv[]) {
 			
 			while( ( nextQuery = [ queryEnumerator nextObject ] ) )
 				{
-					NSAutoreleasePool * localPool = [[NSAutoreleasePool alloc] init];
+					
 					
 					[ hits removeAllObjects ] ;
 					
 					NSEnumerator *targetEnumerator = [ targetSignatures objectEnumerator ] ;
 					
+										
+					int targetCount = 0 ;
+					
 					while( ( nextTarget = [ targetEnumerator nextObject ] ) )
 						{
+							NSAutoreleasePool * localPool = [[NSAutoreleasePool alloc] init];
+
 							NSArray *queryHits = [ X2Signature scoreQuerySignature:nextQuery againstTarget:nextTarget
 													usingTag:compareTag withCorrelation:useCorrelationScoring
 													useFragments:fragmentScoring ] ;
@@ -1079,6 +1157,9 @@ int main (int argc, const char * argv[]) {
 									maxPercentTargetUnmatched:maxPercentTargetUnmatched ] ;
 									
 							[ queryHits release ] ;
+							
+							[ localPool drain ] ;
+							
 									
 							
 						}
@@ -1160,8 +1241,10 @@ int main (int argc, const char * argv[]) {
 								
 							++count ;
 						}
-					[ localPool drain ] ;
+					
 				}
+				
+			fclose( hitFILE ) ;
 		
 		}
 	else

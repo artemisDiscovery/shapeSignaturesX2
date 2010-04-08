@@ -10,6 +10,7 @@
 #import "histogramGroup.h"
 #import "histogramGroupBundle.h"
 #import "hitListItem.h"
+#import "fragment.h"
 
 static NSString *version ;
 
@@ -361,6 +362,27 @@ static NSString *version ;
 		
 		if( useFrag == NO )
 			{
+				// Need a set with all fragment indices
+				
+				NSMutableSet *allQueryFragmentIndices = [ NSMutableSet setWithCapacity:10 ] ;
+				
+				NSEnumerator *fragmentEnumerator = [ query->sourceTree->treeFragments objectEnumerator ] ;
+				fragment *nextFragment ;
+				
+				while( ( nextFragment = [ fragmentEnumerator nextObject ] ) )
+					{
+						[ allQueryFragmentIndices addObject:[ NSString stringWithFormat:@"%d",nextFragment->index ] ] ;
+					}
+					
+				NSMutableSet *allTargetFragmentIndices = [ NSMutableSet setWithCapacity:10 ] ;
+				
+				fragmentEnumerator = [ target->sourceTree->treeFragments objectEnumerator ] ;
+				
+				while( ( nextFragment = [ fragmentEnumerator nextObject ] ) )
+					{
+						[ allTargetFragmentIndices addObject:[ NSString stringWithFormat:@"%d",nextFragment->index ] ] ;
+					}
+				
 				nextQueryHisto = [ queryBundle->sortedFragmentsToHistogram objectForKey:@"GLOBAL" ] ; 
 				
 				nextTargetHisto = [ targetBundle->sortedFragmentsToHistogram objectForKey:@"GLOBAL" ] ;
@@ -368,13 +390,15 @@ static NSString *version ;
 				// This is going to be a little slow, but I am sticking to the logic laid down. :-(
 				
 				histogramGroup *queryGroup = [ [ histogramGroup alloc ] 
-					initWithHistograms:[ NSArray arrayWithObject:nextQueryHisto ] inBundle:queryBundle ] ;
+					initWithHistograms:[ NSArray arrayWithObject:nextQueryHisto ] inBundle:queryBundle
+						withFragmentIndices:allQueryFragmentIndices ] ;
 					
 				histogramGroupBundle *queryGroupBundle = [ [ histogramGroupBundle alloc ]
 					initWithGroups:[ NSArray arrayWithObject:queryGroup ] inHistogramBundle:queryBundle ] ;
 					
 				histogramGroup *targetGroup = [ [ histogramGroup alloc ] 
-					initWithHistograms:[ NSArray arrayWithObject:nextTargetHisto ] inBundle:targetBundle ] ;
+					initWithHistograms:[ NSArray arrayWithObject:nextTargetHisto ] inBundle:targetBundle
+						withFragmentIndices:allTargetFragmentIndices ] ;
 					
 				histogramGroupBundle *targetGroupBundle = [ [ histogramGroupBundle alloc ]
 					initWithGroups:[ NSArray arrayWithObject:targetGroup ] inHistogramBundle:targetBundle ] ;

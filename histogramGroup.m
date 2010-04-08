@@ -12,7 +12,7 @@
 
 @implementation histogramGroup
 
-- (id) initWithHistograms:(NSArray *)histos inBundle:(histogramBundle *)bndl 
+- (id) initWithHistograms:(NSArray *)histos inBundle:(histogramBundle *)bndl withFragmentIndices:(NSSet *)indices
 	{
 		self = [ super init ] ;
 		
@@ -76,10 +76,11 @@
 			
 		// Set up set of group fragment indices 
 		
-		groupFragmentIndices = [ [ NSMutableSet alloc ] initWithCapacity:[ histos count ] ] ;
+		groupFragmentIndices = [ [ NSMutableSet alloc ] initWithSet:indices ] ;
 		
 		histoEnumerator = [ histos objectEnumerator ] ;
 		
+		/*
 		while( ( nextHisto = [ histoEnumerator nextObject ] ) )
 			{
 				if( [ nextHisto->sortedFragmentKey isEqualToString:@"GLOBAL" ] == YES ) continue ;
@@ -88,9 +89,22 @@
 				
 				[ groupFragmentIndices addObjectsFromArray:fragmentIndices ] ;
 			}
+		*/
 						
-		neighborFragmentIndices = [ [ NSMutableSet alloc ] initWithCapacity:[ histos count ] ] ;
+		neighborFragmentIndices = [ [ NSMutableSet alloc ] initWithCapacity:[ indices count ] ] ;
 		
+		NSString *nextGroupFragmentIndex ;
+		
+		NSEnumerator *indexAsStringEnumerator = [ indices objectEnumerator ] ;
+		
+		while( ( nextGroupFragmentIndex = [ indexAsStringEnumerator nextObject ] ) )
+			{
+				int idx = [ nextGroupFragmentIndex intValue ] ;
+				fragment *thisFragment = [ hostBundle->sourceTree->treeFragments objectAtIndex:(idx - 1) ] ;
+				[ neighborFragmentIndices unionSet:thisFragment->neighborFragmentIndices ] ;
+			}
+			
+		/*
 		histoEnumerator = [ histos objectEnumerator ] ;
 		
 		NSMutableSet *localSet = [ [ NSMutableSet alloc ] initWithCapacity:10 ] ;
@@ -119,11 +133,18 @@
 					}
 			}
 					
+		*/
+		
 		// Subtract the fragments involved in the current group 
 		
 		[ neighborFragmentIndices minusSet:groupFragmentIndices ] ;
 		
-		[ localSet release ] ;
+		if( [ neighborFragmentIndices count ] == 0 )
+			{
+				printf( "WARNING: HAVE GROUP FRAGMENTS WITH NO NEIGHBORS\n" ) ;
+			}
+		
+		// [ localSet release ] ;
 		
 				
 			
