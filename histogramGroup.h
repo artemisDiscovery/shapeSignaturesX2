@@ -32,6 +32,8 @@
 	NSMutableSet *groupFragmentIndices ;
 	NSMutableSet *neighborFragmentIndices ;
 	
+	NSArray *sortedGroupFragmentIndices ;
+	
 	NSMutableArray *connectToGroups ;
 	
 }

@@ -14,6 +14,8 @@
 
 - (id) initWithHistograms:(NSArray *)histos inBundle:(histogramBundle *)bndl withFragmentIndices:(NSSet *)indices
 	{
+		NSInteger indexCompare( id , id , void * ) ;
+		
 		self = [ super init ] ;
 		
 		hostBundle = bndl ;
@@ -69,14 +71,25 @@
 			
 		// "Renormalize" the probabilities
 		
-		for( k = 0 ; k < nBins ; ++k )
+		// Note that we could potentially have an empty group (fragment with no probability)
+		
+		if( segmentSum > 0 )
 			{
-				binProbs[k] /= segmentSum ;
+				for( k = 0 ; k < nBins ; ++k )
+					{
+						binProbs[k] /= segmentSum ;
+					}
 			}
 			
 		// Set up set of group fragment indices 
 		
 		groupFragmentIndices = [ [ NSMutableSet alloc ] initWithSet:indices ] ;
+		
+		// Make sorted index array
+		
+		sortedGroupFragmentIndices = [ [ NSMutableArray alloc ] initWithArray:[ groupFragmentIndices allObjects ] ] ;
+		
+		[ sortedGroupFragmentIndices sortUsingFunction:indexCompare context:nil ] ;
 		
 		histoEnumerator = [ histos objectEnumerator ] ;
 		
@@ -265,6 +278,11 @@
 		//	
 		
 		double Score = 0. ;
+		
+		// Check for empty group
+		
+		if( segmentCount == 0 || target->segmentCount == 0 ) return 1. ;
+		if( segmentCount == 0 && target->segmentCount == 0 ) return 0. ;
 		
 		double *TProb = target->binProbs ;
 		double *QProb = binProbs ;
@@ -476,6 +494,9 @@
 		
 - (NSArray *) sortedFragmentIndices
 	{
+		return sortedGroupFragmentIndices ;
+		
+		/*
 		NSInteger indexCompare( id , id , void * ) ;
 		
 		NSMutableArray *returnArray = [ NSMutableArray arrayWithArray:[ groupFragmentIndices allObjects ] ] ;
@@ -483,6 +504,7 @@
 		[ returnArray sortUsingFunction:indexCompare context:nil ] ;
 		
 		return returnArray ;
+		*/
 	}
 		
 - (BOOL) isEqualTo:(histogramGroup *)comp

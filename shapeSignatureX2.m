@@ -339,7 +339,8 @@ static NSString *version ;
 	}
 
 + (NSArray *) scoreQuerySignature:(X2Signature *)query againstTarget:(X2Signature *)target usingTag:(NSString *)tag 
-					withCorrelation:(BOOL)useCor useFragments:(BOOL)useFrag
+					withCorrelation:(BOOL)useCor useFragments:(BOOL)useFrag fragmentGrouping:(BOOL)useGroups
+					bigFragmentSize:(int)bigFSize maxBigFragmentCount:(int)maxBigFCount
 	{
 		// Critical method - compare two signatures and return an array of hit-list items
 		
@@ -421,10 +422,12 @@ static NSString *version ;
 		else
 			{
 				NSArray *queryGroupBundles = [ histogramGroupBundle 
-					allGroupBundlesFromHistogramBundle:queryBundle ] ;
+					allGroupBundlesFromHistogramBundle:queryBundle useGroups:useGroups
+					bigFragmentSize:bigFSize maxBigFragmentCount:maxBigFCount ] ;
 					
 				NSArray *targetGroupBundles = [ histogramGroupBundle 
-					allGroupBundlesFromHistogramBundle:targetBundle ] ;
+					allGroupBundlesFromHistogramBundle:targetBundle useGroups:useGroups
+					bigFragmentSize:bigFSize maxBigFragmentCount:maxBigFCount ] ;
 					
 				NSEnumerator *queryGroupBundleEnumerator = 
 					[ queryGroupBundles objectEnumerator ] ;

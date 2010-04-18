@@ -70,18 +70,32 @@
 	}
 			
 		
-+ (NSArray *) allGroupBundlesFromHistogramBundle:(histogramBundle *)hBundle 
++ (NSArray *) allGroupBundlesFromHistogramBundle:(histogramBundle *)hBundle useGroups:(BOOL)useGroups 
+				bigFragmentSize:(int)bigFSize maxBigFragmentCount:(int)maxBigFCount
 	{
 		// Strategy - for each possible set of fragmentConnection "activations", assemble
 		// groups 
 		
 		NSArray *connections = hBundle->sourceTree->fragmentConnections ;
 		
+		// Make sure connections are clear
+		
+		NSEnumerator *connectionEnumerator = [ connections objectEnumerator ] ;
+				
+		fragmentConnection *nextConnection ;
+		
+		while( ( nextConnection = [ connectionEnumerator nextObject ] ) )
+			{
+				nextConnection->active = NO ;
+			}
+		
 		NSMutableArray *groupBundles = [ [ NSMutableArray alloc ] 
 			initWithCapacity:pow( [ connections count ], 2 ) ] ; 
 			
 		NSMutableArray *groupsToBundle = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
 		NSMutableArray *fragmentSets = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
+		NSMutableArray *fragmentSetsToRemove = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
+		NSMutableSet *collectFragmentSet = [ [ NSMutableSet alloc ] initWithCapacity:10 ] ;
 		
 		NSMutableArray *activeConnections = [ [ NSMutableArray alloc ] 
 			initWithCapacity:[ connections count ] ] ;
@@ -99,6 +113,7 @@
 				// Use current connections to generate group bundle 
 				
 				[ fragmentSets removeAllObjects ] ;
+				[ fragmentSetsToRemove removeAllObjects ] ;
 				[ groupsToBundle removeAllObjects ] ;
 				[ activeConnections removeAllObjects ] ;
 				[ allFragments removeAllObjects ] ;
@@ -121,40 +136,44 @@
 				// already collected, then add its linked members to that set; otherwise, initiate 
 				// a new set 
 				
+				// Set a warning flag if the process of assembly makes a fragment with heavy 
+				// atom count > fSizeLim 
+				
+				
 				NSEnumerator *activeConnectionEnumerator = [ activeConnections objectEnumerator ] ;
 				
 				fragmentConnection *nextActiveConnection ;
 				
 				while( ( nextActiveConnection = [ activeConnectionEnumerator nextObject ] ) )
 					{
-						NSSet *theFragments = [ nextActiveConnection linkedFragments ] ;
+						[ collectFragmentSet removeAllObjects ] ;
+						[ fragmentSetsToRemove removeAllObjects ] ;
+						
+						[ collectFragmentSet unionSet:[ nextActiveConnection linkedFragments ] ] ;
 						
 						NSEnumerator *fragmentSetEnumerator = [ fragmentSets objectEnumerator ] ;
 						
 						NSMutableSet *nextFragmentSet ;
 						
-						BOOL didAMerge = NO ;
-						
 						while( ( nextFragmentSet = [ fragmentSetEnumerator nextObject ] ) )
 							{
-								if( [ nextFragmentSet intersectsSet:theFragments ] == YES )
+								if( [ nextFragmentSet intersectsSet:collectFragmentSet ] == YES )
 									{	
-										didAMerge = YES ;
 										
-										[ nextFragmentSet unionSet:theFragments ] ;
+										[ collectFragmentSet unionSet:nextFragmentSet ] ;
+										[ fragmentSetsToRemove addObject:nextFragmentSet ] ;
 										
-										[ allFragments minusSet:theFragments ] ;
 									}
 							}
 							
-						if( didAMerge == NO )
-							{
-								// Make a new set with the linked fragments
-								
-								[ fragmentSets addObject:[ NSMutableSet setWithSet:theFragments ] ] ;
-								[ allFragments minusSet:theFragments ] ;
-							}
+						[ fragmentSets addObject:[ NSMutableSet setWithSet:collectFragmentSet ] ] ;
+							
+						[ allFragments minusSet:[ nextActiveConnection linkedFragments ] ] ;
+						
+						[ fragmentSets removeObjectsInArray:fragmentSetsToRemove ] ;
 					}
+					
+			
 					
 				// Any fragments left over will be added as singleton sets
 						
@@ -167,15 +186,88 @@
 						[ fragmentSets addObject:[ NSMutableSet setWithObject:nextFragment ] ] ;
 					}
 					
+				
+				// Sanity check - should not have all fragments included together, ever
+				
+				if( [ fragmentSets count ] == 1 )
+					{
+						NSMutableSet *testSet = [ NSMutableSet setWithArray:hBundle->sourceTree->treeFragments ] ;
+						
+						[ testSet minusSet:[ fragmentSets lastObject ] ] ;
+						
+						if( [ testSet count ] == 0 )
+							{
+								printf( "WARNING: SINGLE GROUP WITH ALL FRAGMENTS INCLUDED!\n" ) ;
+							}
+					}
+				
+				// Sanity check - should never have a fragment in more than one fragmentSet
+				// i.e. the intersection of any two fragment sets should be empty
+				
+				int j, k ;
+				
+				for( j = 0 ; j < [ fragmentSets count ] - 1 ; ++j )
+					{
+						for( k = j + 1 ; k < [ fragmentSets count ] ; ++k )
+							{
+								if( [ [ fragmentSets objectAtIndex:j ] intersectsSet:[ fragmentSets objectAtIndex:k ] ]
+										== YES )
+									{
+										printf( "WARNING: TWO FRAGMENT SETS INTERSECT!\n" ) ;
+									}
+							}
+					}
+					
+				// If fragment size limit is in play, skip any mapping if "big" fragment
+				// count in any group is > maxCount limit
+				
+				NSEnumerator *fragmentSetEnumerator ;
+				NSSet *nextFragmentSet ;
+				NSEnumerator *fragmentEnumerator ;
+				
+				if( maxBigFCount > 0 )
+					{
+						BOOL hadViolation = NO ;
+						
+						fragmentSetEnumerator = [ fragmentSets objectEnumerator ] ;
+						
+						while( ( nextFragmentSet = [ fragmentSetEnumerator nextObject ] ) )
+							{
+								if( [ nextFragmentSet count ] == 1 ) continue ;
+								
+								fragmentEnumerator = [ nextFragmentSet objectEnumerator ] ;
+								
+								int bigFragmentCount = 0 ;
+								
+								while( ( nextFragment = [ fragmentEnumerator nextObject ] ) )
+									{
+										if( [ nextFragment heavyAtomCount ] > bigFSize ) ++bigFragmentCount ;
+									}
+									
+								if( bigFragmentCount > maxBigFCount ) 
+									{
+										hadViolation = YES ;
+										break ;
+									}
+							}
+							
+						if( hadViolation == YES )
+							{
+								// Simply move onto the next state
+								
+								continue ;
+							}
+					}
+								
+								
+
 				// Now create histogram groups from each fragment set
 				//
 				// We need to collect all histograms compatible with the fragment indices implicated 
 				// by the fragment set
 				
-				NSEnumerator *fragmentSetEnumerator = [ fragmentSets objectEnumerator ] ;
-				
-				NSSet *nextFragmentSet ;
-				
+				fragmentSetEnumerator = [ fragmentSets objectEnumerator ] ;
+								
 				BOOL hadEmptyGroup = NO ;
 				
 				while( ( nextFragmentSet = [ fragmentSetEnumerator nextObject ] ) )
@@ -183,9 +275,7 @@
 						[ histogramsToGroup removeAllObjects ] ;
 						[ fragmentSetIndices removeAllObjects ] ;
 						
-						NSEnumerator *fragmentEnumerator = [ nextFragmentSet objectEnumerator ] ;
-						
-						fragment *nextFragment ;
+						fragmentEnumerator = [ nextFragmentSet objectEnumerator ] ;
 						
 						while( ( nextFragment = [ fragmentEnumerator nextObject ] ) )
 							{
@@ -219,7 +309,7 @@
 						if( [ histogramsToGroup count ] == 0 )
 							{
 								hadEmptyGroup = YES ;
-								break ;
+								// continue ;
 							}
 						
 						histogramGroup *nextGroup = [ [ histogramGroup alloc ] initWithHistograms:histogramsToGroup 
@@ -232,7 +322,7 @@
 					{
 						// Skip this bundle
 						
-						continue ;
+						// continue ;
 					}
 					
 				// Have all the histogram groups, make the group bundle
@@ -248,6 +338,11 @@
 				
 				[ groupBundles addObject:nextBundle ] ;
 				[ nextBundle release ] ;
+				
+				// if we are NOT using groups, exit at this point - first pass through this loop has 
+				// all fragment connections turned off, and now we are finished!
+				
+				if( useGroups == NO ) break ;
 					
 			} while( [ histogramGroupBundle advance:connections ] == YES ) ;
 			
@@ -257,6 +352,9 @@
 		[ allFragments release ] ;
 		[ histogramsToGroup release ] ;
 		[ fragmentSetIndices release ] ;
+		
+		[ fragmentSetsToRemove release ] ;
+		[ collectFragmentSet release ] ;
 		
 		return groupBundles ;
 		
@@ -308,7 +406,10 @@
 					}
 			}
 			
-		if( allActive == YES ) return NO ;
+		if( allActive == YES ) 
+			{
+				return NO ;
+			}
 		
 		return YES ;
 	}

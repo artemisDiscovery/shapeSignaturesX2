@@ -115,7 +115,6 @@
 		
 		// Check orientation
 		
-		ctNode *checkNode ;
 		
 		if( b->node1 == r )
 			{

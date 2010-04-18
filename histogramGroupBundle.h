@@ -23,7 +23,8 @@
 
 - (id) initWithGroups:(NSArray *)grps inHistogramBundle:(histogramBundle *)hBundle  ;
 
-+ (NSArray *) allGroupBundlesFromHistogramBundle:(histogramBundle *)hBundle ;
++ (NSArray *) allGroupBundlesFromHistogramBundle:(histogramBundle *)hBundle 
+		useGroups:(BOOL)useGroups bigFragmentSize:(int)bigFSize maxBigFragmentCount:(int)maxBigFCount ;
 
 + (BOOL) advance:(NSArray *)conn ;
 

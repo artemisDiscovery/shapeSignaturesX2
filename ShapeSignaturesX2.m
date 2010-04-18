@@ -25,7 +25,8 @@ int main (int argc, const char * argv[]) {
 							SKIPSELFINTERSECTION, SCALE, COMPARETAG, NUMBEROFHITS, MAXHITS, MAXSCORE, FRAGSCORE,
 							SORTBYWEIGHTEDSCORE, MAXPERCENTQUERYUNMATCHED, MAXPERCENTTARGETUNMATCHED,
 							CORRELATIONSCORING, KEYTYPE, KEYINCREMENT, NEIGHBORLOWERBOUNDTOEXCLUDE,
-							MERGENEIGHBORRINGS, TARGETISDIRECTORY } ;
+							MERGENEIGHBORRINGS, TARGETISDIRECTORY, PERMITFRAGMENTGROUPING, BIGFRAGMENTSIZE,
+							MAXBIGFRAGMENTCOUNT } ;
 							
 	
 	enum { CREATEMODE, COMPAREMODE, INFOMODE, KEYSMODE, KMEANSMODE, CHECKMODE, UNDEFINED } mode ;
@@ -53,6 +54,9 @@ int main (int argc, const char * argv[]) {
 	int maxHits = 100 ;
 	BOOL fragmentScoring = NO ;
 	
+	int bigFragSize = 20 ;
+	int maxBigFragCount = -1 ; 
+	
 	BOOL sortByFragmentWeightedScore = YES ;
 	
 	BOOL useCorrelationScoring = NO ;
@@ -64,6 +68,8 @@ int main (int argc, const char * argv[]) {
 	double keyIncrement = 0.05 ;
 	BOOL doNeighbors = NO ;
 	double neighborLowerBoundToExclude = 0.1 ;
+	
+	BOOL permitFragmentGrouping = NO ;
 	
 	int numKMeansClusters = 0 ;
 	
@@ -121,6 +127,9 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-targetdir <target DB is a directory (yes|no); default = NO >\n" ) ;
 			printf( "\t-tag <histogram tag to use; default = 1DShape> \n" ) ;
 			printf( "\t-fragscore <use fragment-based scoring (yes|no); default = NO>\n" ) ;
+			printf( "\t-fraggroup <use fragment grouping w/ fragment scoring (yes|no); default = NO>\n" ) ;
+			printf( "\t-bigfragsize <size of a \"big\" fragment (heavy atom count); default = 20 \n" ) ;
+			printf( "\t-maxbigfragcount <maximum number of \"big\" fragments to group; default = -1 (no limit) \n" ) ;
 			printf( "\t-corrscore <use correlation scoring (yes|no); default = NO>\n" ) ;
 			printf( "\t-maxhits <maximum number of hits to return; default = 100> \n" ) ;
 			printf( "\t-maxscore <maximum shape signature score to return; default = 2.0> \n" ) ;
@@ -240,6 +249,18 @@ int main (int argc, const char * argv[]) {
 							else if( strcasestr( &argv[i][1], "fragscore" ) )
 								{
 									flagType = FRAGSCORE ;
+								}
+							else if( strcasestr( &argv[i][1], "fraggroup" ) )
+								{
+									flagType = PERMITFRAGMENTGROUPING ;
+								}
+							else if( strcasestr( &argv[i][1], "bigfragsize" ) )
+								{
+									flagType = BIGFRAGMENTSIZE ;
+								}
+							else if( strcasestr( &argv[i][1], "maxbigfrag" ) )
+								{
+									flagType = MAXBIGFRAGMENTCOUNT ;
 								}
 							else if( strcasestr( &argv[i][1], "sortbyweight" ) )
 								{
@@ -573,6 +594,23 @@ int main (int argc, const char * argv[]) {
 								
 								break ;
 								
+							case PERMITFRAGMENTGROUPING:
+								if( mode != COMPAREMODE )
+									{
+										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+										exit(1) ;
+									}
+								if( argv[i][0] == 'y' || argv[i][0] == 'Y' )
+									{
+										permitFragmentGrouping = YES ;
+									}
+								else
+									{
+										permitFragmentGrouping = NO ;
+									}
+								
+								break ;
+								
 							case CORRELATIONSCORING:
 								if( mode != COMPAREMODE )
 									{
@@ -608,13 +646,33 @@ int main (int argc, const char * argv[]) {
 								
 								break ;
 								
+							case BIGFRAGMENTSIZE:
+								if( mode != COMPAREMODE )
+									{
+										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+										exit(1) ;
+									}
+								bigFragSize = atoi( argv[i] ) ;
+								
+								break ;
+								
+							case MAXBIGFRAGMENTCOUNT:
+								if( mode != COMPAREMODE )
+									{
+										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+										exit(1) ;
+									}
+								maxBigFragCount = atoi( argv[i] ) ;
+								
+								break ;
+								
 							case MAXPERCENTQUERYUNMATCHED:
 								if( mode != COMPAREMODE )
 									{
 										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 										exit(1) ;
 									}
-								maxPercentQueryUnmatched = atoi( argv[i] ) ;
+								maxPercentQueryUnmatched = atof( argv[i] ) ;
 								
 								break ;
 								
@@ -624,7 +682,7 @@ int main (int argc, const char * argv[]) {
 										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 										exit(1) ;
 									}
-								maxPercentTargetUnmatched = atoi( argv[i] ) ;
+								maxPercentTargetUnmatched = atof( argv[i] ) ;
 								
 								break ;
 
@@ -1148,7 +1206,8 @@ int main (int argc, const char * argv[]) {
 
 							NSArray *queryHits = [ X2Signature scoreQuerySignature:nextQuery againstTarget:nextTarget
 													usingTag:compareTag withCorrelation:useCorrelationScoring
-													useFragments:fragmentScoring ] ;
+													useFragments:fragmentScoring fragmentGrouping:permitFragmentGrouping
+													bigFragmentSize:bigFragSize maxBigFragmentCount:maxBigFragCount ] ;
 													
 							// Merge into hit list
 							
@@ -1202,6 +1261,10 @@ int main (int argc, const char * argv[]) {
 											histogramGroup *histoGroup1 = [ nextHistoGroupPair objectAtIndex:0 ] ;
 											histogramGroup *histoGroup2 = [ nextHistoGroupPair objectAtIndex:1 ] ;
 											
+											// If either group is empty, don't report this
+											
+											if( histoGroup1->segmentCount == 0 || histoGroup2->segmentCount == 0 ) continue ;
+											
 											fprintf(hitFILE,  "[(" ) ;
 											
 											NSArray *groupFragments = [ histoGroup1 sortedFragmentIndices ] ;
@@ -1246,6 +1309,101 @@ int main (int argc, const char * argv[]) {
 				
 			fclose( hitFILE ) ;
 		
+		}
+	else if( mode == INFOMODE )
+		{
+			// Read the DB, and print information for each entry, specficically assignments of atoms to 
+			// fragments and histograms. 
+
+			// Need to read in the query database
+
+			NSArray *querySignatures = [ NSUnarchiver unarchiveObjectWithFile:queryDB ] ;
+
+			NSEnumerator *queryEnumerator = [ querySignatures objectEnumerator ] ;
+
+			X2Signature *nextQuery ;
+
+			while( ( nextQuery = [ queryEnumerator nextObject ] ) )
+				{
+					// First report name and atom fragment assignments
+
+					printf( "****MOLECULE: %s\n", [ nextQuery->sourceTree->treeName cString ] ) ;
+
+					// Fragment assignments
+
+					int j, k ;
+
+					for( j = 1 ; j <= nextQuery->sourceTree->nFragments ; ++j )
+						{
+							printf( "\tFragment %d:\n\t", j ) ;
+
+							for( k = 0 ; k < nextQuery->sourceTree->nNodes ; ++k )
+								{
+									if( nextQuery->sourceTree->nodes[k]->fragmentIndex == j )
+										{
+											printf( "%s ", 
+												[ [ nextQuery->sourceTree->nodes[k] returnPropertyForKey:@"atomName" ] cString ] ) ;
+										}
+								}
+
+							printf( "\n" ) ;
+
+						}
+
+					// Print out histograms
+
+					printf( "\n\tTOTAL # SEGMENTS = %d\n",nextQuery->totalSegments ) ;
+					
+					// Do the 1DHISTOs
+					
+					histogramBundle *the1DBundle = [ nextQuery->histogramBundleForTag objectForKey:@"1DHISTO" ] ;
+
+					printf( "\n\t--------GLOBAL HISTOGRAM\n" ) ;
+					
+					histogram *globalHisto = [ the1DBundle->sortedFragmentsToHistogram objectForKey:@"GLOBAL" ] ;
+					
+					printf( "\t#BINS = %d\n", globalHisto->hostBundle->nBins ) ;
+							printf( "\t#LENGTH BINS = %d\n", globalHisto->hostBundle->nLengthBins ) ;
+							printf( "\tLENGTH DELTA = %f\n", globalHisto->hostBundle->lengthDelta ) ;
+
+					for( j = 0 ; j < globalHisto->hostBundle->nLengthBins ; ++j )
+						{
+							printf( "\t\t%f\t%d\t%f\n", j*globalHisto->hostBundle->lengthDelta, 
+								globalHisto->binCounts[j],
+								globalHisto->binProbs[j] ) ;
+						}
+
+
+					printf( "\n\t--------FRAGMENT HISTOGRAMS\n" ) ;
+
+					NSEnumerator *fragmentTagEnumerator = [ [ the1DBundle->sortedFragmentsToHistogram allKeys ] objectEnumerator ] ;
+					
+					NSString *nextTag ;
+					
+					while( ( nextTag = [ fragmentTagEnumerator nextObject ] ) )
+						{
+							if( [ nextTag isEqualToString:@"GLOBAL" ] == YES ) continue ;
+							
+							printf( "\tHISTOGRAM: %s\n", [ nextTag cString ] ) ;
+							
+							histogram *fragmentHisto = [ the1DBundle->sortedFragmentsToHistogram objectForKey:nextTag ] ;
+
+							printf( "\t#SEGMENTS = %d\n", fragmentHisto->segmentCount ) ;
+							printf( "\t#BINS = %d\n", fragmentHisto->nBins ) ;
+							printf( "\t#LENGTH BINS = %d\n", fragmentHisto->hostBundle->nLengthBins ) ;
+							printf( "\tLENGTH DELTA = %f\n", fragmentHisto->hostBundle->lengthDelta ) ;
+
+							for( j = 0 ; j < fragmentHisto->hostBundle->nLengthBins ; ++j )
+								{
+									printf( "\t\t%f\t%d\t%f\n", j*fragmentHisto->hostBundle->lengthDelta, 
+										fragmentHisto->binCounts[j],
+										fragmentHisto->binProbs[j] ) ;
+								}
+						}
+
+
+
+				}
 		}
 	else
 		{

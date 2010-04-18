@@ -163,7 +163,7 @@
 								
 								// Want query and target children that are not already used 
 						
-								NSMutableSet *queryChildren = [ NSMutableSet setWithSet:queryParent->connectToGroups ] ;
+								NSMutableSet *queryChildren = [ NSMutableSet setWithArray:queryParent->connectToGroups ] ;
 								
 								// Any unused?
 								
@@ -171,7 +171,7 @@
 								
 								if( [ queryChildren count ] == 0 ) continue ;
 								
-								NSMutableSet *targetChildren = [ NSMutableSet setWithSet:targetParent->connectToGroups ] ;
+								NSMutableSet *targetChildren = [ NSMutableSet setWithArray:targetParent->connectToGroups ] ;
 								
 								// Any unused?
 								
