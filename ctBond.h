@@ -36,4 +36,8 @@
 - (NSSet *) neighborNodes ;
 - (NSSet *) neighborNodesWithBondType:(bondType)t ;
 
+- (NSDictionary *) propertyListDict ;
+
+- (id) initWithPropertyListDict:(NSDictionary *) pListDict andNodeTranslator:(NSDictionary *)nodeTran ;
+
 @end

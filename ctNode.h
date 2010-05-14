@@ -91,6 +91,10 @@
 
 - (BOOL) isRingNode ;
 
+- (NSDictionary *) propertyListDict ;
+
+- (id) initWithPropertyListDict:(NSDictionary *)pListDict ;
+
 //- (void) printNode ;
 
 @end

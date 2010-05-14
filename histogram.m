@@ -1181,6 +1181,64 @@ static NSArray *tagDescriptions ;
 		
 		return NO ;
 	}
+	
+	
+- (NSDictionary *) propertyListDict
+	{
+		NSMutableDictionary *returnDictionary = [ NSMutableDictionary dictionaryWithCapacity:10 ] ;
+		
+		[ returnDictionary setObject:sortedFragmentKey forKey:@"sortedFragmentKey" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&nBins length:sizeof(int) ] forKey:@"nBins" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&nFragments length:sizeof(int) ] forKey:@"nFragments" ]  ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:fragments length:3*sizeof(int) ] forKey:@"fragments" ]  ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:&segmentCount length:sizeof(int) ] forKey:@"segmentCount" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&segmentPairCount length:sizeof(int) ] forKey:@"segmentPairCount" ]  ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:binCounts length:nBins*sizeof(int) ] forKey:@"binCounts" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:binProbs length:nBins*sizeof(double) ] forKey:@"binProbs" ]  ;
+		
+		return returnDictionary ;
+	}
+
+- (id) initWithPropertyListDict:(NSDictionary *) pListDict
+	{
+		self = [ super init ] ;
+
+		sortedFragmentKey = [ [ NSString alloc ] initWithString:[ pListDict objectForKey:@"sortedFragmentKey" ] ] ;
+		
+		NSData *theData ;
+		
+		theData = [ pListDict objectForKey:@"nBins" ] ;
+		[ theData getBytes:&nBins length:sizeof(int) ] ;
+
+		theData = [ pListDict objectForKey:@"nFragments" ] ;
+		[ theData getBytes:&nFragments length:sizeof(int) ] ;
+		
+		theData = [ pListDict objectForKey:@"fragments" ] ;
+		[ theData getBytes:fragments length:(3*sizeof(int)) ] ;
+		
+		theData = [ pListDict objectForKey:@"segmentCount" ] ;
+		[ theData getBytes:&segmentCount length:sizeof(int) ] ;
+		
+		theData = [ pListDict objectForKey:@"segmentPairCount" ] ;
+		[ theData getBytes:&segmentPairCount length:sizeof(int) ] ;
+		
+		binCounts = (int *) malloc( nBins * sizeof( int ) ) ;
+		binProbs = (double *) malloc( nBins * sizeof( double ) ) ;
+		
+		theData = [ pListDict objectForKey:@"binCounts" ] ;
+		[ theData getBytes:binCounts length:(nBins*sizeof(int)) ] ;
+		
+		theData = [ pListDict objectForKey:@"binProbs" ] ;
+		[ theData getBytes:binProbs length:(nBins*sizeof(double)) ] ;
+		
+		return self ;
+	}
+
+
+		
 /*
 - (NSSet *) histogramsConnectedTo
 	{

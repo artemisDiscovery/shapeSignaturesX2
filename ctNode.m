@@ -619,6 +619,93 @@ static NSDictionary *atomicWeightForElement ;
 		
 		return self ;
 	}
+	
+- (NSDictionary *) propertyListDict 
+	{
+		NSMutableDictionary *returnDictionary = [ NSMutableDictionary dictionaryWithCapacity:10 ] ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:&atomicNumber length:sizeof(int) ] forKey:@"atomicNumber" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&atomicWeight length:sizeof(double) ] forKey:@"atomicWeight" ]  ;
+		[ returnDictionary setObject:[ NSString stringWithCString:element ] forKey:@"elementAsString" ]  ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:&index length:sizeof(int) ] forKey:@"index" ]  ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:coord length:( 3 * sizeof(double) ) ] forKey:@"coord" ]  ;
+		
+		[ returnDictionary setObject:properties forKey:@"properties" ]  ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:&charge length:sizeof(double) ] forKey:@"charge" ]  ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:&nBonds length:sizeof(int) ] forKey:@"nBonds" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:bonds length:(nBonds*sizeof( ctBond *)) ] 
+			forKey:@"originalBondPtrs" ] ;
+				
+		[ returnDictionary setObject:[ NSData dataWithBytes:&atBondStart length:(nBonds*sizeof(BOOL)) ] forKey:@"atBondStart" ]  ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:&pathIndex length:sizeof(int) ] forKey:@"pathIndex" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&fragmentIndex length:sizeof(int) ] forKey:@"fragmentIndex" ]  ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:&fragmentTree length:sizeof(ctTree *) ] forKey:@"originalFragmentTreePtr" ]  ;
+		
+		
+		return returnDictionary ;
+		
+		//return theData ;
+	}
+	
+- (id) initWithPropertyListDict:(NSDictionary *)pListDict
+	{
+		self = [ super init ] ;
+		
+		NSData *theData ;
+		
+		theData = [ pListDict objectForKey:@"atomicNumber" ] ;
+		[ theData getBytes:&atomicNumber length:sizeof(int) ] ;
+		theData = [ pListDict objectForKey:@"atomicWeight" ] ;
+		[ theData getBytes:&atomicWeight length:sizeof(double) ] ;
+		
+		NSString *elemAsString = [ pListDict objectForKey:@"elementAsString" ] ;
+		
+		element = (char *) malloc( ( [ elemAsString length ] + 1 ) * sizeof(char) ) ;
+		strcpy(element, [ elemAsString cString ] ) ;
+		
+		theData = [ pListDict objectForKey:@"index" ] ;
+		[ theData getBytes:&index length:sizeof(int) ] ;
+		
+		theData = [ pListDict objectForKey:@"coord" ] ;
+		[ theData getBytes:coord length:3*sizeof(double) ] ;
+		
+		properties = [ [ NSMutableDictionary alloc ] 
+			initWithDictionary:[ pListDict objectForKey:@"properties" ] ] ;
+			
+		theData = [ pListDict objectForKey:@"charge" ] ;
+		[ theData getBytes:&charge length:sizeof(double) ] ;
+		
+		theData = [ pListDict objectForKey:@"nBonds" ] ;
+		[ theData getBytes:&nBonds length:sizeof(int) ] ;
+
+		bonds = (ctBond **) malloc( nBonds * sizeof( ctBond * ) ) ;
+		
+		theData = [ pListDict objectForKey:@"originalBondPtrs" ] ;
+		[ theData getBytes:bonds length:(nBonds*sizeof( ctBond *)) ] ;
+		
+		atBondStart = (BOOL *) malloc( nBonds * sizeof( BOOL ) ) ;
+		
+		theData = [ pListDict objectForKey:@"atBondStart" ] ;
+		[ theData getBytes:atBondStart length:(nBonds*sizeof(BOOL)) ] ;
+		
+		theData = [ pListDict objectForKey:@"pathIndex" ] ;
+		[ theData getBytes:&pathIndex length:sizeof(int) ] ;
+		
+		theData = [ pListDict objectForKey:@"fragmentIndex" ] ;
+		[ theData getBytes:&fragmentIndex length:sizeof(int) ] ;
+		
+		theData = [ pListDict objectForKey:@"fragmentTree" ] ;
+		[ theData getBytes:&fragmentTree length:sizeof(ctTree *) ] ;
+		
+		return self ;
+	}
+		
 		
 		
 - (NSString *) description

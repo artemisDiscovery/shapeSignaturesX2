@@ -109,6 +109,8 @@
 
 + (NSSet *) connectedSetFromBond:(ctBond *)seed usingBondSet:(NSMutableSet *)bSet excludeNodes:(NSSet *)excl ;
 
+- (NSDictionary *) propertyListDict ;
 
+- (id) initWithPropertyListDict:(NSDictionary *)pListDict ;
 
 @end

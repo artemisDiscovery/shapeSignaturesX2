@@ -20,16 +20,16 @@ int main (int argc, const char * argv[]) {
 	
 	// The enumerated list below is evolving - in particular there will need to be more scoring options
 	
-	enum flagTypes { CREATE, COMPARE, GRIDSPACING, NUMSEGMENTS, LENGTHDELTA, MEPDELTA, RANDOMIZATIONANGLE, 
+	enum flagTypes { GRIDSPACING, NUMSEGMENTS, LENGTHDELTA, MEPDELTA, RANDOMIZATIONANGLE, 
 							SEGMENTCULLING, RESTARTRATE, SEED, PRINTOPTION, ORIENTATION, 
 							SKIPSELFINTERSECTION, SCALE, COMPARETAG, NUMBEROFHITS, MAXHITS, MAXSCORE, FRAGSCORE,
 							SORTBYWEIGHTEDSCORE, MAXPERCENTQUERYUNMATCHED, MAXPERCENTTARGETUNMATCHED,
 							CORRELATIONSCORING, KEYTYPE, KEYINCREMENT, NEIGHBORLOWERBOUNDTOEXCLUDE,
 							MERGENEIGHBORRINGS, TARGETISDIRECTORY, PERMITFRAGMENTGROUPING, BIGFRAGMENTSIZE,
-							MAXBIGFRAGMENTCOUNT } ;
+							MAXBIGFRAGMENTCOUNT, XMLIN, XMLOUT, EXPLODEDB, RANGE } ;
 							
 	
-	enum { CREATEMODE, COMPAREMODE, INFOMODE, KEYSMODE, KMEANSMODE, CHECKMODE, UNDEFINED } mode ;
+	enum { CREATEMODE, COMPAREMODE, INFOMODE, KEYSMODE, KMEANSMODE, CHECKMODE, CONVERTMODE, UNDEFINED } mode ;
 	
 	mode = UNDEFINED ;
 	
@@ -73,6 +73,14 @@ int main (int argc, const char * argv[]) {
 	
 	int numKMeansClusters = 0 ;
 	
+	BOOL xmlIN = NO ;
+	BOOL xmlOUT = NO ;
+	
+	BOOL explodeDBs = NO ;
+	
+	int selectRangeLo = 0 ;
+	int selectRangeHi = -1 ;
+	
 	NSString *compareTag = @"1DHISTO" ;
 	
 	NSString *printOption = @"NoPrint" ;
@@ -85,6 +93,8 @@ int main (int argc, const char * argv[]) {
 	
 	NSString *queryDB = nil ;
 	NSString *targetDB = nil ;
+	NSString *outputDB = nil ;
+	NSMutableArray *inputDBs = nil ;
 	NSString *hitsFile = nil ;
 	
 	NSString *createDB = nil ;
@@ -105,10 +115,10 @@ int main (int argc, const char * argv[]) {
 		{
 			printf( "USAGE: shapeSigX -create [ flags ] <input directory> <output DB> \n" ) ;
 			printf( "USAGE: shapeSigX -compare [ flags ] <query DB> <target DB/directory> <hits file> \n" ) ;
+			printf( "USAGE: shapeSigX -convert [ flags ] <out DB/directory> <input 1> [<input 2>] ...\n" ) ;
 			printf( "USAGE: shapeSigX -info <query DB> \n" ) ;
 			printf( "USAGE: shapeSigX -keys [ flags ] <input directory> \n" ) ;
 			printf( "USAGE: shapeSigX -check [ flags ] <input directory> <output directory> \n" ) ;
-			printf( "USAGE: shapeSigX -kmeans [ flags ] <input directory> <#clusters> \n" ) ;
 			printf( "-create flags:\n" ) ;
 			printf( "\t-numseg <number of raytrace segments; default = 100000>\n" ) ;
 			printf( "\t-gridspace <grid spacing; default = 1.0>\n" ) ;
@@ -123,6 +133,8 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-mergeRings <merge rings separated by one bond (yes|no); default = NO \n" ) ;
 			printf( "\t-printon <enable print option (raytrace|histogram)> \n" ) ;
 			printf( "\t-keyIncrement <key discretization increment; default = 0.05>\n" ) ;
+			printf( "\t-xmlOut <output XML database format (yes|no) ; default = NO>\n" ) ;
+			printf( "\t-explode <explode signatures into separate files (yes|no) ; default = NO>\n" ) ;
 			printf( "-compare flags:\n" ) ;
 			printf( "\t-targetdir <target DB is a directory (yes|no); default = NO >\n" ) ;
 			printf( "\t-tag <histogram tag to use; default = 1DShape> \n" ) ;
@@ -136,6 +148,12 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-sortBy <how to sort signatures; (minFrag | weightedFrag); default = weightedFrag> \n" ) ;
 			printf( "\t-maxQueryUnmatched <max. %% query unmatched ; default = 100. (no constraint)> \n" ) ;
 			printf( "\t-maxTargetUnmatched <max. %% target unmatched ; default = 100. (no constraint)> \n" ) ;
+			printf( "\t-xmlIn <input XML database format (yes|no) ; default = NO>\n" ) ;
+			printf( "-convert flags:\n" ) ;
+			printf( "\t-xmlIn <input XML database format (yes|no) ; default = NO>\n" ) ;
+			printf( "\t-xmlOut <output XML database format (yes|no) ; default = NO>\n" ) ;
+			printf( "\t-range <start,end> ; default = 0,-1 (all input signatures selected) \n" ) ;
+			printf( "\t-explode <explode signatures into separate files (yes|no) ; default = NO>\n" ) ;
 			//printf( "-keys flags:\n" ) ;
 			//printf( "\t-probIncrement <division for discretizing; default = 0.05> \n" ) ;
 			//printf( "\t-keyType <(g)lobal or (f)fragment histos; default = fragment> \n" ) ;
@@ -168,6 +186,11 @@ int main (int argc, const char * argv[]) {
 							else if( strcasestr( &argv[i][1], "comp" ) )
 								{
 									mode = COMPAREMODE ;
+									parseState = GETTOKEN ;
+								}
+							else if( strcasestr( &argv[i][1], "conv" ) )
+								{
+									mode = CONVERTMODE ;
 									parseState = GETTOKEN ;
 								}
 							else if( strcasestr( &argv[i][1], "info" ) )
@@ -298,6 +321,22 @@ int main (int argc, const char * argv[]) {
 								{
 									flagType = TARGETISDIRECTORY ;
 								}
+							else if( strcasestr( &argv[i][1], "xmlin" ) )
+								{
+									flagType = XMLIN ;
+								}
+							else if( strcasestr( &argv[i][1], "xmlout" ) )
+								{
+									flagType = XMLOUT ;
+								}
+							else if( strcasestr( &argv[i][1], "explode" ) )
+								{
+									flagType = EXPLODEDB ;
+								}
+							else if( strcasestr( &argv[i][1], "range" ) )
+								{
+									flagType = RANGE ;
+								}
 							else
 								{
 									printf( "CAN'T INTERPRET FLAG - Exit!\n" ) ;
@@ -351,6 +390,19 @@ int main (int argc, const char * argv[]) {
 										{	
 											printf( "TOO MANY ARGUMENTS - Exit!\n" ) ;
 											exit(1) ;
+										}
+								}
+							else if( mode == CONVERTMODE )
+								{
+									if( ! outputDB )
+										{
+											outputDB = [ [ NSString stringWithCString:argv[i] ] retain ] ;
+										}
+									else
+										{
+											if( ! inputDBs ) inputDBs = [ [ NSMutableArray alloc ] initWithCapacity:100 ] ;
+											
+											[ inputDBs addObject:[ NSString stringWithCString:argv[i] ] ] ;
 										}
 								}
 							else if( mode == INFOMODE )	
@@ -411,7 +463,7 @@ int main (int argc, const char * argv[]) {
 								}
 							else
 								{
-									printf( "FLAG -create, -compare OR -info MUST APPEAR FIRST - Exit!\n" ) ;
+									printf( "FLAG -create, -compare, -convert OR -info MUST APPEAR FIRST - Exit!\n" ) ;
 									exit(1) ;
 								}
 								
@@ -487,6 +539,89 @@ int main (int argc, const char * argv[]) {
 								else
 									{
 										segmentCulling = NO ;
+									}
+								
+								break ;
+								
+							case XMLIN:
+								if( mode != COMPAREMODE && mode != CONVERTMODE )
+									{
+										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+										exit(1) ;
+									}
+								if( argv[i][0] == 'y' || argv[i][0] == 'Y' )
+									{
+										xmlIN = YES ;
+									}
+								else
+									{
+										xmlIN = NO ;
+									}
+								
+								break ;
+								
+							case XMLOUT:
+								if( mode != CREATEMODE && mode != CONVERTMODE )
+									{
+										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+										exit(1) ;
+									}
+								if( argv[i][0] == 'y' || argv[i][0] == 'Y' )
+									{
+										xmlOUT = YES ;
+									}
+								else
+									{
+										xmlOUT = NO ;
+									}
+								
+								break ;
+								
+							case EXPLODEDB:
+								if( mode != CREATEMODE && mode != CONVERTMODE )
+									{
+										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+										exit(1) ;
+									}
+								if( argv[i][0] == 'y' || argv[i][0] == 'Y' )
+									{
+										explodeDBs = YES ;
+									}
+								else
+									{
+										explodeDBs = NO ;
+									}
+								
+								break ;
+							
+							case RANGE:
+								if( mode != CONVERTMODE )
+									{
+										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+										exit(1) ;
+									}
+								
+								char *token = strtok( argv[i], "-," ) ;
+								
+								if( token[0] == 'a' || token[0] == 'A' )
+									{
+										selectRangeLo = 0 ;
+										selectRangeHi = -1 ;
+									}
+								else
+									{
+										selectRangeLo = atoi( token ) ;
+										
+										token = strtok(NULL, "-," ) ;
+										
+										if( token[0] == 'e' || token[0] == 'E' )
+											{
+												selectRangeHi = -1 ;
+											}
+										else
+											{
+												selectRangeHi = atoi( argv[i] ) ;
+											}
 									}
 								
 								break ;
@@ -837,11 +972,41 @@ int main (int argc, const char * argv[]) {
 			
 			int mol2Count = [ mol2Files count ] ;
 			
-			NSMutableArray *theSignatures = [ [ NSMutableArray alloc ] initWithCapacity:mol2Count ] ;
+			NSMutableArray *theSignatures ;
+			
+			if( explodeDBs == NO )
+				{
+					theSignatures = [ [ NSMutableArray alloc ] initWithCapacity:mol2Count ] ;
+				}
 			
 			printf( "\nCreate new database - Process %d mol2 files in directory %s ... \n",
 				mol2Count, [ mol2Directory cString ] ) ;
-				
+			
+			if( explodeDBs == YES )
+				{
+					if( ! outputDB )
+						{
+							printf( "NO OUTPUT DIRECTORY SPECIFIED - Exit!\n" ) ;
+							exit(1) ;
+						}
+						
+					printf( "\nAttempt to create output directory database %s ...\n", [ outputDB cString ] ) ;
+					
+					if( [ fileManager fileExistsAtPath:outputDB ] == YES )
+						{
+							printf( "FILE/DIRECTORY ALREADY EXISTS - Exit!\n" ) ;
+							exit(1) ;
+						}
+						
+					if( [ fileManager createDirectoryAtPath:outputDB withIntermediateDirectories:NO 
+						attributes:nil error:NULL ] == NO )
+						{
+							printf( "DIRECTORY CREATION FAILED - Exit!\n" ) ;
+							exit(1) ;
+						}
+				}
+
+
 			int flatsCount = [ flatsFiles count ] ;
 			
 			if( mol2Count != flatsCount )
@@ -935,7 +1100,7 @@ int main (int argc, const char * argv[]) {
 						}
 					
 					printf( "@mol:%s\n", [ mol2Root cString ] ) ;
-					
+										
 					// Assume file name of form <name>.mol2 (obviously)
 					
 					nextSurfaceFile = [ mol2Directory stringByAppendingString:[ flatsFiles objectAtIndex:mol2Index ] ] ;
@@ -967,16 +1132,71 @@ int main (int argc, const char * argv[]) {
 						}
 					
 					
-					// Next signature - for testing we just use 1DHisto
-					
-					//XSignature *nextSignature = [ [ XSignature alloc ] initUsingTree:nextTree 
-					//		forTagRoot:@"1DHISTO" andRayTrace:nextRayTrace 
-					//		withStyle:style  ] ;
+					// Next signature 
 				
 					X2Signature *nextSignature = [ [ X2Signature alloc ] initForAllTagsUsingTree:nextTree 
 																andRayTrace:nextRayTrace withStyle:style ] ;
+													
+					if( explodeDBs == NO )
+						{
+							if( xmlOUT == NO )
+								{
+									[ theSignatures addObject:nextSignature ] ;
+								}
+							else
+								{
+									[ theSignatures addObject:[ nextSignature propertyListDict ] ] ;
+									[ nextSignature release ] ;
+								}
+						}
+					else
+						{
+							// Use standard name <tree name>_X2DB or <tree name>_X2DB.xml
+							
+							if( xmlOUT == NO )
+								{
+									NSString *path = [ NSString stringWithFormat:@"%s/%s_X2DB",
+											[ outputDB cString], [ nextSignature->sourceTree->treeName cString ] ] ;
+											
+									NSArray *oneSignature = [ NSArray arrayWithObject:nextSignature ] ;
+											
+									if( [ NSArchiver archiveRootObject:oneSignature toFile:path ] == NO )
+										{
+											printf( "CREATION OF SINGLE X2SIGNATURE ARCHIVE FAILED! \n" ) ;
+											exit(1) ;
+										}
+								}
+							else
+								{
+									NSString *path = [ NSString stringWithFormat:@"%s/%s_X2DB.xml",
+											[ outputDB cString], [ nextSignature->sourceTree->treeName cString ] ] ;
+											
+									NSArray *oneSignature = [ NSArray 
+										arrayWithObject:[ nextSignature propertyListDict ] ] ;
+										
+									NSString *error ;
+		
+									NSData *theData = [ NSPropertyListSerialization dataFromPropertyList:oneSignature
+														format:NSPropertyListXMLFormat_v1_0
+														errorDescription:&error] ;
 														
-					[ theSignatures addObject:nextSignature ] ;
+									if( [ fileManager createFileAtPath:path contents:theData attributes:nil ] == NO )
+										{
+											printf( "CREATION OF SINGLE X2SIGNATURE XML ARCHIVE FAILED! \n" ) ;
+											exit(1) ;
+										}
+								}
+						}
+											
+														
+					// For debugging
+					
+					//NSString *thePropList = [ nextSignature propertyList ] ;
+					
+					// Make it again
+					
+					//X2Signature *signatureCopy = [ [ X2Signature alloc ] 
+					//	initWithPropertyList:thePropList ] ;
 					
 					// Print the fragment keys
 					
@@ -1005,10 +1225,30 @@ int main (int argc, const char * argv[]) {
 				
 			// Archive to output file 
 			
-			if( [ NSArchiver archiveRootObject:theSignatures toFile:createDB ] == NO )
+			if( explodeDBs == NO )
 				{
-					printf( "CREATION OF X2SIGNATURE ARCHIVE FAILED! \n" ) ;
-					exit(1) ;
+					if( xmlOUT == NO )
+						{
+							if( [ NSArchiver archiveRootObject:theSignatures toFile:createDB ] == NO )
+								{
+									printf( "CREATION OF X2SIGNATURE ARCHIVE FAILED! \n" ) ;
+									exit(1) ;
+								}
+						}
+					else
+						{
+							NSString *error ;
+		
+							NSData *theData = [ NSPropertyListSerialization dataFromPropertyList:theSignatures
+												format:NSPropertyListXMLFormat_v1_0
+												errorDescription:&error] ;
+												
+							if( [ fileManager createFileAtPath:createDB contents:theData attributes:nil ] == NO )
+								{
+									printf( "CREATION OF X2SIGNATURE XML ARCHIVE FAILED! \n" ) ;
+									exit(1) ;
+								}
+						}
 				}
 			
 		}
@@ -1060,14 +1300,73 @@ int main (int argc, const char * argv[]) {
 
 			// Need to read in the query and target databases
 			
+			NSMutableArray *querySignatures ;
 			
-			NSArray *querySignatures = [ NSUnarchiver unarchiveObjectWithFile:queryDB ] ;
+			if( xmlIN == NO )
+				{
+					querySignatures = [ NSUnarchiver unarchiveObjectWithFile:queryDB ] ;
+				}
+			else
+				{
+					querySignatures = [ [ NSMutableArray alloc ] initWithCapacity:1000 ] ;
+					
+					NSData *theData = [ NSData dataWithContentsOfFile:queryDB ] ;
+					
+					NSString *errorString ;
+					NSPropertyListFormat theFormat ;
+					
+					NSArray *sourceArray = [ NSPropertyListSerialization propertyListFromData:theData 
+							mutabilityOption:0 format:&theFormat 
+							errorDescription:&errorString ] ;
+							
+					NSEnumerator *sourceArrayEnumerator = [ sourceArray objectEnumerator ] ;
+					
+					NSDictionary *nextSignatureDict ;
+					
+					while( ( nextSignatureDict = [ sourceArrayEnumerator nextObject ] ) )
+						{
+							X2Signature *nextSignature = [ [ X2Signature alloc ] 
+								initWithPropertyListDict:nextSignatureDict ] ;
+								
+							[ querySignatures addObject:nextSignature ] ;
+							[ nextSignature release ] ;
+						}
+				}
 			
-			NSArray *targetSignatures ;
+			NSMutableArray *targetSignatures ;
 			
 			if( targetIsDirectory == NO )
 				{
-					targetSignatures = [ NSUnarchiver unarchiveObjectWithFile:targetDB ] ;
+					if( xmlIN == NO )
+						{
+							targetSignatures = [ NSUnarchiver unarchiveObjectWithFile:targetDB ] ;
+						}
+					else
+						{
+							targetSignatures = [ [ NSMutableArray alloc ] initWithCapacity:1000 ] ;
+					
+							NSData *theData = [ NSData dataWithContentsOfFile:targetDB ] ;
+							
+							NSString *errorString ;
+							NSPropertyListFormat theFormat ;
+							
+							NSArray *sourceArray = [ NSPropertyListSerialization propertyListFromData:theData 
+									mutabilityOption:0 format:&theFormat 
+									errorDescription:&errorString ] ;
+									
+							NSEnumerator *sourceArrayEnumerator = [ sourceArray objectEnumerator ] ;
+							
+							NSDictionary *nextSignatureDict ;
+							
+							while( ( nextSignatureDict = [ sourceArrayEnumerator nextObject ] ) )
+								{
+									X2Signature *nextSignature = [ [ X2Signature alloc ] 
+										initWithPropertyListDict:nextSignatureDict ] ;
+										
+									[ targetSignatures addObject:nextSignature ] ;
+									[ nextSignature release ] ;
+								}
+						}
 				}
 			else
 				{
@@ -1092,7 +1391,16 @@ int main (int argc, const char * argv[]) {
 				
 					// Collect all DB files
 					
-					NSArray *DBFiles =  [ files filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF endswith 'DB'" ] ] ;
+					NSArray *DBFiles ;
+					
+					if( xmlIN == NO )
+						{
+							DBFiles =  [ files filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF endswith 'DB'" ] ] ;
+						}
+					else
+						{
+							DBFiles =  [ files filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF endswith 'DB.xml'" ] ] ;
+						}
 					
 					targetSignatures = [ [ NSMutableArray alloc ] initWithCapacity:[ DBFiles count ] ] ;
 					
@@ -1104,7 +1412,35 @@ int main (int argc, const char * argv[]) {
 					while( ( nextFile = [ fileEnumerator nextObject ] ) )
 						{
 							NSString *nextPath = [ pathRoot stringByAppendingString:nextFile ] ;
-							[ targetSignatures addObjectsFromArray:[ NSUnarchiver unarchiveObjectWithFile:nextPath ] ] ;
+							
+							if( xmlIN == NO )
+								{
+									[ targetSignatures addObjectsFromArray:[ NSUnarchiver unarchiveObjectWithFile:nextPath ] ] ;
+								}
+							else
+								{
+									NSData *theData = [ NSData dataWithContentsOfFile:nextPath ] ;
+									
+									NSString *errorString ;
+									NSPropertyListFormat theFormat ;
+							
+									NSArray *sourceArray = [ NSPropertyListSerialization propertyListFromData:theData 
+											mutabilityOption:0 format:&theFormat 
+											errorDescription:&errorString ] ;
+											
+									NSEnumerator *sourceArrayEnumerator = [ sourceArray objectEnumerator ] ;
+									
+									NSDictionary *nextSignatureDict ;
+									
+									while( ( nextSignatureDict = [ sourceArrayEnumerator nextObject ] ) )
+										{
+											X2Signature *nextSignature = [ [ X2Signature alloc ] 
+												initWithPropertyListDict:nextSignatureDict ] ;
+												
+											[ targetSignatures addObject:nextSignature ] ;
+											[ nextSignature release ] ;
+										}
+								}
 						}
 				}
 						

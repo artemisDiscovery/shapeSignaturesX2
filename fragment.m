@@ -326,6 +326,126 @@
 		return ;
 	}
  
+ 
+ - (NSDictionary *) propertyListDict 
+	{
+		NSMutableDictionary *returnDictionary = [ NSMutableDictionary dictionaryWithCapacity:10 ] ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:&index length:sizeof(int) ] forKey:@"index" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&type length:sizeof(fragmentType) ] forKey:@"fragmentType" ]  ;
+		
+		ctNode **originalNodePtrs = (ctNode **) malloc( [ fragmentNodes count ] * sizeof( ctNode * ) ) ;
+		
+		NSArray *nodeArray = [ fragmentNodes allObjects ] ;
+		
+		[ returnDictionary setObject:[ NSNumber numberWithInt:[fragmentNodes count] ] forKey:@"fragmentNodeCount" ] ;
+		[ returnDictionary setObject:[ NSNumber numberWithInt:[fragmentBonds count] ] forKey:@"fragmentBondCount" ] ;
+		
+		int j ;
+		
+		for( j = 0 ; j < [ fragmentNodes count ] ; ++j )
+			{
+				originalNodePtrs[j] = [ nodeArray objectAtIndex:j ] ;
+			}
+			
+		[ returnDictionary setObject:[ NSData dataWithBytes:originalNodePtrs 
+			length:([ fragmentNodes count ]*sizeof(ctNode *)) ]
+			forKey:@"originalNodePtrs" ] ;
+			
+		ctBond **originalBondPtrs = (ctBond **) malloc( [ fragmentBonds count ] * sizeof( ctBond * ) ) ;
+		
+		NSArray *bondArray = [ fragmentBonds allObjects ] ;
+		
+		for( j = 0 ; j < [ fragmentBonds count ] ; ++j )
+			{
+				originalBondPtrs[j] = [ bondArray objectAtIndex:j ] ;
+			}
+			
+		[ returnDictionary setObject:[ NSData dataWithBytes:originalBondPtrs 
+			length:([ fragmentBonds count ]*sizeof(ctBond *)) ]
+			forKey:@"originalBondPtrs" ] ;
+			
+		[ returnDictionary setObject:[ neighborFragmentIndices allObjects ] 
+			forKey:@"neighborFragmentIndicesAsArray" ] ;
+			
+			
+		free( originalNodePtrs ) ;
+		free( originalBondPtrs ) ;
+		
+		return returnDictionary ;
+		//return theData ;
+	}
+		
+- (id)  initWithPropertyListDict:(NSDictionary *)pListDict andNodeTranslator:(NSDictionary *)nodeTran
+		andBondTranslator:(NSDictionary *)bondTran
+	{
+		self = [ super init ] ;
+		
+	
+		normal = center = nil ;
+	
+		neighborFragments = nil ;
+	
+		connections = nil ;
+
+		
+		NSData *theData ;
+		
+		theData = [ pListDict objectForKey:@"index" ] ;
+		[ theData getBytes:&index length:sizeof(int) ] ;
+		theData = [ pListDict objectForKey:@"fragmentType" ] ;
+		[ theData getBytes:&type length:sizeof(fragmentType) ] ;
+		
+		int fragmentNodeCount = [ [ pListDict objectForKey:@"fragmentNodeCount" ] intValue ] ;
+		int fragmentBondCount = [ [ pListDict objectForKey:@"fragmentBondCount" ] intValue ] ;
+
+		ctNode **originalNodePtrs = (ctNode **) malloc( fragmentNodeCount * sizeof( ctNode * ) ) ;
+		
+		theData = [ pListDict objectForKey:@"originalNodePtrs" ] ;
+		[ theData getBytes:originalNodePtrs length:( fragmentNodeCount * sizeof( ctNode * ) ) ] ;
+		
+		ctBond **originalBondPtrs = (ctBond **) malloc( fragmentBondCount * sizeof( ctNode * ) ) ;
+		
+		theData = [ pListDict objectForKey:@"originalBondPtrs" ] ;
+		[ theData getBytes:originalBondPtrs length:( fragmentBondCount * sizeof( ctBond * ) ) ] ;
+		
+		NSMutableArray *newNodeArray = [ [ NSMutableArray alloc ] initWithCapacity:fragmentNodeCount ] ;
+				
+		int j ;
+		
+		for( j = 0 ; j < fragmentNodeCount ; ++j )
+			{
+				ctNode *newNode = [ nodeTran 
+					objectForKey:[ NSData dataWithBytes:&(originalNodePtrs[j]) length:sizeof( ctNode * )  ] ] ;
+					
+				[ newNodeArray addObject:newNode ] ;
+			}
+			
+		fragmentNodes = [ [ NSMutableSet alloc ] initWithArray:newNodeArray ] ;
+		[ newNodeArray release ] ;
+		
+	
+		NSMutableArray *newBondArray = [ [ NSMutableArray alloc ] initWithCapacity:fragmentBondCount ] ;
+				
+		for( j = 0 ; j < fragmentBondCount ; ++j )
+			{
+				ctBond *newBond = [ bondTran 
+					objectForKey:[ NSData dataWithBytes:&(originalBondPtrs[j]) length:sizeof( ctBond * )  ] ] ;
+					
+				[ newBondArray addObject:newBond ] ;
+			}
+			
+		fragmentBonds = [ [ NSMutableSet alloc ] initWithArray:newBondArray ] ;
+		[ newBondArray release ] ;		
+		
+		neighborFragmentIndices = [ [ NSMutableSet alloc ] 
+			initWithArray:[ pListDict objectForKey:@"neighborFragmentIndicesAsArray" ] ] ;
+			
+		free( originalNodePtrs ) ;
+		free( originalBondPtrs ) ;
+			
+		return self ;
+	}
 
 - (void) encodeWithCoder:(NSCoder *)coder
 	{

@@ -194,6 +194,50 @@
 		
 		return self ;
 	}
+	
+- (NSDictionary *) propertyListDict 
+	{
+		NSMutableDictionary *returnDictionary = [ NSMutableDictionary dictionaryWithCapacity:10 ] ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:&node1 length:sizeof( ctNode * ) ] 
+			forKey:@"originalNode1Ptr" ] ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&node2 length:sizeof( ctNode * ) ] 
+			forKey:@"originalNode2Ptr" ] ;
+			
+		[ returnDictionary setObject:[ NSData dataWithBytes:&type length:sizeof( bondType ) ] 
+			forKey:@"type" ] ;
+			
+		
+		return returnDictionary ;
+		//return theData ;
+	}
+	
+- (id) initWithPropertyListDict:(NSDictionary *) pListDict andNodeTranslator:(NSDictionary *)nodeTran 
+	{
+		self = [ super init ] ;
+		
+		NSData *theData ;
+		
+		theData = [ pListDict objectForKey:@"type" ] ;
+		[ theData getBytes:&type length:sizeof(bondType) ] ;
+		
+		theData = [ pListDict objectForKey:@"originalNode1Ptr" ] ;
+		ctNode *originalPtr ;
+		[ theData getBytes:&originalPtr length:sizeof(ctNode *) ] ;
+		
+		node1 = [ nodeTran objectForKey:[ NSData dataWithBytes:&originalPtr length:sizeof( ctNode * )  ] ] ;
+		
+		theData = [ pListDict objectForKey:@"originalNode2Ptr" ] ;
+		[ theData getBytes:&originalPtr length:sizeof(ctNode *) ] ;
+		
+		node2 = [ nodeTran objectForKey:[ NSData dataWithBytes:&originalPtr length:sizeof( ctNode * )  ] ] ;
+		
+		return self ;
+	}
+		
+		
+		
+	
 		
 - (NSString *) description
 	{

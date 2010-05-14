@@ -79,6 +79,8 @@
 					{
 						// Done
 						
+						fclose( mol2File ) ;
+						
 						return self ;
 					}
 					
@@ -2863,6 +2865,9 @@
 	}
 	*/
 	
+		
+		
+	
 - (int) indexOfNode:(ctNode *) n 
 	{
 		int i ;
@@ -2878,6 +2883,200 @@
 		return -1 ;
 	}
 				
+				
+- (NSDictionary *) propertyListDict 
+	{
+		NSMutableDictionary *returnDictionary = [ NSMutableDictionary dictionaryWithCapacity:10 ] ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:&nNodes length:sizeof(int) ] forKey:@"nNodes" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&nBonds length:sizeof(int) ] forKey:@"nBonds" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&nFragments length:sizeof(int) ] forKey:@"nFragments" ]  ;
+		
+		NSData *originalNodePtrs = [ NSData dataWithBytes:nodes length:(nNodes * sizeof( ctNode * ) ) ] ;
+		NSData *originalBondPtrs = [ NSData dataWithBytes:bonds length:(nBonds * sizeof( ctBond * ) ) ] ;
+		
+		[ returnDictionary setObject:originalNodePtrs forKey:@"orginalNodePtrs" ]  ;
+		[ returnDictionary setObject:originalBondPtrs forKey:@"originalBondPtrs" ]  ;
+		
+		// Array of current nodes as propertylists
+		
+		NSMutableArray *nodesAsPLists = [ NSMutableArray arrayWithCapacity:nNodes ] ;
+		
+		int j ;
+		
+		for( j = 0 ; j < nNodes ; ++j )
+			{
+				[ nodesAsPLists addObject:[ nodes[j] propertyListDict ] ] ;
+			}
+			
+		
+		[ returnDictionary setObject:nodesAsPLists forKey:@"nodesAsPLists" ]  ;
+		
+		// Array of current bonds as propertylists
+		
+		NSMutableArray *bondsAsPLists = [ NSMutableArray arrayWithCapacity:nBonds ] ;
+		
+		for( j = 0 ; j < nBonds ; ++j )
+			{
+				[ bondsAsPLists addObject:[ bonds[j] propertyListDict ] ] ;
+			}
+			
+		
+		[ returnDictionary setObject:bondsAsPLists forKey:@"bondsAsPLists" ]  ;
+		
+		fragment **originalTreeFragmentPtrs = (fragment **) malloc( [ treeFragments count ] * sizeof( fragment *) ) ;
+				
+		j = 0 ;
+		
+		for( j = 0 ; j < [ treeFragments count ] ; ++j )
+			{
+				originalTreeFragmentPtrs[j] = [ treeFragments objectAtIndex:j ] ;
+			}
+		
+		NSData *originalTreeFragPtrs = [ NSData dataWithBytes:originalTreeFragmentPtrs length:([ treeFragments count ] * sizeof( fragment * ) ) ] ;
+		[ returnDictionary setObject:originalTreeFragPtrs forKey:@"originalTreeFragmentPtrs" ]  ;	
+		
+		// Tree Fragments as property lists 
+		
+		NSMutableArray *treeFragmentsAsPLists = [ NSMutableArray arrayWithCapacity:nFragments ] ;
+		
+		for( j = 0 ; j < nFragments ; ++j )
+			{
+				[ treeFragmentsAsPLists addObject:[ [ treeFragments objectAtIndex:j ] propertyListDict ] ] ;
+			}
+			
+		[ returnDictionary setObject:treeFragmentsAsPLists forKey:@"treeFragmentsAsPLists" ]  ;
+		
+		[ returnDictionary setObject:treeName forKey:@"treeName" ]  ;
+		
+		
+		
+		free( originalTreeFragmentPtrs ) ;
+		
+		return returnDictionary ;
+		//return theData ;
+		
+		
+		
+	}
+	
+- (id) initWithPropertyListDict:(NSDictionary *)pListDict
+	{
+		self = [ super init ] ;
+		
+		NSData *theData ;
+		
+		theData = [ pListDict objectForKey:@"nNodes" ] ;
+		[ theData getBytes:&nNodes length:sizeof(int) ] ;
+		theData = [ pListDict objectForKey:@"nBonds" ] ;
+		[ theData getBytes:&nBonds length:sizeof(int) ] ;
+		theData = [ pListDict objectForKey:@"nFragments" ] ;
+		[ theData getBytes:&nFragments length:sizeof(int) ] ;
+		
+		nodes = (ctNode **) malloc( nNodes * sizeof( ctNode * ) ) ;
+		ctNode **originalNodes = (ctNode **) malloc( nNodes * sizeof( ctNode * ) ) ;
+		
+		theData = [ pListDict objectForKey:@"orginalNodePtrs" ] ;
+		[ theData getBytes:originalNodes length:(nNodes * sizeof( ctNode * ) ) ] ;
+		
+		bonds = (ctBond **) malloc( nBonds * sizeof( ctBond * ) ) ;
+		ctBond **originalBonds = (ctBond **) malloc( nBonds * sizeof( ctBond * ) ) ;
+		
+		theData = [ pListDict objectForKey:@"originalBondPtrs" ] ;
+		[ theData getBytes:originalBonds length:(nBonds * sizeof( ctBond * ) ) ] ;
+		
+		
+		// Array of current nodes as propertylists
+		
+		NSMutableArray *nodesAsPLists = [ pListDict objectForKey:@"nodesAsPLists" ] ;
+		
+		int j, k ;
+		
+		for( j = 0 ; j < nNodes ; ++j )
+			{
+				nodes[j] = [ [ ctNode alloc ] initWithPropertyListDict:[ nodesAsPLists objectAtIndex:j ] ] ;
+			}
+			
+		// Make dictionary to relate old node pointers to new
+		
+		NSMutableDictionary *nodePointerTranslator = [ [ NSMutableDictionary alloc ] initWithCapacity:nNodes ] ;
+		
+		for( j = 0 ; j < nNodes ; ++j )
+			{
+				[ nodePointerTranslator setObject:nodes[j] 
+					forKey:[ NSData  dataWithBytes:&(originalNodes[j]) length:sizeof(ctNode *)  ] ] ;
+			}
+			
+		
+		// Array of current bonds as propertylists
+		
+		NSMutableArray *bondsAsPLists = [ pListDict objectForKey:@"bondsAsPLists" ] ;
+		
+		for( j = 0 ; j < nBonds ; ++j )
+			{
+				bonds[j] = [ [ ctBond alloc ] initWithPropertyListDict:[ bondsAsPLists objectAtIndex:j ]
+					andNodeTranslator:nodePointerTranslator ] ;
+			}
+			
+		// Make dictionary to relate old bond pointers to new
+		
+		NSMutableDictionary *bondPointerTranslator = [ [ NSMutableDictionary alloc ] initWithCapacity:nBonds ] ;
+		
+		for( j = 0 ; j < nBonds ; ++j )
+			{
+				[ bondPointerTranslator setObject:bonds[j] 
+					forKey:[ NSData  dataWithBytes:&(originalBonds[j]) length:sizeof(ctBond *)  ] ] ;
+			}
+			
+		// Need to repair bond references in node objects
+		
+		for( j = 0 ; j < nNodes ; ++j )
+			{
+				for( k = 0 ; k < nodes[j]->nBonds ; ++k )
+					{
+						ctBond *newBondPtr = [ bondPointerTranslator 
+							objectForKey:[ NSData  dataWithBytes:&(nodes[j]->bonds[k]) length:sizeof(ctBond *)  ] ] ;
+							
+						nodes[j]->bonds[k] = newBondPtr ;
+					}
+			}
+		
+		
+
+		fragment **originalTreeFragmentPtrs = (fragment **) malloc( nFragments * sizeof( fragment *) ) ;
+		
+		theData = [ pListDict objectForKey:@"originalTreeFragmentPtrs" ] ;
+		[ theData getBytes:originalTreeFragmentPtrs length:( nFragments * sizeof( fragment *) ) ] ;
+				
+		// Init tree fragments
+		
+		NSMutableArray *treeFragmentsAsPLists = [ pListDict objectForKey:@"treeFragmentsAsPLists" ] ;
+		
+		treeFragments = [ [ NSMutableArray alloc ] initWithCapacity:nFragments ] ;
+		
+		for( j = 0 ; j < nFragments ; ++j )
+			{
+				fragment *theFragment = [ [ fragment alloc ] initWithPropertyListDict:[ treeFragmentsAsPLists objectAtIndex:j ]
+					andNodeTranslator:nodePointerTranslator
+					andBondTranslator:bondPointerTranslator ] ;
+					
+				[ treeFragments addObject:theFragment ] ;
+			}
+		
+		treeName = [ [ NSString alloc ] initWithString:[ pListDict objectForKey:@"treeName" ] ] ;
+		
+		free( originalTreeFragmentPtrs ) ;
+		free( originalNodes ) ;
+		free( originalBonds ) ;
+		
+		[ nodePointerTranslator release ] ;
+		[ bondPointerTranslator release ] ;
+		
+		return self ;
+	}
+		
+	
+	
 - (void) encodeWithCoder:( NSCoder *)coder
 	{
 		[ coder encodeValueOfObjCType:@encode(int) at:&nNodes ] ;

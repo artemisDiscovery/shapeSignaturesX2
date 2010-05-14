@@ -669,6 +669,124 @@ NSInteger indexCompare2( id A, id B, void *ctxt )
 		return NSOrderedSame ;
 	}
 
+- (NSString *) propertyListDict
+	{
+		// This method expresses an XSignature in text format as a property list. This is 
+		// a portable alternative to archiving using NSCoder, and which we can also use 
+		// in web service implementation
+		
+		NSMutableDictionary *returnDictionary = [ NSMutableDictionary dictionaryWithCapacity:10 ] ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:&totalSegments length:sizeof(int) ] forKey:@"totalSegments" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&totalSegmentPairs length:sizeof(int) ] forKey:@"totalSegmentPairs" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&totalInterFragmentSegments length:sizeof(int) ] forKey:@"totalInterFragmentSegments" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&totalInterFragmentSegmentPairs length:sizeof(int) ] forKey:@"totalInterFragmentSegmentPairs" ] ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&totalIntraFragmentSegments length:sizeof(int) ] forKey:@"totalIntraFragmentSegments" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&totalIntraFragmentSegmentPairs length:sizeof(int) ] forKey:@"totalIntraFragmentSegmentPairs" ]  ;
+		
+		[ returnDictionary  setObject:[ sourceTree propertyListDict ]  forKey:@"sourceTreePList" ] ;
+		
+		NSMutableDictionary *histogramBundlePropListForTag = [ NSMutableDictionary 
+			dictionaryWithCapacity:[ histogramBundleForTag count ] ] ;
+			
+		NSEnumerator *tagEnumerator = [ [ histogramBundleForTag allKeys ] objectEnumerator ] ;
+		
+		NSString *nextTag ;
+		
+		while( ( nextTag = [ tagEnumerator nextObject ] ) )
+			{
+				[ histogramBundlePropListForTag setObject:[ [ histogramBundleForTag objectForKey:nextTag ] propertyListDict ]
+					forKey:nextTag ] ;
+			}
+			
+		[ returnDictionary  setObject:histogramBundlePropListForTag forKey:@"histogramBundlePropListForTag" ] ;
+		
+		return returnDictionary ;
+		
+		NSString *error ;
+		
+		NSData *theData = [ NSPropertyListSerialization dataFromPropertyList:returnDictionary
+                            format:NSPropertyListXMLFormat_v1_0
+                            errorDescription:&error] ;
+							
+		if( ! theData )
+			{
+				printf( "WARNING: COULD NOT PRODUCE PROPERTY LIST REPRESENTATION OF X2Signature - %s\n",
+					[ error cString ] ) ;
+				return nil ;
+			}
+		
+		return [ [ NSString alloc ] initWithData:theData encoding:NSASCIIStringEncoding ] ;
+		return theData ;
+	}
+	
+- (id) initWithPropertyListDict:(NSDictionary *)sourceDictionary
+	{
+		self = [ super init ] ;
+		
+		//NSData *pListAsData = [ pList dataUsingEncoding:NSASCIIStringEncoding  ] ;
+		
+		//NSString *errorString ;
+		//NSPropertyListFormat theFormat ;
+		
+		//NSDictionary *sourceDictionary = [ NSPropertyListSerialization propertyListFromData:pListAsData mutabilityOption:0 format:&theFormat 
+		//	errorDescription:&errorString ] ;
+
+			
+		NSData *theData ;
+			
+		theData = [ sourceDictionary objectForKey:@"totalSegments" ] ;
+		[ theData getBytes:&totalSegments length:sizeof(int) ] ;
+		theData = [ sourceDictionary objectForKey:@"totalSegmentPairs" ] ;
+		[ theData getBytes:&totalSegmentPairs length:sizeof(int) ] ;
+		theData = [ sourceDictionary objectForKey:@"totalInterFragmentSegments" ] ;
+		[ theData getBytes:&totalInterFragmentSegments length:sizeof(int) ] ;
+		theData = [ sourceDictionary objectForKey:@"totalInterFragmentSegmentPairs" ] ;
+		[ theData getBytes:&totalInterFragmentSegmentPairs length:sizeof(int) ] ;
+		theData = [ sourceDictionary objectForKey:@"totalIntraFragmentSegments" ] ;
+		[ theData getBytes:&totalIntraFragmentSegments length:sizeof(int) ] ;
+		theData = [ sourceDictionary objectForKey:@"totalIntraFragmentSegmentPairs" ] ;
+		[ theData getBytes:&totalIntraFragmentSegmentPairs length:sizeof(int) ] ;
+			
+			
+			
+		NSDictionary *pListDict = [ sourceDictionary objectForKey:@"sourceTreePList" ] ;
+		
+		sourceTree = [ [ ctTree alloc ] initWithPropertyListDict:pListDict ] ;
+		
+		// Histogram bundles
+		
+		
+		
+		NSDictionary *histogramBundlePropListForTag = [ sourceDictionary objectForKey:@"histogramBundlePropListForTag" ] ;
+		
+		histogramBundleForTag = [ [ NSMutableDictionary alloc ] initWithCapacity:[ histogramBundlePropListForTag count ] ] ;
+		
+		NSEnumerator *tagEnumerator = [ [ histogramBundlePropListForTag allKeys ] objectEnumerator ] ;
+		
+		NSString *nextTag ;
+		
+		while( ( nextTag = [ tagEnumerator nextObject ] ) )
+			{
+				NSDictionary *nextPropListDict = [ histogramBundlePropListForTag objectForKey:nextTag ] ;
+				
+				histogramBundle *nextHistoBundle = [ [ histogramBundle alloc ] 
+					initWithPropertyListDict:nextPropListDict ] ;
+					
+				nextHistoBundle->sourceTree = sourceTree ;
+				nextHistoBundle->sourceSignature = self ;
+				
+				[ histogramBundleForTag setObject:nextHistoBundle forKey:nextTag ] ;
+			}
+				
+				
+		
+		return self ;
+	
+		
+				
+	}
+
 								
 NSInteger compareMappingPair( id A, id B, void *ctxt )
 	{

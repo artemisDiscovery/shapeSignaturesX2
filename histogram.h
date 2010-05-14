@@ -86,6 +86,10 @@ typedef struct { double lengthDelta ; double MEPDelta ; } histogramStyle ;
 
 + (double) lowerBoundOnDistanceBetweenKey:(NSString *)key1 andKey:(NSString *)key2 usingProbabilityIncrement:(double)pInc ;
 
+- (NSDictionary *) propertyListDict ;
+
+- (id) initWithPropertyListDict:(NSDictionary *) pListDict ;
+
 /*
 - (BOOL) isConnectedToHistogram:(histogram *)h ;
 

@@ -66,4 +66,9 @@ typedef enum { RING, RING_TERMINAL, RING_INTERIOR, NONRING, SUBSTITUENT, BRIDGE 
 
 - (void) registerConnection:(fragmentConnection *)c ;
 
+- (NSDictionary *) propertyListDict ;
+
+- (id) initWithPropertyListDict:(NSDictionary *)pListDict andNodeTranslator:(NSDictionary *)nodeTran
+		andBondTranslator:(NSDictionary *)bondTran ;
+
 @end

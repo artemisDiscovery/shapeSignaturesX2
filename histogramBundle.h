@@ -51,4 +51,9 @@
 
 - ( NSString *) keyStringsForFragmentWithIncrement:(double) inc ;
 
+- (NSDictionary *) propertyListDict ;
+
+- (id) initWithPropertyListDict:(NSDictionary *) pListDict ;
+
+
 @end

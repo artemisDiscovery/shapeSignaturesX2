@@ -64,5 +64,9 @@
 
 + (NSString *) version ;
 
+- (NSString *) propertyListDict ;
+
+- (id) initWithPropertyListDict:(NSDictionary *)sourceDictionary ;
+
 
 @end

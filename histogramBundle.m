@@ -627,6 +627,95 @@ int MED3( int a, int b, int c )
 		return ;
 	}
 	
+- (NSDictionary *) propertyListDict
+	{
+		NSMutableDictionary *returnDictionary = [ NSMutableDictionary dictionaryWithCapacity:10 ] ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:&type length:sizeof(histogramClass) ] forKey:@"type" ]  ;
+		[ returnDictionary setObject:tag forKey:@"tag" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&nBins length:sizeof(int) ] forKey:@"nBins" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&nLengthBins length:sizeof(int) ] forKey:@"nLengthBins" ]  ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:&lengthDelta length:sizeof(double) ] forKey:@"lengthDelta" ]  ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:&nMEPBins length:sizeof(int) ] forKey:@"nMEPBins" ]  ;
+		
+		[ returnDictionary setObject:[ NSData dataWithBytes:&minMEP length:sizeof(double) ] forKey:@"minMEP" ]  ;
+		[ returnDictionary setObject:[ NSData dataWithBytes:&MEPDelta length:sizeof(double) ] forKey:@"MEPDelta" ]  ;
+		
+		NSMutableDictionary *returnBundleDict = [ NSMutableDictionary 
+			dictionaryWithCapacity:[ sortedFragmentsToHistogram count ] ] ;
+			
+		NSEnumerator *histoKeyEnumerator = [ [ sortedFragmentsToHistogram allKeys ] objectEnumerator ] ;
+		
+		NSString *nextKey ;
+		
+		while( ( nextKey = [ histoKeyEnumerator nextObject ] ) )
+			{
+				[ returnBundleDict setObject:[ [ sortedFragmentsToHistogram objectForKey:nextKey ] propertyListDict ]
+					forKey:nextKey ] ;
+			}
+			
+		[ returnDictionary setObject:returnBundleDict forKey:@"histogramBundlePropListDict" ] ;
+		
+		return returnDictionary ;
+	}
+
+- (id) initWithPropertyListDict:(NSDictionary *) pListDict 
+	{
+		self = [ super init ] ;
+
+		NSData *theData ;
+		
+		theData = [ pListDict objectForKey:@"type" ] ;
+		[ theData getBytes:&type length:sizeof(histogramClass) ] ;
+		
+		tag = [ [ NSString alloc ] initWithString:[ pListDict objectForKey:@"tag" ] ] ;
+		
+		theData = [ pListDict objectForKey:@"nBins" ] ;
+		[ theData getBytes:&nBins length:sizeof(int) ] ;
+		
+		theData = [ pListDict objectForKey:@"nLengthBins" ] ;
+		[ theData getBytes:&nLengthBins length:sizeof(int) ] ;
+		
+		theData = [ pListDict objectForKey:@"lengthDelta" ] ;
+		[ theData getBytes:&lengthDelta length:sizeof(double) ] ;
+		
+		theData = [ pListDict objectForKey:@"nMEPBins" ] ;
+		[ theData getBytes:&nMEPBins length:sizeof(int) ] ;
+		
+		theData = [ pListDict objectForKey:@"minMEP" ] ;
+		[ theData getBytes:&minMEP length:sizeof(double) ] ;
+		
+		theData = [ pListDict objectForKey:@"MEPDelta" ] ;
+		[ theData getBytes:&MEPDelta length:sizeof(double) ] ;
+		
+		NSDictionary *histogramBundlePropListDict = [ pListDict objectForKey:@"histogramBundlePropListDict" ] ;
+		
+		sortedFragmentsToHistogram = [ [ NSMutableDictionary alloc ] 
+			initWithCapacity:[ histogramBundlePropListDict count ] ] ;
+			
+		// Each object in histogramBundlePropListDict is a histogram property list, needs to source 
+		// for histogram to be added to the dictionary
+		
+		NSEnumerator *keyEnumerator = [ [ histogramBundlePropListDict allKeys ] objectEnumerator ] ;
+		
+		NSString *nextKey ;
+		
+		while( ( nextKey = [ keyEnumerator nextObject ] ) )
+			{
+				NSDictionary *nextHistoPropertyDict = [ histogramBundlePropListDict objectForKey:nextKey ] ;
+				
+				histogram *nextHisto = [ [ histogram alloc ] initWithPropertyListDict:nextHistoPropertyDict ] ;
+				
+				[ sortedFragmentsToHistogram setObject:nextHisto forKey:nextKey ] ;
+				
+				[ nextHisto release ] ;
+			}
+	
+		return self ;
+	}
+	
 - ( NSString *) keyStringsForBundleWithIncrement:(double) inc
 	{
 		NSMutableString *returnString = [ [ NSMutableString alloc ] initWithCapacity:100 ] ;
