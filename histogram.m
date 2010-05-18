@@ -9,7 +9,6 @@
 #import "histogram.h"
 #import "rayTrace.h"
 #import "histogramBundle.h"
-#import "histogramConnection.h"
 
 static NSArray *recognizedTags ;
 static NSArray *classByRecognizedTag ;

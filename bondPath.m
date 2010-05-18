@@ -115,7 +115,6 @@
 		
 		// Check orientation
 		
-		
 		if( b->node1 == r )
 			{
 				[ bondOrientations addObject:[ NSNumber numberWithBool:YES ] ] ;

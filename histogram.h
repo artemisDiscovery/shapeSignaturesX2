@@ -10,7 +10,6 @@
  
 
 @class histogramBundle ;
-@class histogramConnection ;
 
 
 @class X2SignatureMapping ;

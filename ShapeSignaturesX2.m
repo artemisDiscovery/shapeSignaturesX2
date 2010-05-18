@@ -984,7 +984,7 @@ int main (int argc, const char * argv[]) {
 			
 			if( explodeDBs == YES )
 				{
-					if( ! outputDB )
+					if( ! createDB )
 						{
 							printf( "NO OUTPUT DIRECTORY SPECIFIED - Exit!\n" ) ;
 							exit(1) ;
@@ -992,13 +992,13 @@ int main (int argc, const char * argv[]) {
 						
 					printf( "\nAttempt to create output directory database %s ...\n", [ outputDB cString ] ) ;
 					
-					if( [ fileManager fileExistsAtPath:outputDB ] == YES )
+					if( [ fileManager fileExistsAtPath:createDB ] == YES )
 						{
 							printf( "FILE/DIRECTORY ALREADY EXISTS - Exit!\n" ) ;
 							exit(1) ;
 						}
 						
-					if( [ fileManager createDirectoryAtPath:outputDB withIntermediateDirectories:NO 
+					if( [ fileManager createDirectoryAtPath:createDB withIntermediateDirectories:NO 
 						attributes:nil error:NULL ] == NO )
 						{
 							printf( "DIRECTORY CREATION FAILED - Exit!\n" ) ;
@@ -1156,7 +1156,7 @@ int main (int argc, const char * argv[]) {
 							if( xmlOUT == NO )
 								{
 									NSString *path = [ NSString stringWithFormat:@"%s/%s_X2DB",
-											[ outputDB cString], [ nextSignature->sourceTree->treeName cString ] ] ;
+											[ createDB cString], [ nextSignature->sourceTree->treeName cString ] ] ;
 											
 									NSArray *oneSignature = [ NSArray arrayWithObject:nextSignature ] ;
 											
@@ -1169,7 +1169,7 @@ int main (int argc, const char * argv[]) {
 							else
 								{
 									NSString *path = [ NSString stringWithFormat:@"%s/%s_X2DB.xml",
-											[ outputDB cString], [ nextSignature->sourceTree->treeName cString ] ] ;
+											[ createDB cString], [ nextSignature->sourceTree->treeName cString ] ] ;
 											
 									NSArray *oneSignature = [ NSArray 
 										arrayWithObject:[ nextSignature propertyListDict ] ] ;
