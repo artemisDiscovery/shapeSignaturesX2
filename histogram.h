@@ -6,7 +6,14 @@
 //  Copyright 2009 __MyCompanyName__. All rights reserved.
 //
 
+#include "platform.h"
+
+#ifdef LINUX
+#import <Foundation/Foundation.h>
+#else
 #import <Cocoa/Cocoa.h>
+#endif
+#include <math.h>
  
 
 @class histogramBundle ;

@@ -1,4 +1,11 @@
+#include "platform.h"
+
+#ifdef LINUX
+#import <Foundation/Foundation.h>
+#else
 #import <Cocoa/Cocoa.h>
+#endif
+
 #include <string.h>
 #import "flatSurface.h"
 #import "rayTrace.h"
@@ -6,6 +13,8 @@
 #import "shapeSignatureX2.h"
 #import "hitListItem.h"
 #include <math.h> 
+
+NSInteger fileNameCompare( id A, id B, void *ctxt ) ;
 
 int main (int argc, const char * argv[]) {
     NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
@@ -942,7 +951,12 @@ int main (int argc, const char * argv[]) {
 			
 			NSError *fileError ;
 			
+			
+#ifdef LINUX
+			NSArray *files = [ fileManager directoryContentsAtPath:mol2Directory ] ;
+#else
 			NSArray *files = [ fileManager contentsOfDirectoryAtPath:mol2Directory error:&fileError ] ;
+#endif
 			
 			if( ! files )
 				{
@@ -959,13 +973,42 @@ int main (int argc, const char * argv[]) {
 				
 			// Collect all mol2 files, flats and site files
 			
-			NSArray *mol2Files =  [ files filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF endswith '.mol2'" ] ] ;
-			NSArray *flatsFiles = [ files filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF ENDSWITH '.flats'" ] ] ;
-			NSArray *siteFiles =  [ files filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF ENDSWITH '.site'" ] ] ;
+			// To support GNUStep I am going to back off using predicates
 			
-			[ mol2Files retain ] ;
-			[ flatsFiles retain ] ;
-			[ siteFiles retain ] ;
+			//NSArray *mol2Files =  [ files filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF endswith '.mol2'" ] ] ;
+			//NSArray *flatsFiles = [ files filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF ENDSWITH '.flats'" ] ] ;
+			//NSArray *siteFiles =  [ files filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF ENDSWITH '.site'" ] ] ;
+			
+			NSMutableArray *mol2Files = [ [ NSMutableArray alloc ] initWithCapacity:[ files count ] ] ;
+			NSMutableArray *flatsFiles = [ [ NSMutableArray alloc ] initWithCapacity:[ files count ] ] ;
+			NSMutableArray *siteFiles = [ [ NSMutableArray alloc ] initWithCapacity:[ files count ] ] ;
+			
+			//[ mol2Files retain ] ;
+			//[ flatsFiles retain ] ;
+			//[ siteFiles retain ] ;
+			
+			NSEnumerator *fileEnumerator = [ files objectEnumerator ] ;
+			NSString *nextFile ;
+
+			while( ( nextFile = [ fileEnumerator nextObject ] ) )
+				{
+					if( [ nextFile hasSuffix:@".mol2" ] == YES )
+						{
+							[ mol2Files addObject:nextFile ] ;
+						}
+					else if( [ nextFile hasSuffix:@".flats" ] == YES )
+						{
+								[ flatsFiles addObject:nextFile ] ;
+						}
+					 else if( [ nextFile hasSuffix:@".site" ] == YES )
+						{
+								[ siteFiles addObject:nextFile ] ;
+						}
+				}
+
+			[ mol2Files sortUsingFunction:fileNameCompare context:nil ] ;
+			[ flatsFiles sortUsingFunction:fileNameCompare context:nil ] ;
+			[ siteFiles  sortUsingFunction:fileNameCompare context:nil ] ;
 			
 			// We can assume that mol2 files and their associated flats, sites files occur in the same 
 			// order - I will not allow possibility of gaps
@@ -1374,7 +1417,11 @@ int main (int argc, const char * argv[]) {
 			
 					NSError *fileError ;
 					
-					NSArray *files = [ fileManager contentsOfDirectoryAtPath:targetDB error:&fileError ] ;
+#ifdef LINUX
+			NSArray *files = [ fileManager directoryContentsAtPath:targetDB ] ;
+#else
+			NSArray *files = [ fileManager contentsOfDirectoryAtPath:targetDB error:&fileError ] ;
+#endif
 					
 					if( ! files )
 						{
@@ -1391,22 +1438,42 @@ int main (int argc, const char * argv[]) {
 				
 					// Collect all DB files
 					
+					NSEnumerator *fileEnumerator ;
+					NSString *nextFile ;
+					
 					NSArray *DBFiles ;
+					
+					DBFiles = [ [ NSMutableArray alloc ] initWithCapacity:[ files count ] ] ;
+					
+					fileEnumerator = [ files objectEnumerator ] ;
 					
 					if( xmlIN == NO )
 						{
-							DBFiles =  [ files filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF endswith 'DB'" ] ] ;
+							while( ( nextFile = [ fileEnumerator nextObject ] ) )
+								{
+									if( [ nextFile hasSuffix:@"DB" ] == YES )
+										{
+											[ DBFiles addObject:nextFile ] ;
+										}
+								}
+							//DBFiles =  [ files filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF endswith 'DB'" ] ] ;
 						}
 					else
 						{
-							DBFiles =  [ files filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF endswith 'DB.xml'" ] ] ;
+							while( ( nextFile = [ fileEnumerator nextObject ] ) )
+								{
+									if( [ nextFile hasSuffix:@"DB.xml" ] == YES )
+										{
+											[ DBFiles addObject:nextFile ] ;
+										}
+								}
+							//DBFiles =  [ files filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF endswith 'DB.xml'" ] ] ;
 						}
 					
 					targetSignatures = [ [ NSMutableArray alloc ] initWithCapacity:[ DBFiles count ] ] ;
 					
-					NSEnumerator *fileEnumerator = [ DBFiles objectEnumerator ] ;
+					fileEnumerator = [ DBFiles objectEnumerator ] ;
 					
-					NSString *nextFile ;
 					NSString *pathRoot = [ targetDB stringByAppendingString:@"/" ] ;
 					
 					while( ( nextFile = [ fileEnumerator nextObject ] ) )
@@ -1534,8 +1601,6 @@ int main (int argc, const char * argv[]) {
 					NSEnumerator *targetEnumerator = [ targetSignatures objectEnumerator ] ;
 					
 										
-					int targetCount = 0 ;
-					
 					while( ( nextTarget = [ targetEnumerator nextObject ] ) )
 						{
 							NSAutoreleasePool * localPool = [[NSAutoreleasePool alloc] init];
@@ -1749,3 +1814,14 @@ int main (int argc, const char * argv[]) {
     [pool drain];
     return 0;
 }
+
+NSInteger fileNameCompare( id A, id B, void *ctxt )
+	{
+		NSString *fA = (NSString *) A ;
+                NSString *fB = (NSString *) B ;
+
+		NSString *aName = [ [ fA componentsSeparatedByString:@"." ] objectAtIndex:0 ] ;
+		NSString *bName = [ [ fB componentsSeparatedByString:@"." ] objectAtIndex:0 ] ;
+
+		return (NSInteger) [ aName compare:bName ] ;
+	}

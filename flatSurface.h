@@ -6,9 +6,17 @@
 //  Copyright 2009 __MyCompanyName__. All rights reserved.
 //
 
+#include "platform.h"
+
+#ifdef LINUX
+#import <Foundation/Foundation.h>
+#else
 #import <Cocoa/Cocoa.h>
+#endif
+
 #import "ctTree.h"
 #import "elementCollection.h" 
+#include <math.h>
 
 typedef enum {CONTACT, REENTRANT, SADDLE } elemType ;
 

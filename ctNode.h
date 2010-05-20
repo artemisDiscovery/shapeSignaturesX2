@@ -6,7 +6,14 @@
 //  Copyright 2009 ArtemisDiscovery LLC. All rights reserved.
 //
 
+#include "platform.h"
+
+#ifdef LINUX
+#import <Foundation/Foundation.h>
+#else
 #import <Cocoa/Cocoa.h>
+#endif
+
 #import "ctBond.h"
 #import "FFToolTypeDefs.h"
 #include <string.h>

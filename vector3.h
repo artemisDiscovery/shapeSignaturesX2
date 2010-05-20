@@ -6,7 +6,15 @@
 //  Copyright (c) 2001 __MyCompanyName__. All rights reserved.
 //
 
+#include "platform.h"
+
+#ifdef LINUX
 #import <Foundation/Foundation.h>
+#else
+#import <Cocoa/Cocoa.h>
+#endif
+
+#include <math.h>
 
 // This class implements simple defs of a 3D vector and operations on vector. 
 // Will be expanded as needed

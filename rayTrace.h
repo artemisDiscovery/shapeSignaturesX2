@@ -6,7 +6,14 @@
 //  Copyright 2009 __MyCompanyName__. All rights reserved.
 //
 
+#include "platform.h"
+
+#ifdef LINUX
+#import <Foundation/Foundation.h>
+#else
 #import <Cocoa/Cocoa.h>
+#endif
+
 #import "flatSurface.h"
 
 
@@ -49,8 +56,8 @@
 - (double) addReflectionAtPosition:(double [])pos withMEP:(double)m inPartition:(int)p atStart:(BOOL)strt ;
 
 
-- (NSArray *) partition2DHistogramsWithLengthDelta:(double)ldel andMEPDelta:(double)mepDel ; 
-- (NSArray *) partition1DHistogramsWithLengthDelta:(double)ldel ;
+//- (NSArray *) partition2DHistogramsWithLengthDelta:(double)ldel andMEPDelta:(double)mepDel ; 
+//- (NSArray *) partition1DHistogramsWithLengthDelta:(double)ldel ;
 
 - (void) printRaytraceToFile:(NSString *)path ;
 

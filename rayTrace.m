@@ -133,6 +133,22 @@
 							continue ;
 						}
 						
+				// Check for startPoint and intersectPoint too close together - may be 
+				// caused by "needle-like" element
+				
+				double dx = startPoint[0] - intersectPoint[0] ;
+				double dy = startPoint[1] - intersectPoint[1] ;
+				double dz = startPoint[2] - intersectPoint[2] ;
+				
+				double d = sqrt( dx*dx + dy*dy + dz*dz ) ;
+				
+				if( d < 0.001 )
+					{
+						needsInitialized = TRUE ;
+						++badIntersectCount ;
+						continue ;
+					}
+						
 				if( ss == YES && surf->elemSelfIntersecting[intersectElem] == YES )
 						{
 							needsInitialized = TRUE ;
@@ -224,6 +240,7 @@
 			nSegments, nReflections,   badIntersectCount, 
 			nSelfIntSkipIntersect, nCull ) ;
 		printf( "\t%d, %d = intrafragment segments, interfragment segments\n", nIntraFragmentSegments, nInterFragmentSegments ) ;
+		
 		
 		return self ;
 
@@ -334,6 +351,8 @@
 				fprintf( output, "L %f %f %f %f %f %f %f %f %f %f %f %f\n",
 					x1, y1, z1, x2, y2, z2, r1, 0.25, b1, r2, 0.25, b2 ) ;
 			}
+			
+		fclose( output ) ;
 			
 		return ;
 

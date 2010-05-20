@@ -6,7 +6,14 @@
 //  Copyright 2010 __MyCompanyName__. All rights reserved.
 //
 
+#include "platform.h"
+
+#ifdef LINUX
+#import <Foundation/Foundation.h>
+#else
 #import <Cocoa/Cocoa.h>
+#endif
+
 #import "vector3.h"
 #import "ctTree.h"
 
@@ -45,8 +52,8 @@ typedef enum { RING, RING_TERMINAL, RING_INTERIOR, NONRING, SUBSTITUENT, BRIDGE 
 
 - (id) initWithBonds:(NSSet *)b andType:(fragmentType)typ checkForNeighbors:(BOOL)chk inTree:(ctTree *)tr ;
 
-- (void) addCenter ;
-- (void) addNormal ;
+//- (void) addCenter ;
+//- (void) addNormal ;
 
 - (void) mergeFragment:(fragment *)m ;
 

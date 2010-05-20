@@ -167,7 +167,6 @@
 		
 - (int) heavyAtomCount
 	{
-		int j ;
 		
 		int hCount = 0 ;
 		

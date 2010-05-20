@@ -6,7 +6,14 @@
 //  Copyright 2009 __MyCompanyName__. All rights reserved.
 //
 
+#include "platform.h"
+
+#ifdef LINUX
+#import <Foundation/Foundation.h>
+#else
 #import <Cocoa/Cocoa.h>
+#endif
+
 #import "X2SignatureMapping.h"
 
 // This is one item in the hitlist. It always represents a comparison between hisrogram group bundles

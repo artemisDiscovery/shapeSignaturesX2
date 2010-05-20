@@ -6,7 +6,14 @@
 //  Copyright 2010 __MyCompanyName__. All rights reserved.
 //
 
+#include "platform.h"
+
+#ifdef LINUX
+#import <Foundation/Foundation.h>
+#else
 #import <Cocoa/Cocoa.h>
+#endif
+
 #import "rayTrace.h"
 #import "histogram.h"
 
@@ -49,7 +56,7 @@
 
 - (id) initWithRayTrace:(rayTrace *)rt tag:(NSString *)tg style:(histogramStyle)st inSignature:(X2Signature *)sig  ;
 
-- ( NSString *) keyStringsForFragmentWithIncrement:(double) inc ;
+- ( NSString *) keyStringsForBundleWithIncrement:(double) inc ;
 
 - (NSDictionary *) propertyListDict ;
 

@@ -6,7 +6,14 @@
 //  Copyright 2009 ArtemisDiscovery LLC. All rights reserved.
 //
 
+#include "platform.h"
+
+#ifdef LINUX
+#import <Foundation/Foundation.h>
+#else
 #import <Cocoa/Cocoa.h>
+#endif
+
 #import "ctNode.h"
 #import "ctBond.h"
 #import "vector3.h"
@@ -75,7 +82,7 @@
 
 - (void) makeRingClosures ;
 
-- (int) ringClosureIndexForNode:(ctNode *)n1 andNode:(ctNode *)n2 ;
+//- (int) ringClosureIndexForNode:(ctNode *)n1 andNode:(ctNode *)n2 ;
 
 - (void) assignNodesToFragmentsByMergingNeighborRings:(BOOL)merge ;
 

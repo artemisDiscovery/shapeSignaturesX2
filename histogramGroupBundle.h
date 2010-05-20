@@ -6,7 +6,14 @@
 //  Copyright 2010 __MyCompanyName__. All rights reserved.
 //
 
+#include "platform.h"
+
+#ifdef LINUX
+#import <Foundation/Foundation.h>
+#else
 #import <Cocoa/Cocoa.h>
+#endif
+
 #import "histogramGroup.h"
 
 // This is a bundle of groups. Groups link together histograms (in accord with underlying source tree), 

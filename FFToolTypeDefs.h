@@ -7,7 +7,14 @@
  *
  */
 
-#include <Carbon/Carbon.h>
+#include "platform.h"
+
+#ifdef LINUX
+#import <Foundation/Foundation.h>
+#else
+#import <Cocoa/Cocoa.h>
+#endif
+
 
 typedef enum { LINEAR, TRIGONAL, RESONANT, TETRAHEDRAL, SQUARE_PLANAR, TRIGONAL_BIPYRAMIDAL, OCTAHEDRAL, UNKNOWN } geometryType ;
 

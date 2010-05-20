@@ -6,7 +6,14 @@
 //  Copyright 2010 __MyCompanyName__. All rights reserved.
 //
 
+#include "platform.h"
+
+#ifdef LINUX
+#import <Foundation/Foundation.h>
+#else
 #import <Cocoa/Cocoa.h>
+#endif
+
 #import "fragment.h"
 
 // This class represents a connection between fragments. Serves as the foundation to build 

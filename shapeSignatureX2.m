@@ -543,8 +543,6 @@ static NSString *version ;
 				
 				mappingEnumerator = [ accumMappings objectEnumerator ] ;
 				
-				nextMapping ;
-				
 				while( ( nextMapping = [ mappingEnumerator nextObject ] ) )
 					{
 						theItem = [ [ hitListItem alloc ] initWithMapping:nextMapping ] ;
@@ -717,7 +715,7 @@ NSInteger indexCompare2( id A, id B, void *ctxt )
 			}
 		
 		return [ [ NSString alloc ] initWithData:theData encoding:NSASCIIStringEncoding ] ;
-		return theData ;
+		//return theData ;
 	}
 	
 - (id) initWithPropertyListDict:(NSDictionary *)sourceDictionary

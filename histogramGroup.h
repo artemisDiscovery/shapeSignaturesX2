@@ -6,8 +6,16 @@
 //  Copyright 2010 __MyCompanyName__. All rights reserved.
 //
 
+#include "platform.h"
+
+#ifdef LINUX
+#import <Foundation/Foundation.h>
+#else
 #import <Cocoa/Cocoa.h>
+#endif
+
 #import "histogramBundle.h"
+#include <math.h>
 
 
 // This represents a group of histograms. All must have the same dimension so that they can be 
