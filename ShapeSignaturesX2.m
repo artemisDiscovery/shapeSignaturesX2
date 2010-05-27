@@ -1093,6 +1093,11 @@ int main (int argc, const char * argv[]) {
 			
 			for( mol2Index = 0 ; mol2Index < mol2Count ; ++mol2Index )		
 				{
+					// To make cross-platform comparisons more consistent, I will reset the seed for 
+					// each input molecule
+					
+					srandom( (unsigned) seed ) ;
+					
 					NSString *nextMol2Name = [ mol2Files objectAtIndex:mol2Index ] ;
 					NSString *nextMol2File = [ mol2Directory stringByAppendingString:nextMol2Name ] ;
 					
