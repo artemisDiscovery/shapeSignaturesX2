@@ -157,7 +157,6 @@ static NSDictionary *atomicWeightForElement ;
 	}
 		
 		
-		
 	
 - (void) addBond:(ctBond *)b 
 	{

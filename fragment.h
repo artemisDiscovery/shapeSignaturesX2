@@ -35,6 +35,8 @@ typedef enum { RING, RING_TERMINAL, RING_INTERIOR, NONRING, SUBSTITUENT, BRIDGE 
 	
 	// This represents a fragment in a tree
 	
+	ctTree *sourceTree ;
+	
 	fragmentType type ; 
 	
 	NSMutableSet *fragmentNodes ;
@@ -50,7 +52,7 @@ typedef enum { RING, RING_TERMINAL, RING_INTERIOR, NONRING, SUBSTITUENT, BRIDGE 
 
 }
 
-- (id) initWithBonds:(NSSet *)b andType:(fragmentType)typ checkForNeighbors:(BOOL)chk inTree:(ctTree *)tr ;
+- (id) initWithBonds:(NSSet *)b andType:(fragmentType)typ inTree:(ctTree *)tr ;
 
 //- (void) addCenter ;
 //- (void) addNormal ;

@@ -32,6 +32,7 @@
 		maximalTreePaths = nil ;
 		
 		treeFragments = nil ;
+		fragmentToNeighborData = nil ;
 		
 		
 		normal = nil ;
@@ -407,6 +408,15 @@
 	{
 		int i ;
 		
+		if( treeFragments )
+			{
+				[ fragmentToNeighborData release ] ;
+				[ treeFragments release ] ;
+			}
+		
+
+								
+		
 		for( i = 0 ; i < nNodes ; ++i )
 			{
 				[ nodes[i] release ] ;
@@ -420,7 +430,7 @@
 		free( nodes ) ;
 		free( bonds ) ;
 		
-		if( treeFragments ) [ treeFragments release ] ;
+		
 		
 		[ super dealloc ] ;
 		
@@ -606,7 +616,7 @@
 		// This is a way more intelligent approach then I first implemented. I will make a TRUE maximal tree using 
 		// BOND objects. (My previous implementation used maximal paths, and lots of special tests.)
 		
-		
+		NSAutoreleasePool *localPool = [ [ NSAutoreleasePool alloc ] init ] ;
 		
 		NSMutableSet *bondSet = [ NSMutableSet setWithArray:[ NSArray arrayWithObjects:bonds count:nBonds ] ] ;
 		
@@ -630,6 +640,7 @@
 		if( ! nextNode )
 			{
 				printf( "NO HEAVY ATOMS - CANNOT MAKE RINGS\n" ) ;
+				[ localPool drain ] ;
 				return ;
 			}
 			
@@ -732,6 +743,8 @@
 			}
 			
 		haveRingClosures = YES ;
+	
+		[ localPool drain ] ;
 			
 		return ;
 				
@@ -952,9 +965,12 @@
 		if( ! treeFragments )
 			{
 				treeFragments = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
+				fragmentToNeighborData = [ [ NSMutableDictionary alloc ] initWithCapacity:10 ] ;
 			}
 			
 		nFragments = 0 ;
+		
+		NSAutoreleasePool *localPool = [ [ NSAutoreleasePool alloc ] init ] ;
 		
 		// We need to make sure we have maximal trees and rings
 		
@@ -969,9 +985,10 @@
 				// The whole thing is one big fragment
 				
 				fragment *theFragment = [ [ fragment alloc ] initWithBonds:[ NSSet setWithObjects:bonds count:nBonds ] 
-						andType:SUBSTITUENT checkForNeighbors:NO inTree:self ] ;
+																   andType:SUBSTITUENT inTree:self ] ;
 										
 				[ treeFragments addObject:theFragment ] ;
+				[ theFragment release ] ;
 					
 				
 			}
@@ -1152,9 +1169,11 @@
 							}
 							
 						fragment *theFragment = [ [ fragment alloc ] initWithBonds:fragmentBonds  
-										andType:RING checkForNeighbors:NO inTree:nil ] ;
+										andType:RING inTree:self ] ;
 														
 						[ treeFragments addObject:theFragment ] ;
+						
+						[ theFragment release ] ;
 					
 						
 						[ remainingBonds minusSet:fragmentBonds ] ;
@@ -1183,11 +1202,11 @@
 						
 						while( ( nextRing = [ ringEnumerator nextObject ] ) )
 							{
-								NSArray *neighborRings = [ self neighborFragmentsTo:nextRing  ] ;
+								NSArray *neighborRingData = [ self neighborDataForFragment:nextRing  ] ;
 								
-								if( [ neighborRings count ] > 0 )
+								if( [ neighborRingData count ] > 0 )
 									{
-										fragment *joinFragment = [ [ neighborRings lastObject ] objectAtIndex:0 ] ;
+										fragment *joinFragment = [ [ neighborRingData lastObject ] objectAtIndex:0 ] ;
 										
 										[ nextRing mergeFragment:joinFragment ] ;
 										
@@ -1197,6 +1216,7 @@
 										
 										break ;
 									}
+								
 							}
 							
 						if( removeFragment ) [ treeFragments removeObject:removeFragment ] ;
@@ -1254,7 +1274,10 @@
 								
 						
 						fragment *nextFragment = [ [ fragment alloc ] initWithBonds:nonRingSet 
-													andType:NONRING checkForNeighbors:YES inTree:self ] ;
+													andType:NONRING inTree:self ] ;
+					
+						NSArray *neighborData = [ self neighborDataForFragment:nextFragment ] ;
+						
 													
 						[ remainingBonds minusSet:nonRingSet ] ;
 													
@@ -1266,7 +1289,7 @@
 								int neighborRingCount = 0 ;
 								fragment *lastNeighborRing ;
 								
-								NSEnumerator *neighborFragmentBundleEnumerator = [ nextFragment->neighborFragments objectEnumerator ] ;
+								NSEnumerator *neighborFragmentBundleEnumerator = [ neighborData objectEnumerator ] ;
 								NSArray *nextNeighborFragmentBundle ;
 								
 								while( ( nextNeighborFragmentBundle = [ neighborFragmentBundleEnumerator nextObject ] ) )
@@ -1287,6 +1310,7 @@
 								if( neighborRingCount == 1 )
 									{
 										[ lastNeighborRing mergeFragment:nextFragment ] ;
+										[ nextFragment release ] ;
 #ifdef FRAGMENT_DEBUG
 										NSLog( @"Merge into fragment %@", [ lastNeighborRing description ] ) ;
 #endif										
@@ -1294,6 +1318,7 @@
 								else
 									{
 										[ treeFragments addObject:nextFragment ] ;
+										[ nextFragment release ] ;
 #ifdef FRAGMENT_DEBUG										
 										NSLog( @"Add new fragment %@", [ nextFragment description ] ) ;
 #endif										
@@ -1302,6 +1327,7 @@
 						else
 							{
 								[ treeFragments addObject:nextFragment ] ;
+								[ nextFragment release ] ;
 							}
 								
 								
@@ -1337,13 +1363,13 @@
 											{
 												haveJoin = YES ;
 												
-												NSArray *rings = [ self neighborFragmentsTo:nextFragment ] ;
+												NSArray *rings = [ self neighborDataForFragment:nextFragment ] ;
 												
 												// Must be two fragments
 												
 												mergeRing = [ [ rings objectAtIndex:0 ] objectAtIndex:0 ] ;
 												removeRing = [ [ rings objectAtIndex:1 ] objectAtIndex:0 ] ;
-												
+																								
 												break ;
 											}
 									}
@@ -1378,7 +1404,8 @@
 				
 				while( ( nextFragment = [ fragmentEnumerator nextObject ] ) )
 					{
-						nextFragment->neighborFragments = [ self neighborFragmentsTo:nextFragment ] ;
+						NSArray *neighborData = [ self neighborDataForFragment:nextFragment ] ;
+						[ fragmentToNeighborData setObject:neighborData forKey:[ NSValue valueWithPointer:nextFragment ] ] ;
 						[ nextFragment adjustNodesByNeighbors ] ;
 					}
 					
@@ -1427,10 +1454,13 @@
 									
 						if( fOne && fTwo )
 							{
-								[ fOne->neighborFragments addObject:[ NSArray 
-									arrayWithObjects:fTwo, [ NSSet setWithObject:nodeOne ], nil ] ] ;
-								[ fTwo->neighborFragments addObject:[ NSArray 
-									arrayWithObjects:fOne, [ NSSet setWithObject:nodeTwo ], nil ] ] ;
+								[ [ fragmentToNeighborData objectForKey:[ NSValue valueWithPointer:fOne ] ]
+									addObject:[ NSArray arrayWithObjects:fTwo,
+											   [ NSSet setWithObjects:nodeOne,nil ] ,nil] ] ;
+							
+								 [ [ fragmentToNeighborData objectForKey:[ NSValue valueWithPointer:fTwo ] ]
+								 addObject:[ NSArray arrayWithObjects:fOne,
+											[ NSSet setWithObjects:nodeTwo,nil ],nil ] ] ;
 							}
 					}
 					
@@ -1457,6 +1487,7 @@
 				[ initialRemainder release ] ;
 				[ remainingBonds release ] ;
 				[ currentNodes release ] ;
+				[ fragmentBonds release ] ;
 			}
 			
 		
@@ -1488,7 +1519,10 @@
  
 		// For later generation of histogram groups, generate connection objects between fragments
  
-		[ self makeFragmentConnections ] ;				
+		[ self makeFragmentConnections ] ;			
+		
+		[ localPool release ] ;
+		
 		return ;
 		
 	}
@@ -1554,7 +1588,7 @@
 				
 + (NSSet *) connectedSetFromBond:(ctBond *)seed usingBondSet:(NSMutableSet *)bSet excludeNodes:(NSSet *)excl
 	{
-		NSMutableSet *returnSet = [ [ NSMutableSet alloc ] initWithCapacity:[ bSet count ] ] ;
+		NSMutableSet *returnSet = [ NSMutableSet setWithCapacity:[ bSet count ] ] ;
 		
 		[ returnSet addObject:seed ] ;
 		
@@ -1628,7 +1662,7 @@
 				
 		
 		
-- (NSArray *) neighborFragmentsTo:(fragment *)f
+- (NSMutableArray *) neighborDataForFragment:(fragment *)f
 	{
 		// Return all fragments in current tree list that neighbor argument 
 		// For each neighbor return an array [ fragment *neighbor, NSSet *commonNodes ]
@@ -1640,7 +1674,7 @@
 		
 		fragment *nextFragment ;
 		
-		NSMutableArray *returnArray = [ [ NSMutableArray alloc ] initWithCapacity:[ treeFragments count ] ] ;
+		NSMutableArray *returnArray = [ NSMutableArray arrayWithCapacity:[ treeFragments count ] ] ;
 		
 		NSMutableSet *testSet = [ [ NSMutableSet alloc ] initWithCapacity:[ f->fragmentNodes count ] ] ;
 		
@@ -1658,7 +1692,8 @@
 				
 				if( [ testSet count ] > 0 )
 					{
-						[ returnArray addObject:[ NSArray arrayWithObjects:nextFragment,[ NSSet setWithSet:testSet ],nil ] ] ;
+						[ returnArray addObject:[ NSArray arrayWithObjects:nextFragment,
+													[ NSSet setWithSet:testSet ],nil ] ] ;
 					}
 			}
 			
@@ -3061,6 +3096,8 @@
 					andBondTranslator:bondPointerTranslator ] ;
 					
 				[ treeFragments addObject:theFragment ] ;
+			
+				theFragment->sourceTree = self ;
 			}
 		
 		treeName = [ [ NSString alloc ] initWithString:[ pListDict objectForKey:@"treeName" ] ] ;

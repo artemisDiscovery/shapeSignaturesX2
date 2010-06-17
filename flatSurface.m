@@ -551,7 +551,7 @@ static short *testIntersect = NULL ;
         nX = (int)floor( (maxX - xMin)/delta  ) ;
         nY = (int)floor( (maxY - yMin)/delta  ) ;
         nZ = (int)floor( (maxZ - zMin)/delta  ) ;
-        
+		
         gridToElem = ( elementCollection ****) malloc( (nX + 1)*sizeof( elementCollection *** ) ) ;
         
        
@@ -570,6 +570,7 @@ static short *testIntersect = NULL ;
                             }
                     }
             }
+		
                 
         // Assign elements to the grid
         
@@ -677,6 +678,7 @@ static short *testIntersect = NULL ;
 		if( siteContactElems ) free( siteContactElems ) ;
 		
 		
+		
 		for( i = 0 ; i <= nX ; ++i )
             {
                for( j = 0 ; j <= nY ; ++j )
@@ -690,7 +692,9 @@ static short *testIntersect = NULL ;
                     }
 				free( gridToElem[i] ) ;
             }
-			
+		
+		free( gridToElem ) ;
+					
 		[ super dealloc ] ;
 		
 		return ;

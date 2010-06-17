@@ -13,15 +13,15 @@
 @implementation fragment
 
 	
-- (id) initWithBonds:(NSSet *)b andType:(fragmentType)typ checkForNeighbors:(BOOL)chk inTree:(ctTree *)tr 
+- (id) initWithBonds:(NSSet *)b andType:(fragmentType)typ inTree:(ctTree *)tr 
 	{
 		self = [ super init ] ;
+	
+		sourceTree = tr ;
 		
 		fragmentBonds = [ [ NSMutableSet alloc ] initWithSet:b ] ;
 		
 		fragmentNodes = [ [ NSMutableSet alloc ] initWithCapacity:[ fragmentBonds count ] ] ;
-		
-		neighborFragments = nil ; 
 		
 		neighborFragmentIndices = nil ;
 		connections = nil ;
@@ -40,30 +40,6 @@
 		
 		index = -1 ;
 		
-		if( chk == YES )
-			{
-				// Check for any neighbors
-				
-				// Added array has a retain count of one and points at 
-				// autoreleased objects 
-				
-				neighborFragments = [ tr neighborFragmentsTo:self ] ;
-				
-				// Neighbor check will override type passed in!
-				
-				
-				// Subtract any common nodes
-				/*
-				NSEnumerator *neighborEnumerator = [ neighborFragments objectEnumerator ] ;
-				
-				NSArray *nextNeighbor ;
-				
-				while( ( nextNeighbor = [ neighborEnumerator nextObject ] ) )
-					{
-						[ fragmentNodes minusSet:[ nextNeighbor lastObject ] ] ;
-					}
-				*/
-			}
 			
 		return self ;
 	}
@@ -73,7 +49,6 @@
 		[ fragmentBonds release ] ;
 		[ fragmentNodes release ] ;
 		
-		if( neighborFragments ) [ neighborFragments release ] ;
 		if( neighborFragmentIndices ) [ neighborFragmentIndices release ] ;
 		if( connections ) [ connections release ] ;
 		if( center ) [ center release ] ;
@@ -88,8 +63,6 @@
 	{
 		[ fragmentNodes unionSet:m->fragmentNodes ] ;
 		[ fragmentBonds unionSet:m->fragmentBonds ] ;
-		
-		[ m release ] ;
 		
 		return ;
 	}
@@ -147,13 +120,15 @@
 		
 - (void) adjustNodesByNeighbors
 	{
-		if( ! neighborFragments ) return ;
+		if( ! sourceTree->fragmentToNeighborData ) return ;
+	
+		NSArray *neighborData = [ sourceTree->fragmentToNeighborData objectForKey:[ NSValue valueWithPointer:self ] ] ;
 		
 		// If we are a ring, keep our nodes (only nonring fragments give up nodes)
 		
 		if( type == RING || type == RING_TERMINAL || type == RING_INTERIOR ) return ;
 		
-		NSEnumerator *neighborEnumerator = [ neighborFragments objectEnumerator ] ;
+		NSEnumerator *neighborEnumerator = [ neighborData objectEnumerator ] ;
 		
 		NSArray *nextNeighborBundle ;
 		
@@ -183,16 +158,22 @@
 	
 - (int) neighborRingCount 
 	{
-		if( ! neighborFragments ) return 0 ;
+		if( ! sourceTree->fragmentToNeighborData ) return ;
+	
+		NSArray *neighborData = [ sourceTree->fragmentToNeighborData objectForKey:[ NSValue valueWithPointer:self ] ] ;
 		
-		NSEnumerator *neighborFragmentEnumerator = [ neighborFragments objectEnumerator ] ;
+		NSEnumerator *neighborDataEnumerator = [ neighborData objectEnumerator ] ;
+	
+		NSArray *nextBundle ;
 		
 		fragment *nextNeighborFragment ;
 		
 		int ringCount = 0 ;
 		
-		while( ( nextNeighborFragment = [ neighborFragmentEnumerator nextObject ] ) )
+		while( ( nextBundle = [ neighborDataEnumerator nextObject ] ) )
 			{
+				nextNeighborFragment = [ nextBundle objectAtIndex:0 ] ;
+			
 				if( nextNeighborFragment->type == RING || nextNeighborFragment->type == RING_INTERIOR ||
 					nextNeighborFragment->type == RING_TERMINAL ) ++ringCount ;
 			}
@@ -202,16 +183,21 @@
 
 - (int) neighborBridgeCount
 	{
-		if( ! neighborFragments ) return 0 ;
+		if( ! sourceTree->fragmentToNeighborData ) return ;
 		
-		NSEnumerator *neighborFragmentEnumerator = [ neighborFragments objectEnumerator ] ;
+		NSArray *neighborData = [ sourceTree->fragmentToNeighborData objectForKey:[ NSValue valueWithPointer:self ] ] ;
+		
+		NSEnumerator *neighborDataEnumerator = [ neighborData objectEnumerator ] ;
+		
+		NSArray *nextBundle ;
 		
 		fragment *nextNeighborFragment ;
-		
+	
 		int bridgeCount = 0 ;
 		
-		while( ( nextNeighborFragment = [ neighborFragmentEnumerator nextObject ] ) )
+		while( ( nextBundle = [ neighborDataEnumerator nextObject ] ) )
 			{
+				nextNeighborFragment = [ nextBundle objectAtIndex:0 ] ;
 				if( nextNeighborFragment->type == BRIDGE ) ++bridgeCount ;
 			}
 			
@@ -267,18 +253,22 @@
 	
 - (void) assignNeighborFragmentIndices
 	{
-		if( ! neighborFragments ) return ;
- 
+		if( ! sourceTree->fragmentToNeighborData ) return ;
+		
+		NSArray *neighborData = [ sourceTree->fragmentToNeighborData objectForKey:[ NSValue valueWithPointer:self ] ] ;
+		
+		NSEnumerator *neighborDataEnumerator = [ neighborData objectEnumerator ] ;
+		
+		NSArray *nextBundle ;
+		
+		fragment *nextNeighborFragment ;
+	
 		neighborFragmentIndices = [ [ NSMutableSet alloc ] initWithCapacity:[ neighborFragments count ] ] ;
  
-		NSEnumerator *neighborFragmentEnumerator = [ neighborFragments objectEnumerator ] ;
- 
-		NSArray *nextNeighborFragment ;
- 
-		while( ( nextNeighborFragment = [ neighborFragmentEnumerator nextObject ] ) )
+		while( ( nextBundle = [ neighborDataEnumerator nextObject ] ) )
 			{
-				fragment *neighbor = [ nextNeighborFragment objectAtIndex:0 ] ;
-				[ neighborFragmentIndices addObject:[ NSString stringWithFormat:@"%d",neighbor->index ] ] ;
+				fragment *nextNeighborFragment = [ nextBundle objectAtIndex:0 ] ;
+				[ neighborFragmentIndices addObject:[ NSString stringWithFormat:@"%d",nextNeighborFragment->index ] ] ;
 			}
  
 		return ;
@@ -383,8 +373,6 @@
 	
 		normal = center = nil ;
 	
-		neighborFragments = nil ;
-	
 		connections = nil ;
 
 		
@@ -454,9 +442,7 @@
  
 		[ coder encodeObject:fragmentNodes ] ;
 		[ coder encodeObject:fragmentBonds ] ;
- 
-		[ coder encodeObject:neighborFragments ] ;
- 
+  
 		[ coder encodeObject:neighborFragmentIndices ] ;
  
  
@@ -472,8 +458,6 @@
  
 		fragmentNodes = [ [ coder decodeObject ] retain ] ;
 		fragmentBonds = [ [ coder decodeObject ] retain ] ;
- 
-		neighborFragments = [ [ coder decodeObject ] retain ] ;
  
 		neighborFragmentIndices = [ [ coder decodeObject ] retain ] ;
  

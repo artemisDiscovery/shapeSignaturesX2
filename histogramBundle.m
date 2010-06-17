@@ -46,6 +46,11 @@ int MED3( int a, int b, int c )
 	
 		self = [ super init ] ;
 		
+		// To aid in memory debugging, I am putting a local pool in place so that I can clear 
+		// all object enumerators 
+		
+		NSAutoreleasePool *localPool = [ [ NSAutoreleasePool alloc ] init ] ;
+		
 		sourceTree = rt->theSurface->theTree ;
 		
 		sourceSignature = sig ;
@@ -200,6 +205,8 @@ int MED3( int a, int b, int c )
 								[ allHistograms 
 									addObject:fragmentIndicesToHistogram[0][frag1][frag2] ] ;
 									
+								[ fragmentIndicesToHistogram[0][frag1][frag2] release ] ;
+									
 								currentHistogram = fragmentIndicesToHistogram[0][frag1][frag2] ;
 							}
 									
@@ -241,12 +248,14 @@ int MED3( int a, int b, int c )
 							
 						[ sortedFragmentsToHistogram setObject:nextHisto forKey:histoKey ] ;
 						
-						[ nextHisto release ] ;
+						
 					}
 					
 				[ globalHistogram normalize ] ;
 				
 				[ sortedFragmentsToHistogram setObject:globalHistogram forKey:@"GLOBAL" ] ; 
+				
+				[ globalHistogram release ] ;
 					
 			}
 		else if( ([ tg rangeOfString:@"2DMEPHISTO" ]).location == 0 )
@@ -296,6 +305,8 @@ int MED3( int a, int b, int c )
 								
 								[ allHistograms 
 									addObject:currentHistogram ] ;
+								
+								[ currentHistogram release ] ;
 									
 							}
 									
@@ -351,12 +362,13 @@ int MED3( int a, int b, int c )
 							
 						[ sortedFragmentsToHistogram setObject:nextHisto forKey:histoKey ] ;
 						
-						[ nextHisto release ] ;
 					}
 					
 				[ globalHistogram normalize ] ;
 				
 				[ sortedFragmentsToHistogram setObject:globalHistogram forKey:@"GLOBAL" ] ;
+				
+				[ globalHistogram release ] ;
 			}
 		else if( ([ tg rangeOfString:@"2DMEPREDUCEDHISTO" ]).location == 0 )
 			{
@@ -406,6 +418,8 @@ int MED3( int a, int b, int c )
 								
 								[ allHistograms 
 									addObject:currentHistogram ] ;
+									
+								[ currentHistogram release ] ;
 									
 							}
 						
@@ -470,12 +484,13 @@ int MED3( int a, int b, int c )
 							
 						[ sortedFragmentsToHistogram setObject:nextHisto forKey:histoKey ] ;
 						
-						[ nextHisto release ] ;
 					}
 					
 				[ globalHistogram normalize ] ;
 				
 				[ sortedFragmentsToHistogram setObject:globalHistogram forKey:@"GLOBAL" ] ;
+				
+				[ globalHistogram release ] ;
 			}
 		else if( ([ tg rangeOfString:@"2DMEPREDUCEDINVERTEDHISTO" ]).location == 0 )
 			{
@@ -528,6 +543,8 @@ int MED3( int a, int b, int c )
 								
 								[ allHistograms 
 									addObject:currentHistogram ] ;
+									
+								[ currentHistogram release ] ;
 									
 							}
 						
@@ -591,12 +608,13 @@ int MED3( int a, int b, int c )
 							
 						[ sortedFragmentsToHistogram setObject:nextHisto forKey:histoKey ] ;
 						
-						[ nextHisto release ] ;
 					}
 					
 				[ globalHistogram normalize ] ;
 				
 				[ sortedFragmentsToHistogram setObject:globalHistogram forKey:@"GLOBAL" ] ;
+				
+				[ globalHistogram release ] ;
 			}
 				
 		for( i = 0 ; i <= nFragments ; ++i )
@@ -610,6 +628,8 @@ int MED3( int a, int b, int c )
 			}
 			
 		free( fragmentIndicesToHistogram ) ;
+		
+		[ localPool drain ] ;
 		
 		[ allHistograms release ] ;
 		

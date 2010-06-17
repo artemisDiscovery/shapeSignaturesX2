@@ -1194,7 +1194,6 @@ int main (int argc, const char * argv[]) {
 							else
 								{
 									[ theSignatures addObject:[ nextSignature propertyListDict ] ] ;
-									[ nextSignature release ] ;
 								}
 						}
 					else
@@ -1213,6 +1212,8 @@ int main (int argc, const char * argv[]) {
 											printf( "CREATION OF SINGLE X2SIGNATURE ARCHIVE FAILED! \n" ) ;
 											exit(1) ;
 										}
+										
+									
 								}
 							else
 								{
@@ -1233,6 +1234,8 @@ int main (int argc, const char * argv[]) {
 											printf( "CREATION OF SINGLE X2SIGNATURE XML ARCHIVE FAILED! \n" ) ;
 											exit(1) ;
 										}
+										
+									
 								}
 						}
 											
@@ -1256,17 +1259,22 @@ int main (int argc, const char * argv[]) {
 					
 					[ keyString release ] ;
 					
+					// This release should be OK - in the case of "exploded" directory, should trigger signature dealloc
 					
-					// Every 100 molecules, clear autorelease pool
+					[ nextSignature release ] ;
 					
-					if( mol2Index % 100 == 0 )
-						{
+					
+					// Every molecules, clear autorelease pool
+					
+					//if( mol2Index % 100 == 0 )
+					//	{
 							[ pool drain ] ;
 							pool = [[NSAutoreleasePool alloc] init] ;
-						}
+					//	}
 						
 					// Always trash surface object and rayTrace object
 					
+					[ nextTree release ] ;
 					[ nextRayTrace release ] ;
 					[ nextSurface release ] ;
 				}

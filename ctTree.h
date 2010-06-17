@@ -57,6 +57,7 @@
 		
 		
 		NSMutableArray *treeFragments ;
+		NSMutableDictionary *fragmentToNeighborData ;
 				
 		
 		NSString *treeName ;
@@ -112,7 +113,7 @@
 
 //- (void) adjustCoalescedTreeFragmentIndex:(int) idx ;
 
-- (NSArray *) neighborFragmentsTo:(fragment *)f   ;
+- (NSMutableArray *) neighborDataForFragment:(fragment *)f   ;
 
 + (NSSet *) connectedSetFromBond:(ctBond *)seed usingBondSet:(NSMutableSet *)bSet excludeNodes:(NSSet *)excl ;
 

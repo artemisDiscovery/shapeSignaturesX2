@@ -102,6 +102,8 @@ static NSString *version ;
 			}
 			
 		[ histogramBundleForTag setObject:theHistogramBundle forKey:tag ] ;
+		
+		[ theHistogramBundle release ] ;
 			
 		// Check segments/segmentPairs
 		
@@ -336,6 +338,17 @@ static NSString *version ;
 			}
 		
 		return self ;
+	}
+	
+- (void) dealloc
+	{
+		if( identifier ) [ identifier release ] ;
+		
+		[ histogramBundleForTag release ] ;
+		
+		[ super dealloc ] ;
+		
+		return ;
 	}
 
 + (NSArray *) scoreQuerySignature:(X2Signature *)query againstTarget:(X2Signature *)target usingTag:(NSString *)tag 
