@@ -13,6 +13,7 @@
 #import "shapeSignatureX2.h"
 #import "hitListItem.h"
 #include <math.h> 
+#import "URLUploader.h"
 
 NSInteger fileNameCompare( id A, id B, void *ctxt ) ;
 
@@ -35,7 +36,7 @@ int main (int argc, const char * argv[]) {
 							SORTBYWEIGHTEDSCORE, MAXPERCENTQUERYUNMATCHED, MAXPERCENTTARGETUNMATCHED,
 							CORRELATIONSCORING, KEYTYPE, KEYINCREMENT, NEIGHBORLOWERBOUNDTOEXCLUDE,
 							MERGENEIGHBORRINGS, TARGETISDIRECTORY, PERMITFRAGMENTGROUPING, BIGFRAGMENTSIZE,
-							MAXBIGFRAGMENTCOUNT, XMLIN, XMLOUT, EXPLODEDB, RANGE } ;
+							MAXBIGFRAGMENTCOUNT, XMLIN, XMLOUT, EXPLODEDB, RANGE, URLIN, URLOUT } ;
 							
 	
 	enum { CREATEMODE, COMPAREMODE, INFOMODE, KEYSMODE, KMEANSMODE, CHECKMODE, CONVERTMODE, UNDEFINED } mode ;
@@ -86,6 +87,9 @@ int main (int argc, const char * argv[]) {
 	BOOL xmlOUT = NO ;
 	
 	BOOL explodeDBs = NO ;
+	
+	BOOL outputToURL = NO ;
+	BOOL inputFromURL = NO ;
 	
 	int selectRangeLo = 0 ;
 	int selectRangeHi = -1 ;
@@ -139,11 +143,13 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-orient <orientation (inside|outside); default = IN>\n" ) ;
 			printf( "\t-skipSelf <skip self intersecting surface (yes|no); default = YES>\n" ) ;
 			printf( "\t-scale <scale factor for ray-trace; default = 1.0>\n" ) ;
-			printf( "\t-mergeRings <merge rings separated by one bond (yes|no); default = NO \n" ) ;
+			printf( "\t-mergeRings <merge rings separated by one bond (yes|no); default = NO \n>" ) ;
 			printf( "\t-printon <enable print option (raytrace|histogram)> \n" ) ;
 			printf( "\t-keyIncrement <key discretization increment; default = 0.05>\n" ) ;
 			printf( "\t-xmlOut <output XML database format (yes|no) ; default = NO>\n" ) ;
 			printf( "\t-explode <explode signatures into separate files (yes|no) ; default = NO>\n" ) ;
+			printf( "\t-urlOut <send output signatures to URL (yes|no) ; default = NO ; sets xmlOut = YES >\n" ) ;
+			printf( "\t-urlIn <pull input data tarball from URL (yes|no) ; default = NO >\n" ) ;
 			printf( "-compare flags:\n" ) ;
 			printf( "\t-targetdir <target DB is a directory (yes|no); default = NO >\n" ) ;
 			printf( "\t-tag <histogram tag to use; default = 1DShape> \n" ) ;
@@ -337,6 +343,14 @@ int main (int argc, const char * argv[]) {
 							else if( strcasestr( &argv[i][1], "xmlout" ) )
 								{
 									flagType = XMLOUT ;
+								}
+							else if( strcasestr( &argv[i][1], "urlOut" ) )
+								{
+									flagType = URLOUT ;
+								}
+							else if( strcasestr( &argv[i][1], "urlIn" ) )
+								{
+									flagType = URLIN ;
 								}
 							else if( strcasestr( &argv[i][1], "explode" ) )
 								{
@@ -585,6 +599,42 @@ int main (int argc, const char * argv[]) {
 									}
 								
 								break ;
+							
+							case URLOUT:
+							if( mode != CREATEMODE && mode != CONVERTMODE )
+								{
+								printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+								exit(1) ;
+								}
+							if( argv[i][0] == 'y' || argv[i][0] == 'Y' )
+								{
+									outputToURL = YES ;
+									xmlOUT = YES ;
+									explodeDBs = NO ;
+								}
+							else
+								{
+									outputToURL = NO ;
+								}
+							
+							break ;
+							
+							case URLIN:
+							if( mode != CREATEMODE && mode != CONVERTMODE )
+								{
+								printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+								exit(1) ;
+								}
+							if( argv[i][0] == 'y' || argv[i][0] == 'Y' )
+								{
+									inputFromURL = YES ;
+								}
+							else
+								{
+									inputFromURL = NO ;
+								}
+							
+							break ;
 								
 							case EXPLODEDB:
 								if( mode != CREATEMODE && mode != CONVERTMODE )
@@ -1017,7 +1067,7 @@ int main (int argc, const char * argv[]) {
 			
 			NSMutableArray *theSignatures ;
 			
-			if( explodeDBs == NO )
+			if( explodeDBs == NO && outputToURL == NO )
 				{
 					theSignatures = [ [ NSMutableArray alloc ] initWithCapacity:mol2Count ] ;
 				}
@@ -1185,58 +1235,66 @@ int main (int argc, const char * argv[]) {
 					X2Signature *nextSignature = [ [ X2Signature alloc ] initForAllTagsUsingTree:nextTree 
 																andRayTrace:nextRayTrace withStyle:style ] ;
 													
-					if( explodeDBs == NO )
+					if( outputToURL == YES )
 						{
-							if( xmlOUT == NO )
-								{
-									[ theSignatures addObject:nextSignature ] ;
-								}
-							else
-								{
-									[ theSignatures addObject:[ nextSignature propertyListDict ] ] ;
-								}
+							// Pipe to the target URL
 						}
 					else
 						{
+						if( explodeDBs == NO )
+							{
+								if( xmlOUT == NO )
+									{
+										[ theSignatures addObject:nextSignature ] ;
+									}
+								else
+									{
+										[ theSignatures addObject:[ nextSignature propertyListDict ] ] ;
+									}
+							}
+						else
+							{
 							// Use standard name <tree name>_X2DB or <tree name>_X2DB.xml
 							
 							if( xmlOUT == NO )
 								{
 									NSString *path = [ NSString stringWithFormat:@"%s/%s_X2DB",
-											[ createDB cString], [ nextSignature->sourceTree->treeName cString ] ] ;
-											
+													  [ createDB cString], [ nextSignature->sourceTree->treeName cString ] ] ;
+									
 									NSArray *oneSignature = [ NSArray arrayWithObject:nextSignature ] ;
-											
+									
 									if( [ NSArchiver archiveRootObject:oneSignature toFile:path ] == NO )
 										{
 											printf( "CREATION OF SINGLE X2SIGNATURE ARCHIVE FAILED! \n" ) ;
 											exit(1) ;
 										}
-										
-									
+								
+								
 								}
 							else
 								{
 									NSString *path = [ NSString stringWithFormat:@"%s/%s_X2DB.xml",
-											[ createDB cString], [ nextSignature->sourceTree->treeName cString ] ] ;
-											
+													  [ createDB cString], [ nextSignature->sourceTree->treeName cString ] ] ;
+									
 									NSArray *oneSignature = [ NSArray 
-										arrayWithObject:[ nextSignature propertyListDict ] ] ;
-										
+															 arrayWithObject:[ nextSignature propertyListDict ] ] ;
+									
 									NSString *error ;
-		
+									
 									NSData *theData = [ NSPropertyListSerialization dataFromPropertyList:oneSignature
-														format:NSPropertyListXMLFormat_v1_0
-														errorDescription:&error] ;
-														
+																								  format:NSPropertyListXMLFormat_v1_0
+																						errorDescription:&error] ;
+									
 									if( [ fileManager createFileAtPath:path contents:theData attributes:nil ] == NO )
 										{
 											printf( "CREATION OF SINGLE X2SIGNATURE XML ARCHIVE FAILED! \n" ) ;
 											exit(1) ;
 										}
-										
-									
+								
+								
 								}
+							}
+						
 						}
 											
 														

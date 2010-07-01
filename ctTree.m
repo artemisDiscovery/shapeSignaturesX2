@@ -410,7 +410,7 @@
 		
 		if( treeFragments )
 			{
-				[ fragmentToNeighborData release ] ;
+				if( fragmentToNeighborData ) [ fragmentToNeighborData release ] ;
 				[ treeFragments release ] ;
 			}
 		
@@ -430,7 +430,9 @@
 		free( nodes ) ;
 		free( bonds ) ;
 		
+		if( fragmentConnections ) [ fragmentConnections release ] ;
 		
+		[ treeName release ] ;
 		
 		[ super dealloc ] ;
 		
@@ -1576,6 +1578,7 @@
 									initWithFirst:nextFragment second:nextNeighborFragment ] ;
  
 								[ fragmentConnections addObject:newConnection ] ;
+								[ newConnection release ] ;
 							}
 					}
  

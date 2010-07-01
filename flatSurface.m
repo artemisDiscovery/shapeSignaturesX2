@@ -672,6 +672,8 @@ static short *testIntersect = NULL ;
 			}
 			
 		free( elementAtoms ) ;
+	
+		free( nAtomsForElement ) ;
 		
 		free( partitionForElement ) ;
 		

@@ -150,6 +150,10 @@ static NSDictionary *atomicWeightForElement ;
 		// NOTE that I do NOT release the bonds we point at - that can only be done by the tree
 		
 		free( bonds ) ;
+	
+		free( element ) ;
+	
+		free( atBondStart ) ;
 		
 		[ super dealloc ] ;
 		
