@@ -6,9 +6,9 @@
 //  Copyright 2010 Artemis Discovery, LLC. All rights reserved.
 //
 
-#import "CFUploader.h"
+#import "libCURLUploader.h"
 
 
-@implementation CFUploader
+@implementation libCURLUploader
 
 @end
