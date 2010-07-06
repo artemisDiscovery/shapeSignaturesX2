@@ -13,7 +13,7 @@
 #import "shapeSignatureX2.h"
 #import "hitListItem.h"
 #include <math.h> 
-#import "URLUploader.h"
+#import "Uploader.h"
 
 NSInteger fileNameCompare( id A, id B, void *ctxt ) ;
 
@@ -36,7 +36,8 @@ int main (int argc, const char * argv[]) {
 							SORTBYWEIGHTEDSCORE, MAXPERCENTQUERYUNMATCHED, MAXPERCENTTARGETUNMATCHED,
 							CORRELATIONSCORING, KEYTYPE, KEYINCREMENT, NEIGHBORLOWERBOUNDTOEXCLUDE,
 							MERGENEIGHBORRINGS, TARGETISDIRECTORY, PERMITFRAGMENTGROUPING, BIGFRAGMENTSIZE,
-							MAXBIGFRAGMENTCOUNT, XMLIN, XMLOUT, EXPLODEDB, RANGE, URLIN, URLOUT } ;
+							MAXBIGFRAGMENTCOUNT, XMLIN, XMLOUT, EXPLODEDB, RANGE, URLIN, URLOUT,
+							COMPRESS, DECOMPRESS } ;
 							
 	
 	enum { CREATEMODE, COMPAREMODE, INFOMODE, KEYSMODE, KMEANSMODE, CHECKMODE, CONVERTMODE, UNDEFINED } mode ;
@@ -85,6 +86,9 @@ int main (int argc, const char * argv[]) {
 	
 	BOOL xmlIN = NO ;
 	BOOL xmlOUT = NO ;
+	
+	BOOL compressDBs = NO ;
+	BOOL decompressDBs = NO ;
 	
 	BOOL explodeDBs = NO ;
 	
@@ -150,6 +154,7 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-explode <explode signatures into separate files (yes|no) ; default = NO>\n" ) ;
 			printf( "\t-urlOut <send output signatures to URL (yes|no) ; default = NO ; sets xmlOut = YES >\n" ) ;
 			printf( "\t-urlIn <pull input data tarball from URL (yes|no) ; default = NO >\n" ) ;
+			printf( "\t-compress <compress XML signatures (yes|no) ; default = NO ; sets xmlOut = YES >\n" ) ;
 			printf( "-compare flags:\n" ) ;
 			printf( "\t-targetdir <target DB is a directory (yes|no); default = NO >\n" ) ;
 			printf( "\t-tag <histogram tag to use; default = 1DShape> \n" ) ;
@@ -164,6 +169,7 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-maxQueryUnmatched <max. %% query unmatched ; default = 100. (no constraint)> \n" ) ;
 			printf( "\t-maxTargetUnmatched <max. %% target unmatched ; default = 100. (no constraint)> \n" ) ;
 			printf( "\t-xmlIn <input XML database format (yes|no) ; default = NO>\n" ) ;
+			printf( "\t-decompress <decompress XML input signatures (yes|no) ; default = NO ; sets xmlIn = YES >\n" ) ;
 			printf( "-convert flags:\n" ) ;
 			printf( "\t-xmlIn <input XML database format (yes|no) ; default = NO>\n" ) ;
 			printf( "\t-xmlOut <output XML database format (yes|no) ; default = NO>\n" ) ;
@@ -198,7 +204,7 @@ int main (int argc, const char * argv[]) {
 									mode = CREATEMODE ;
 									parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "comp" ) )
+							else if( strcasestr( &argv[i][1], "compare" ) )
 								{
 									mode = COMPAREMODE ;
 									parseState = GETTOKEN ;
@@ -352,6 +358,14 @@ int main (int argc, const char * argv[]) {
 								{
 									flagType = URLIN ;
 								}
+							else if( strcasestr( &argv[i][1], "compress" ) )
+								{
+									flagType = COMPRESS ;
+								}
+							else if( strcasestr( &argv[i][1], "decompress" ) )
+								{
+									flagType = DECOMPRESS ;
+								}						
 							else if( strcasestr( &argv[i][1], "explode" ) )
 								{
 									flagType = EXPLODEDB ;
@@ -635,7 +649,44 @@ int main (int argc, const char * argv[]) {
 								}
 							
 							break ;
-								
+							
+							case COMPRESS :
+							if( mode != CREATEMODE && mode != CONVERTMODE )
+								{
+								printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+								exit(1) ;
+								}
+							if( argv[i][0] == 'y' || argv[i][0] == 'Y' )
+								{
+									compressDBs = YES ;
+									xmlOUT = YES ;
+								}
+							else
+								{
+									compressDBs = NO ;
+								}
+							
+							break ;
+							
+							case DECOMPRESS :
+							if( mode != COMPAREMODE )
+								{
+								printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+								exit(1) ;
+								}
+							if( argv[i][0] == 'y' || argv[i][0] == 'Y' )
+								{
+								decompressDBs = YES ;
+								xmlIN = YES ;
+								}
+							else
+								{
+								decompressDBs = NO ;
+								}
+							
+							break ;
+							
+							
 							case EXPLODEDB:
 								if( mode != CREATEMODE && mode != CONVERTMODE )
 									{
@@ -1072,8 +1123,17 @@ int main (int argc, const char * argv[]) {
 					theSignatures = [ [ NSMutableArray alloc ] initWithCapacity:mol2Count ] ;
 				}
 			
-			printf( "\nCreate new database - Process %d mol2 files in directory %s ... \n",
-				mol2Count, [ mol2Directory cString ] ) ;
+			if( outputToURL == NO )
+				{
+					printf( "\nCreate new database - Process %d mol2 files in directory %s ... \n",
+						   mol2Count, [ mol2Directory cString ] ) ;
+				}
+			else
+				{
+					printf( "\nUpload signatures to target URL - Process %d mol2 files in directory %s ... \n",
+						   mol2Count, [ mol2Directory cString ] ) ;
+				}
+			
 			
 			if( explodeDBs == YES )
 				{
@@ -1238,6 +1298,25 @@ int main (int argc, const char * argv[]) {
 					if( outputToURL == YES )
 						{
 							// Pipe to the target URL
+						
+							NSArray *oneSignature = [ NSArray 
+													 arrayWithObject:[ nextSignature propertyListDict ] ] ;
+							
+							NSString *error ;
+							
+							NSData *theData = [ NSPropertyListSerialization dataFromPropertyList:oneSignature
+																						  format:NSPropertyListXMLFormat_v1_0
+																				errorDescription:&error] ;
+							if( compressDBs == YES )
+								{
+									theData = [ X2Signature compress:theData ] ;
+								}
+						
+							[[Uploader alloc] initWithURL:[ NSURL URLWithString:createDB ]
+																	  filePath:@"/Users/zauhar/shapeSigValidation/novobiocin_top10000/structures0_Test_OSX_Leakless_X2DB.Dir.xml/ZINC00029552_X2DB.xml"
+																  ];
+								
+								
 						}
 					else
 						{
@@ -1273,8 +1352,18 @@ int main (int argc, const char * argv[]) {
 								}
 							else
 								{
-									NSString *path = [ NSString stringWithFormat:@"%s/%s_X2DB.xml",
-													  [ createDB cString], [ nextSignature->sourceTree->treeName cString ] ] ;
+									NSString *path ;
+									if( compressDBs == NO )
+										{
+											path = [ NSString stringWithFormat:@"%s/%s_X2DB.xml",
+															  [ createDB cString], [ nextSignature->sourceTree->treeName cString ] ] ;
+										}
+									else
+										{
+											path = [ NSString stringWithFormat:@"%s/%s_X2DB.xml.Z",
+															  [ createDB cString], [ nextSignature->sourceTree->treeName cString ] ] ;
+										}
+									
 									
 									NSArray *oneSignature = [ NSArray 
 															 arrayWithObject:[ nextSignature propertyListDict ] ] ;
@@ -1283,7 +1372,12 @@ int main (int argc, const char * argv[]) {
 									
 									NSData *theData = [ NSPropertyListSerialization dataFromPropertyList:oneSignature
 																								  format:NSPropertyListXMLFormat_v1_0
-																						errorDescription:&error] ;
+																									errorDescription:&error] ;
+									if( compressDBs == YES )
+										{
+											theData = [ X2Signature compress:theData ] ;
+										}
+									
 									
 									if( [ fileManager createFileAtPath:path contents:theData attributes:nil ] == NO )
 										{
@@ -1339,7 +1433,7 @@ int main (int argc, const char * argv[]) {
 				
 			// Archive to output file 
 			
-			if( explodeDBs == NO )
+			if( explodeDBs == NO && outputToURL == NO )
 				{
 					if( xmlOUT == NO )
 						{
@@ -1356,6 +1450,11 @@ int main (int argc, const char * argv[]) {
 							NSData *theData = [ NSPropertyListSerialization dataFromPropertyList:theSignatures
 												format:NSPropertyListXMLFormat_v1_0
 												errorDescription:&error] ;
+						
+							if( compressDBs == YES )
+								{
+									theData = [ X2Signature compress:theData ] ;
+								}
 												
 							if( [ fileManager createFileAtPath:createDB contents:theData attributes:nil ] == NO )
 								{

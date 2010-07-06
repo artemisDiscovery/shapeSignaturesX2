@@ -75,5 +75,8 @@
 
 - (id) initWithPropertyListDict:(NSDictionary *)sourceDictionary ;
 
++ (NSData *) compress:(NSData *)data ;
++ (NSData *) decompress:(NSData *)data ;
+
 
 @end
