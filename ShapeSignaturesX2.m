@@ -13,7 +13,7 @@
 #import "shapeSignatureX2.h"
 #import "hitListItem.h"
 #include <math.h> 
-#import "Uploader.h"
+#import "libCURLUploader.h"
 
 NSInteger fileNameCompare( id A, id B, void *ctxt ) ;
 
@@ -37,7 +37,7 @@ int main (int argc, const char * argv[]) {
 							CORRELATIONSCORING, KEYTYPE, KEYINCREMENT, NEIGHBORLOWERBOUNDTOEXCLUDE,
 							MERGENEIGHBORRINGS, TARGETISDIRECTORY, PERMITFRAGMENTGROUPING, BIGFRAGMENTSIZE,
 							MAXBIGFRAGMENTCOUNT, XMLIN, XMLOUT, EXPLODEDB, RANGE, URLIN, URLOUT,
-							COMPRESS, DECOMPRESS } ;
+							COMPRESS, DECOMPRESS, ABBREVIATEDINFO } ;
 							
 	
 	enum { CREATEMODE, COMPAREMODE, INFOMODE, KEYSMODE, KMEANSMODE, CHECKMODE, CONVERTMODE, UNDEFINED } mode ;
@@ -95,6 +95,8 @@ int main (int argc, const char * argv[]) {
 	BOOL outputToURL = NO ;
 	BOOL inputFromURL = NO ;
 	
+	BOOL abbreviatedInfo = YES ;
+	
 	int selectRangeLo = 0 ;
 	int selectRangeHi = -1 ;
 	
@@ -147,7 +149,7 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-orient <orientation (inside|outside); default = IN>\n" ) ;
 			printf( "\t-skipSelf <skip self intersecting surface (yes|no); default = YES>\n" ) ;
 			printf( "\t-scale <scale factor for ray-trace; default = 1.0>\n" ) ;
-			printf( "\t-mergeRings <merge rings separated by one bond (yes|no); default = NO \n>" ) ;
+			printf( "\t-mergeRings <merge rings separated by one bond (yes|no); default = NO >\n" ) ;
 			printf( "\t-printon <enable print option (raytrace|histogram)> \n" ) ;
 			printf( "\t-keyIncrement <key discretization increment; default = 0.05>\n" ) ;
 			printf( "\t-xmlOut <output XML database format (yes|no) ; default = NO>\n" ) ;
@@ -171,16 +173,19 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-xmlIn <input XML database format (yes|no) ; default = NO>\n" ) ;
 			printf( "\t-decompress <decompress XML input signatures (yes|no) ; default = NO ; sets xmlIn = YES >\n" ) ;
 			printf( "-convert flags:\n" ) ;
+			printf( "\t-decompress <decompress input signatures (yes|no); default = NO>\n") ;
+			printf( "\t-compress <compress output signatures (yes|no); default = NO ; sets xmlOUT = YES >\n") ;
 			printf( "\t-xmlIn <input XML database format (yes|no) ; default = NO>\n" ) ;
 			printf( "\t-xmlOut <output XML database format (yes|no) ; default = NO>\n" ) ;
-			printf( "\t-range <start,end> ; default = 0,-1 (all input signatures selected) \n" ) ;
 			printf( "\t-explode <explode signatures into separate files (yes|no) ; default = NO>\n" ) ;
 			//printf( "-keys flags:\n" ) ;
 			//printf( "\t-probIncrement <division for discretizing; default = 0.05> \n" ) ;
 			//printf( "\t-keyType <(g)lobal or (f)fragment histos; default = fragment> \n" ) ;
 			//printf( "\t-neighbors <probability lower bound to exclude> \n" ) ;
-			printf( "-info :\n" ) ;
-			printf( "\t<provide information on atom assignment to fragments, and print all histograms>\n" ) ;
+			printf( "-info flags:\n" ) ;
+			printf( "\t-xmlIn <input XML database format (yes|no) ; default = NO>\n" ) ;
+			printf( "\t-decompress <decompress input signatures (yes|no); default = NO>\n") ;
+			printf( "\t-abbreviatedInfo <only report name and fragment keys (yes|no); default = YES>\n" ) ;
 			
 			exit(1) ;
 		}
@@ -199,138 +204,138 @@ int main (int argc, const char * argv[]) {
 						{
 							parseState = GETFLAG ;
 							
-							if( strcasestr( &argv[i][1], "create" ) )
+							if( strcasestr( &argv[i][1], "create" ) == &argv[i][1] )
 								{
 									mode = CREATEMODE ;
 									parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "compare" ) )
+							else if( strcasestr( &argv[i][1], "compare" ) == &argv[i][1] )
 								{
 									mode = COMPAREMODE ;
 									parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "conv" ) )
+							else if( strcasestr( &argv[i][1], "convert" ) == &argv[i][1] )
 								{
 									mode = CONVERTMODE ;
 									parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "info" ) )
+							else if( strcasestr( &argv[i][1], "info" ) == &argv[i][1] )
 								{
 									mode = INFOMODE ;
 									parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "keys" ) )
+							else if( strcasestr( &argv[i][1], "keys" ) == &argv[i][1] )
 								{
 									mode = KEYSMODE ;
 									parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "kmeans" ) )
+							else if( strcasestr( &argv[i][1], "kmeans" ) == &argv[i][1] )
 								{
 									mode = KMEANSMODE ;
 									parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "check" ) )
+							else if( strcasestr( &argv[i][1], "check" ) == &argv[i][1] )
 								{
 									mode = CHECKMODE ;
 									parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "grid" ) )
+							else if( strcasestr( &argv[i][1], "grid" ) == &argv[i][1] )
 									{
 										flagType = GRIDSPACING ;
 									}
-							else if( strcasestr( &argv[i][1], "num" ) )
+							else if( strcasestr( &argv[i][1], "num" ) == &argv[i][1] )
 									{
 										flagType = NUMSEGMENTS ;
 									}
-							else if( strcasestr( &argv[i][1], "ldel" ) )
+							else if( strcasestr( &argv[i][1], "ldel" ) == &argv[i][1] )
 									{
 										flagType = LENGTHDELTA ;
 									}
-							else if( strcasestr( &argv[i][1], "rand" ) )
+							else if( strcasestr( &argv[i][1], "rand" ) == &argv[i][1] )
 									{
 										flagType = RANDOMIZATIONANGLE ;
 									}
-							else if( strcasestr( &argv[i][1], "cul" ) )
+							else if( strcasestr( &argv[i][1], "cul" ) == &argv[i][1] )
 									{
 										flagType = SEGMENTCULLING ;
 									}
-							else if( strcasestr( &argv[i][1], "rest" ) )
+							else if( strcasestr( &argv[i][1], "rest" ) == &argv[i][1] )
 									{
 										flagType = RESTARTRATE ;
 									}
-							else if( strcasestr( &argv[i][1], "ori" ) )
+							else if( strcasestr( &argv[i][1], "ori" ) == &argv[i][1] )
 									{
 										flagType = ORIENTATION ;
 									}
-							else if( strcasestr( &argv[i][1], "see" ) )
+							else if( strcasestr( &argv[i][1], "see" ) == &argv[i][1] )
 									{
 										flagType = SEED ;
 									}
-							else if( strcasestr( &argv[i][1], "skips" ) )
+							else if( strcasestr( &argv[i][1], "skips" ) == &argv[i][1] )
 									{
 										flagType = SKIPSELFINTERSECTION ;
 									}
-							else if( strcasestr( &argv[i][1], "scale" ) )
+							else if( strcasestr( &argv[i][1], "scale" ) == &argv[i][1] )
 									{
 										flagType = SCALE ;
 									}
-							else if( strcasestr( &argv[i][1], "pri" ) )
+							else if( strcasestr( &argv[i][1], "pri" ) == &argv[i][1] )
 									{
 										flagType = PRINTOPTION ;
 									}
-							else if( strcasestr( &argv[i][1], "tag" ) )
+							else if( strcasestr( &argv[i][1], "tag" ) == &argv[i][1] )
 									{
 										flagType = COMPARETAG ;
 									}
-							else if( strcasestr( &argv[i][1], "maxhit" ) )
+							else if( strcasestr( &argv[i][1], "maxhit" ) == &argv[i][1] )
 									{
 										flagType = MAXHITS ;
 									}
-							else if( strcasestr( &argv[i][1], "maxscore" ) )
+							else if( strcasestr( &argv[i][1], "maxscore" ) == &argv[i][1] )
 									{
 										flagType = MAXSCORE ;
 									}
-							else if( strcasestr( &argv[i][1], "fragscore" ) )
+							else if( strcasestr( &argv[i][1], "fragscore" ) == &argv[i][1] )
 								{
 									flagType = FRAGSCORE ;
 								}
-							else if( strcasestr( &argv[i][1], "fraggroup" ) )
+							else if( strcasestr( &argv[i][1], "fraggroup" ) == &argv[i][1] )
 								{
 									flagType = PERMITFRAGMENTGROUPING ;
 								}
-							else if( strcasestr( &argv[i][1], "bigfragsize" ) )
+							else if( strcasestr( &argv[i][1], "bigfragsize" ) == &argv[i][1] )
 								{
 									flagType = BIGFRAGMENTSIZE ;
 								}
-							else if( strcasestr( &argv[i][1], "maxbigfrag" ) )
+							else if( strcasestr( &argv[i][1], "maxbigfrag" ) == &argv[i][1] )
 								{
 									flagType = MAXBIGFRAGMENTCOUNT ;
 								}
-							else if( strcasestr( &argv[i][1], "sortbyweight" ) )
+							else if( strcasestr( &argv[i][1], "sortbyweight" ) == &argv[i][1] )
 								{
 									flagType = SORTBYWEIGHTEDSCORE ;
 								}
-							else if( strcasestr( &argv[i][1], "queryunma" ) )
+							else if( strcasestr( &argv[i][1], "queryunma" ) == &argv[i][1] )
 								{
 									flagType = MAXPERCENTQUERYUNMATCHED ;
 								}
-							else if( strcasestr( &argv[i][1], "targetunma" ) )
+							else if( strcasestr( &argv[i][1], "targetunma" ) == &argv[i][1] )
 								{
 									flagType = MAXPERCENTTARGETUNMATCHED ;
 								}
-							else if( strcasestr( &argv[i][1], "corr" ) )
+							else if( strcasestr( &argv[i][1], "corr" ) == &argv[i][1] )
 								{
 									flagType = CORRELATIONSCORING ;
 								}
-							else if( strcasestr( &argv[i][1], "keyIncre" ) )
+							else if( strcasestr( &argv[i][1], "keyIncre" ) == &argv[i][1] )
 								{
 									flagType = KEYINCREMENT ;
 								}
-							else if( strcasestr( &argv[i][1], "keyt" ) )
+							else if( strcasestr( &argv[i][1], "keyt" ) == &argv[i][1] )
 								{
 									flagType = KEYTYPE ;
 								}
-							else if( strcasestr( &argv[i][1], "neigh" ) )
+							else if( strcasestr( &argv[i][1], "neigh" ) == &argv[i][1] )
 								{
 									flagType = NEIGHBORLOWERBOUNDTOEXCLUDE ;
 								}
@@ -338,39 +343,43 @@ int main (int argc, const char * argv[]) {
 								{
 									flagType = MERGENEIGHBORRINGS ;
 								}
-							else if( strcasestr( &argv[i][1], "targetdir" ) )
+							else if( strcasestr( &argv[i][1], "targetdir" ) == &argv[i][1] )
 								{
 									flagType = TARGETISDIRECTORY ;
 								}
-							else if( strcasestr( &argv[i][1], "xmlin" ) )
+							else if( strcasestr( &argv[i][1], "xmlin" ) == &argv[i][1] )
 								{
 									flagType = XMLIN ;
 								}
-							else if( strcasestr( &argv[i][1], "xmlout" ) )
+							else if( strcasestr( &argv[i][1], "xmlout" ) == &argv[i][1] )
 								{
 									flagType = XMLOUT ;
 								}
-							else if( strcasestr( &argv[i][1], "urlOut" ) )
+							else if( strcasestr( &argv[i][1], "urlOut" ) == &argv[i][1] )
 								{
 									flagType = URLOUT ;
 								}
-							else if( strcasestr( &argv[i][1], "urlIn" ) )
+							else if( strcasestr( &argv[i][1], "urlIn" ) == &argv[i][1] )
 								{
 									flagType = URLIN ;
 								}
-							else if( strcasestr( &argv[i][1], "compress" ) )
+							else if( strcasestr( &argv[i][1], "compress" ) == &argv[i][1] )
 								{
 									flagType = COMPRESS ;
 								}
-							else if( strcasestr( &argv[i][1], "decompress" ) )
+							else if( strcasestr( &argv[i][1], "decompress" ) == &argv[i][1] )
 								{
 									flagType = DECOMPRESS ;
 								}						
-							else if( strcasestr( &argv[i][1], "explode" ) )
+							else if( strcasestr( &argv[i][1], "explode" ) == &argv[i][1] )
 								{
 									flagType = EXPLODEDB ;
 								}
-							else if( strcasestr( &argv[i][1], "range" ) )
+							else if( strcasestr( &argv[i][1], "abbrev" ) == &argv[i][1] )
+								{
+									flagType = ABBREVIATEDINFO ;
+								}
+							else if( strcasestr( &argv[i][1], "range" ) == &argv[i][1] )
 								{
 									flagType = RANGE ;
 								}
@@ -581,7 +590,7 @@ int main (int argc, const char * argv[]) {
 								break ;
 								
 							case XMLIN:
-								if( mode != COMPAREMODE && mode != CONVERTMODE )
+								if( mode != COMPAREMODE && mode != CONVERTMODE && mode != INFOMODE )
 									{
 										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 										exit(1) ;
@@ -669,19 +678,19 @@ int main (int argc, const char * argv[]) {
 							break ;
 							
 							case DECOMPRESS :
-							if( mode != COMPAREMODE )
+							if( mode != COMPAREMODE && mode != CONVERTMODE && mode != INFOMODE )
 								{
-								printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
-								exit(1) ;
+									printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+									exit(1) ;
 								}
 							if( argv[i][0] == 'y' || argv[i][0] == 'Y' )
 								{
-								decompressDBs = YES ;
-								xmlIN = YES ;
+									decompressDBs = YES ;
+									xmlIN = YES ;
 								}
 							else
 								{
-								decompressDBs = NO ;
+									decompressDBs = NO ;
 								}
 							
 							break ;
@@ -703,6 +712,23 @@ int main (int argc, const char * argv[]) {
 									}
 								
 								break ;
+							
+							case ABBREVIATEDINFO:
+							if( mode != INFOMODE  )
+								{
+									printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+									exit(1) ;
+								}
+							if( argv[i][0] == 'y' || argv[i][0] == 'Y' )
+								{
+									abbreviatedInfo = YES ;
+								}
+							else
+								{
+									abbreviatedInfo = NO ;
+								}
+							
+							break ;
 							
 							case RANGE:
 								if( mode != CONVERTMODE )
@@ -1312,9 +1338,38 @@ int main (int argc, const char * argv[]) {
 									theData = [ X2Signature compress:theData ] ;
 								}
 						
-							[[Uploader alloc] initWithURL:[ NSURL URLWithString:createDB ]
-																	  filePath:@"/Users/zauhar/shapeSigValidation/novobiocin_top10000/structures0_Test_OSX_Leakless_X2DB.Dir.xml/ZINC00029552_X2DB.xml"
-																  ];
+							// Flesh out the data so we can easly extract keys and name on server side
+						
+							//NSMutableString *keyString = [ [ nextSignature->histogramBundleForTag objectForKey:@"1DHISTO" ] 
+							//							  		keyStringsForBundleWithIncrement:0.05 ]  ;
+						
+							//NSMutableString *frontString = [ NSMutableString stringWithCapacity:1000 ] ;
+						
+							//[ frontString appendString:@"name=" ] ;
+							//[ frontString appendString:nextSignature->sourceTree->treeName ] ;
+							//[ frontString appendString:@"?keys=" ] ;
+							//[ frontString 
+							//	 appendString:[ [ nextSignature->histogramBundleForTag objectForKey:@"1DHISTO" ] 
+							//		keyStringsForBundleWithIncrement:0.05 ] ] ;
+						
+							//[ frontString replaceOccurrencesOfString:@"\n" withString:@";" 
+							//								 options:NSLiteralSearch range: NSMakeRange(0, [frontString length]) ] ;
+							//[ frontString appendString:@"compressedSignatureData=" ] ;
+						
+							//NSMutableData *upData = [ NSMutableData dataWithData:[ frontString dataUsingEncoding:NSASCIIStringEncoding ] ] ;
+						
+							//[ upData appendData:theData ] ;
+						
+							NSString *fName = [ NSString stringWithFormat:@"%s.xml",
+									[ nextSignature->sourceTree->treeName cString ] ] ;
+						
+							libCURLUploader *theUploader = [ [libCURLUploader alloc] initWithURL:"http://www.artemisdiscovery.com/uploadShapeSig.php"
+															 data:theData fileName:fName 
+															];
+						
+							[ theUploader upload ] ;
+						
+							[ theUploader release ] ;
 								
 								
 						}
@@ -1524,6 +1579,11 @@ int main (int argc, const char * argv[]) {
 					querySignatures = [ [ NSMutableArray alloc ] initWithCapacity:1000 ] ;
 					
 					NSData *theData = [ NSData dataWithContentsOfFile:queryDB ] ;
+				
+					if( decompressDBs == YES )
+						{
+							theData = [ X2Signature decompress:theData ] ;
+						}
 					
 					NSString *errorString ;
 					NSPropertyListFormat theFormat ;
@@ -1559,6 +1619,11 @@ int main (int argc, const char * argv[]) {
 							targetSignatures = [ [ NSMutableArray alloc ] initWithCapacity:1000 ] ;
 					
 							NSData *theData = [ NSData dataWithContentsOfFile:targetDB ] ;
+						
+							if( decompressDBs == YES )
+								{
+									theData = [ X2Signature decompress:theData ] ;
+								}
 							
 							NSString *errorString ;
 							NSPropertyListFormat theFormat ;
@@ -1885,10 +1950,49 @@ int main (int argc, const char * argv[]) {
 		{
 			// Read the DB, and print information for each entry, specficically assignments of atoms to 
 			// fragments and histograms. 
+		
+			// We always assume for now that the database is a single file (NOT a directory)
 
 			// Need to read in the query database
-
-			NSArray *querySignatures = [ NSUnarchiver unarchiveObjectWithFile:queryDB ] ;
+		
+			NSMutableArray *querySignatures ;
+		
+			if( xmlIN == NO )
+				{
+					querySignatures = [ NSUnarchiver unarchiveObjectWithFile:queryDB ] ;
+				}
+			else
+				{
+					querySignatures = [ [ NSMutableArray alloc ] initWithCapacity:1000 ] ;
+					
+					NSData *theData = [ NSData dataWithContentsOfFile:queryDB ] ;
+					
+					if( decompressDBs == YES )
+						{
+							theData = [ X2Signature decompress:theData ] ;
+						}
+					
+					NSString *errorString ;
+					NSPropertyListFormat theFormat ;
+					
+					NSArray *sourceArray = [ NSPropertyListSerialization propertyListFromData:theData 
+																			 mutabilityOption:0 format:&theFormat 
+																			 errorDescription:&errorString ] ;
+					
+					NSEnumerator *sourceArrayEnumerator = [ sourceArray objectEnumerator ] ;
+					
+					NSDictionary *nextSignatureDict ;
+					
+					while( ( nextSignatureDict = [ sourceArrayEnumerator nextObject ] ) )
+						{
+							X2Signature *nextSignature = [ [ X2Signature alloc ] 
+														  initWithPropertyListDict:nextSignatureDict ] ;
+							
+							[ querySignatures addObject:nextSignature ] ;
+							[ nextSignature release ] ;
+						}
+				}
+		
 
 			NSEnumerator *queryEnumerator = [ querySignatures objectEnumerator ] ;
 
@@ -1898,7 +2002,14 @@ int main (int argc, const char * argv[]) {
 				{
 					// First report name and atom fragment assignments
 
-					printf( "****MOLECULE: %s\n", [ nextQuery->sourceTree->treeName cString ] ) ;
+					printf( "@molecule:%s\n", [ nextQuery->sourceTree->treeName cString ] ) ;
+				
+					NSMutableString *keyString = [ [ nextQuery->histogramBundleForTag objectForKey:@"1DHISTO" ] 
+												  keyStringsForBundleWithIncrement:0.05 ]  ;
+				
+					printf( "%s", [ keyString cString ] ) ;
+				
+					if( abbreviatedInfo == YES ) continue ;
 
 					// Fragment assignments
 

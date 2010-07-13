@@ -833,6 +833,7 @@ NSInteger indexCompare2( id A, id B, void *ctxt )
 			return nil;
 	
 	void *theBytes = [ data bytes ] ;
+	void *theReadPtr = theBytes ;
 	
     /* compress until end of data */
     do 
@@ -855,7 +856,8 @@ NSInteger indexCompare2( id A, id B, void *ctxt )
 				bytesLeft = 0 ;
 			}
 		
-		memcpy(in, theBytes, bytesToCompress ) ;
+		memcpy(in, theReadPtr, bytesToCompress ) ;
+		theReadPtr += bytesToCompress ;
 		strm.avail_in = bytesToCompress ;
 				
 		flush = bytesLeft == 0 ? Z_FINISH : Z_NO_FLUSH;
@@ -916,6 +918,7 @@ NSInteger indexCompare2( id A, id B, void *ctxt )
 			return nil;
 		
 		void *theBytes = [ data bytes ] ;
+		void *theReadPtr = theBytes ;
 		
 		/* compress until end of data */
 		do 
@@ -943,7 +946,8 @@ NSInteger indexCompare2( id A, id B, void *ctxt )
 			if (strm.avail_in == 0)
 				break;
 			
-			memcpy(in, theBytes, bytesToDecompress ) ;
+			memcpy(in, theReadPtr, bytesToDecompress ) ;
+			theReadPtr += bytesToDecompress ;
 			
 			strm.next_in = in;
 			

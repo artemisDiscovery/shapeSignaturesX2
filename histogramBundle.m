@@ -727,6 +727,8 @@ int MED3( int a, int b, int c )
 				NSDictionary *nextHistoPropertyDict = [ histogramBundlePropListDict objectForKey:nextKey ] ;
 				
 				histogram *nextHisto = [ [ histogram alloc ] initWithPropertyListDict:nextHistoPropertyDict ] ;
+			
+				nextHisto->hostBundle = self ;
 				
 				[ sortedFragmentsToHistogram setObject:nextHisto forKey:nextKey ] ;
 				
