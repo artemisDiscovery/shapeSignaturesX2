@@ -20,6 +20,8 @@
 - (id) initWithURL:(NSString *)url data:(NSData *)d fileName:(NSString *)name
 {
 	
+	targetURL = [ url retain ] ;
+	
 	uploadData = [ d retain ] ;
 	
 	uploadFileName = [ name retain ] ;
@@ -27,8 +29,11 @@
 
 - (void) dealloc
 {
+	[ targetURL release ] ;
 	[ uploadData release ] ;
 	[ uploadFileName release ] ;
+	
+	[ super dealloc ] ;
 	
 	return ;
 }
@@ -51,7 +56,7 @@
 	
 	curl = curl_easy_init() ;
 	
-	curl_easy_setopt( curl, CURLOPT_URL, "https://www.artemisdiscovery.com/uploadShapeSig.php");
+	curl_easy_setopt( curl, CURLOPT_URL, [ targetURL cString ] );
 	
 	headerlist = curl_slist_append( headerlist, "Content-Type: application/octet-stream");
 	

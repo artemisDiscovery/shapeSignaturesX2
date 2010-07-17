@@ -7,7 +7,13 @@
 //
 
 #import <Foundation/Foundation.h>
+#include "platform.h"
+
+#ifdef OSX
 #include <curl/curl.h>
+#else
+#include "/usr/local/include/curl/curl.h"
+#endif
 
 
 @interface libCURLUploader : NSObject 

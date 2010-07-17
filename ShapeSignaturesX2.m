@@ -1363,7 +1363,8 @@ int main (int argc, const char * argv[]) {
 							NSString *fName = [ NSString stringWithFormat:@"%s.xml",
 									[ nextSignature->sourceTree->treeName cString ] ] ;
 						
-							libCURLUploader *theUploader = [ [libCURLUploader alloc] initWithURL:"http://www.artemisdiscovery.com/uploadShapeSig.php"
+							libCURLUploader *theUploader = [ [libCURLUploader alloc] 
+															 initWithURL:createDB
 															 data:theData fileName:fName 
 															];
 						
@@ -1697,7 +1698,8 @@ int main (int argc, const char * argv[]) {
 						{
 							while( ( nextFile = [ fileEnumerator nextObject ] ) )
 								{
-									if( [ nextFile hasSuffix:@"DB.xml" ] == YES )
+									if( [ nextFile hasSuffix:@"DB.xml" ] == YES || 
+										[ nextFile hasSuffix:@"DB.xml.Z" ] == YES )
 										{
 											[ DBFiles addObject:nextFile ] ;
 										}
@@ -1722,6 +1724,11 @@ int main (int argc, const char * argv[]) {
 							else
 								{
 									NSData *theData = [ NSData dataWithContentsOfFile:nextPath ] ;
+								
+									if( decompressDBs == YES )
+										{
+											theData = [ X2Signature decompress:theData ] ;
+										}
 									
 									NSString *errorString ;
 									NSPropertyListFormat theFormat ;
