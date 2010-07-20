@@ -14,6 +14,7 @@
 #import "hitListItem.h"
 #include <math.h> 
 #import "libCURLUploader.h"
+#import "libCURLDownloader.h"
 
 NSInteger fileNameCompare( id A, id B, void *ctxt ) ;
 
@@ -399,14 +400,7 @@ int main (int argc, const char * argv[]) {
 										{
 											mol2Directory = [ [ NSString stringWithCString:argv[i] ] retain ] ;
 											
-											// Make sure of trailing / for convenience ...
 											
-											if( [ mol2Directory characterAtIndex:([ mol2Directory length ] - 1) ] != '/' )
-												{
-													// Add the final slash
-													
-													mol2Directory = [ [ mol2Directory stringByAppendingString:@"/" ] retain ] ;
-												}
 										}
 									else if( ! createDB )
 										{
@@ -1077,6 +1071,49 @@ int main (int argc, const char * argv[]) {
 			NSFileManager *fileManager = [ NSFileManager defaultManager ] ;
 			
 			NSError *fileError ;
+		
+		// Make sure of trailing / for convenience ...
+		
+		if( inputFromURL == NO )
+			{
+				if( [ mol2Directory characterAtIndex:([ mol2Directory length ] - 1) ] != '/' )
+					{
+						// Add the final slash
+					
+						NSString *temp = mol2Directory ;
+						
+						mol2Directory = [ [ mol2Directory stringByAppendingString:@"/" ] retain ] ;
+					
+						[ temp release ] ;
+					}
+			}
+		
+			if( inputFromURL == YES )
+				{
+					// We will collect directory as tar file from URL. We will check for .Z or .gz extension
+				
+					// In this case, 'mol2Directory' is reallly a URL
+				
+					libCURLDownloader *downloader = [ [ libCURLDownloader alloc ] initWithURL:mol2Directory ] ;
+				
+					[ downloader download ] ;
+				
+					// If successful, we replace the mol2Directory with the result from the URL download
+				
+					if( ! downloader->outputDirectory )
+						{
+							printf( "UNKNOWN ERROR - COULD NOT DOWNLOAD URL - Exit!\n" ) ;
+							exit(1) ;
+						}
+					else
+						{
+							NSString *temp = mol2Directory ;
+							mol2Directory = [ downloader->outputDirectory retain ] ;
+							[ temp release ] ;
+						}
+				
+					[ downloader release ] ;
+				}
 			
 			
 #ifdef LINUX
