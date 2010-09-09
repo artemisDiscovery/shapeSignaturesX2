@@ -17,10 +17,11 @@
 #import "shapeSignatureX2.h"
 #import "histogramGroupBundle.h"
 
-// This object defines a mapping between histogram group bundles, based ontwo X2Signatures
+// This object defines a mapping between histogram group bundles, based on two X2Signatures
 
 // In the case of global comparison, there is only one histogram comparison (the appopriate global histos)
 // while in the case of a fragment-based histogram there will be an array of matches
+
 
 @interface X2SignatureMapping : NSObject 
 {

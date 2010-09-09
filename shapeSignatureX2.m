@@ -367,7 +367,7 @@ static NSString *version ;
 		
 		// We consider all possible intial mappings using a fragment of query and fragment of target as root
 		
-		NSLog( @"***SCORE %@ AGAINST %@ \n", query->sourceTree->treeName, target->sourceTree->treeName ) ;
+		//NSLog( @"***SCORE %@ AGAINST %@ \n", query->sourceTree->treeName, target->sourceTree->treeName ) ;
 		
 		NSInteger compareHistoGroupPair( id hA, id hB, void *ctxt ) ;
 		NSInteger compareMappingPair( id mA, id mB, void *ctxt ) ;
@@ -795,6 +795,7 @@ NSInteger indexCompare2( id A, id B, void *ctxt )
 				nextHistoBundle->sourceSignature = self ;
 				
 				[ histogramBundleForTag setObject:nextHistoBundle forKey:nextTag ] ;
+				[ nextHistoBundle release ] ;
 			}
 				
 				

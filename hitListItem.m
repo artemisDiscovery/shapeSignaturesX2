@@ -18,6 +18,11 @@
 		mapping = map ;
 		
 		[ map retain ] ;
+	
+		fragmentGroupPairs = [ [ NSMutableArray alloc ] initWithCapacity:[ mapping->histoGroupPairs count ] ] ;
+	
+		queryName = [ [ NSString alloc ] initWithString:mapping->query->hostBundle->sourceTree->treeName ] ;
+		targetName = [ [ NSString alloc ] initWithString:mapping->target->hostBundle->sourceTree->treeName ] ;
 		
 		weightedScore = 2. ; 
 		minimumScore = 2. ;
@@ -30,7 +35,12 @@
 	
 - (void) dealloc
 	{
-		[ mapping release ] ;
+		if( mapping ) [ mapping release ] ;
+		
+		[ fragmentGroupPairs release ] ;
+	
+		[ queryName release ] ;
+		[ targetName release ] ;
 		
 		[ super dealloc ] ;
 		
@@ -51,8 +61,8 @@
 
 		weightedScore = 0 ;
 		
-		int cumQuerySegments =  0 ;
-		int cumTargetSegments = 0 ;
+		cumQuerySegments =  0 ;
+		cumTargetSegments = 0 ;
 		
 		while( ( nextHistoGroupPair = [ histoGroupPairEnumerator nextObject ] ) )
 			{
@@ -61,7 +71,9 @@
 				
 				double score = [ queryHistoGroup scoreWithHistogramGroup:targetHistoGroup useCorrelation:useCor ] ;
 				
-				[ nextHistoGroupPair addObject:[ NSNumber numberWithDouble:score ] ] ;
+				
+			
+				//[ nextHistoGroupPair addObject:[ NSNumber numberWithDouble:score ] ] ;
 				
 				if( score < minimumScore ) minimumScore = score ;
 				if( score > maximumScore ) maximumScore = score ;
@@ -70,6 +82,13 @@
 				
 				int qCount = queryHistoGroup->segmentCount + queryHistoGroup->segmentPairCount ;
 				int tCount = targetHistoGroup->segmentCount + targetHistoGroup->segmentPairCount ;
+			
+				[ fragmentGroupPairs addObject:[ NSArray arrayWithObjects:
+											[ NSArray arrayWithArray:[ queryHistoGroup sortedFragmentIndices ] ],
+											[ NSArray arrayWithArray:[ targetHistoGroup sortedFragmentIndices ] ],
+											[ NSNumber numberWithDouble:score ],
+											[ NSNumber numberWithInt:qCount ],
+											[ NSNumber numberWithInt:tCount ],nil ] ] ;
 				
 				weightedScore += ( qCount + tCount ) * score ;
 				cumQuerySegments += qCount ;
@@ -79,24 +98,28 @@
 			}
 			
 		weightedScore /= ( cumQuerySegments + cumTargetSegments ) ;
-		
-		int QTOT, TTOT ;
-		
+				
 		if( mapping->query->hostBundle->type == ONE_DIMENSIONAL  )
 			{
-				QTOT = mapping->query->hostBundle->sourceSignature->totalSegments ;
-				TTOT = mapping->target->hostBundle->sourceSignature->totalSegments ;
+				totalQuerySegments = mapping->query->hostBundle->sourceSignature->totalSegments ;
+				totalTargetSegments = mapping->target->hostBundle->sourceSignature->totalSegments ;
 			}
 		else
 			{
-				QTOT = mapping->query->hostBundle->sourceSignature->totalSegmentPairs ;
-				TTOT = mapping->target->hostBundle->sourceSignature->totalSegmentPairs ;
+				totalQuerySegments = mapping->query->hostBundle->sourceSignature->totalSegmentPairs ;
+				totalTargetSegments = mapping->target->hostBundle->sourceSignature->totalSegmentPairs ;
 			}
 		
 		// Compute "percentage" of query unmatched, likewise for target
 		
-		percentQueryUnmatched = 100. * ( 1. - ((double) cumQuerySegments ) / QTOT ) ;
-		percentTargetUnmatched = 100. * ( 1. - ((double) cumTargetSegments ) / TTOT ) ;
+		percentQueryUnmatched = 100. * ( 1. - ((double) cumQuerySegments ) / totalQuerySegments ) ;
+		percentTargetUnmatched = 100. * ( 1. - ((double) cumTargetSegments ) / totalTargetSegments ) ;
+	
+		// No longer need the mapping 
+	
+		[ mapping release ] ;
+	
+		mapping = nil ;
 		
 		return ;
 	}
@@ -137,6 +160,14 @@
 			{
 				[ hits sortUsingSelector:@selector( sortByMinimum: ) ] ;
 			}
+	
+		
+		if( [ hits count ] > maxHits )
+			{
+				NSRange removeRange = NSMakeRange(maxHits, [ hits count ] - maxHits ) ;
+				[ hits removeObjectsInRange:removeRange ] ;
+			}
+		
 			
 		return ;
 	}

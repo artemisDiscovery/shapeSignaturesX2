@@ -1,4 +1,5 @@
 #include "platform.h"
+#include <mysql.h>
 
 #ifdef LINUX
 #import <Foundation/Foundation.h>
@@ -36,7 +37,7 @@ int main (int argc, const char * argv[]) {
 							SKIPSELFINTERSECTION, SCALE, COMPARETAG, NUMBEROFHITS, MAXHITS, MAXSCORE, FRAGSCORE,
 							SORTBYWEIGHTEDSCORE, MAXPERCENTQUERYUNMATCHED, MAXPERCENTTARGETUNMATCHED,
 							CORRELATIONSCORING, KEYTYPE, KEYINCREMENT, NEIGHBORLOWERBOUNDTOEXCLUDE,
-							MERGENEIGHBORRINGS, TARGETISDIRECTORY, PERMITFRAGMENTGROUPING, BIGFRAGMENTSIZE,
+							MERGENEIGHBORRINGS, TARGETISDIRECTORY, TARGETISMYSQLIDS, PERMITFRAGMENTGROUPING, BIGFRAGMENTSIZE,
 							MAXBIGFRAGMENTCOUNT, XMLIN, XMLOUT, EXPLODEDB, RANGE, URLIN, URLOUT,
 							COMPRESS, DECOMPRESS, ABBREVIATEDINFO } ;
 							
@@ -51,6 +52,7 @@ int main (int argc, const char * argv[]) {
 	BOOL insideTrace = YES ;
 	
 	BOOL targetIsDirectory = NO ;
+	BOOL targetIsMySQLIDs = NO ;
 	
 	double lengthDelta = 0.5 ;
 	double MEPDelta = 0.05 ;
@@ -119,6 +121,12 @@ int main (int argc, const char * argv[]) {
 	
 	NSString *createDB = nil ;
 	
+	NSString *MySQLDB = @"zinc" ;
+	NSString *MySQLUSER = @"root" ;
+	NSString *MySQLPASSWORD = @"vr9tr74m" ;
+	NSString *MySQLHOST = @"localhost" ;
+	NSString *MySQLTABLE = @"compressedShapeSignatures" ;
+	
 							
 	// Calculation parameters
 	
@@ -134,7 +142,7 @@ int main (int argc, const char * argv[]) {
 	if( argc < 3 )
 		{
 			printf( "USAGE: shapeSigX -create [ flags ] <input directory> <output DB> \n" ) ;
-			printf( "USAGE: shapeSigX -compare [ flags ] <query DB> <target DB/directory> <hits file> \n" ) ;
+			printf( "USAGE: shapeSigX -compare [ flags ] <query DB> <target DB/directory/ID file> <hits file> \n" ) ;
 			printf( "USAGE: shapeSigX -convert [ flags ] <out DB/directory> <input 1> [<input 2>] ...\n" ) ;
 			printf( "USAGE: shapeSigX -info <query DB> \n" ) ;
 			printf( "USAGE: shapeSigX -keys [ flags ] <input directory> \n" ) ;
@@ -160,6 +168,7 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-compress <compress XML signatures (yes|no) ; default = NO ; sets xmlOut = YES >\n" ) ;
 			printf( "-compare flags:\n" ) ;
 			printf( "\t-targetdir <target DB is a directory (yes|no); default = NO >\n" ) ;
+			printf( "\t-targetmysqlIDs <target file holds molecule IDs for mysql database (yes|no); default = NO>\n" ) ;
 			printf( "\t-tag <histogram tag to use; default = 1DShape> \n" ) ;
 			printf( "\t-fragscore <use fragment-based scoring (yes|no); default = NO>\n" ) ;
 			printf( "\t-fraggroup <use fragment grouping w/ fragment scoring (yes|no); default = NO>\n" ) ;
@@ -347,6 +356,10 @@ int main (int argc, const char * argv[]) {
 							else if( strcasestr( &argv[i][1], "targetdir" ) == &argv[i][1] )
 								{
 									flagType = TARGETISDIRECTORY ;
+								}
+							else if( strcasestr( &argv[i][1], "targetmysql" ) == &argv[i][1] )
+								{
+									flagType = targetIsMySQLIDs ;
 								}
 							else if( strcasestr( &argv[i][1], "xmlin" ) == &argv[i][1] )
 								{
@@ -765,6 +778,7 @@ int main (int argc, const char * argv[]) {
 								if( argv[i][0] == 'y' || argv[i][0] == 'Y' )
 									{
 										targetIsDirectory = YES ;
+										targetIsMySQLIDs = NO ;
 									}
 								else
 									{
@@ -772,6 +786,24 @@ int main (int argc, const char * argv[]) {
 									}
 								
 								break ;
+							
+							case TARGETISMYSQLIDS:
+								if( mode != COMPAREMODE )
+									{
+										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+										exit(1) ;
+									}
+								if( argv[i][0] == 'y' || argv[i][0] == 'Y' )
+									{
+										targetIsMySQLIDs = YES ;
+										targetIsDirectory = NO ;
+									}
+								else
+									{
+										targetIsMySQLIDs = NO ;
+									}
+							
+							break ;
 								
 							case MERGENEIGHBORRINGS:
 								if( mode != CREATEMODE )
@@ -1607,6 +1639,11 @@ int main (int argc, const char * argv[]) {
 			// Need to read in the query and target databases
 			
 			NSMutableArray *querySignatures ;
+		
+			// If target is a directory - 
+		
+			NSMutableArray *DBFiles = nil ;
+			NSMutableArray *DBIDs = nil ;
 			
 			if( xmlIN == NO )
 				{
@@ -1644,7 +1681,7 @@ int main (int argc, const char * argv[]) {
 						}
 				}
 			
-			NSMutableArray *targetSignatures ;
+			NSMutableArray *targetSignatures = nil ;
 			
 			if( targetIsDirectory == NO )
 				{
@@ -1684,6 +1721,21 @@ int main (int argc, const char * argv[]) {
 								}
 						}
 				}
+			else if( targetIsMySQLIDs == YES )
+				{
+					NSError *error = nil ;
+				
+					NSString *fileContent = [ NSString stringWithContentsOfFile:targetDB 
+													encoding:NSASCIIStringEncoding error:&error ] ;
+				
+					if( error )
+						{
+							printf( "ERROR READING FILE OF TARGET IDs - Exit!\n" ) ;
+							exit(1) ;
+						}
+				
+					NSArray *DBIDs = [ fileContent componentsSeparatedByString:@"\n" ] ;
+				}
 			else
 				{
 					NSFileManager *fileManager = [ NSFileManager defaultManager ] ;
@@ -1691,9 +1743,9 @@ int main (int argc, const char * argv[]) {
 					NSError *fileError ;
 					
 #ifdef LINUX
-			NSArray *files = [ fileManager directoryContentsAtPath:targetDB ] ;
+					NSArray *files = [ fileManager directoryContentsAtPath:targetDB ] ;
 #else
-			NSArray *files = [ fileManager contentsOfDirectoryAtPath:targetDB error:&fileError ] ;
+					NSArray *files = [ fileManager contentsOfDirectoryAtPath:targetDB error:&fileError ] ;
 #endif
 					
 					if( ! files )
@@ -1709,12 +1761,10 @@ int main (int argc, const char * argv[]) {
 						}
 				
 				
-					// Collect all DB files
+					// Collect all target DB file names
 					
 					NSEnumerator *fileEnumerator ;
 					NSString *nextFile ;
-					
-					NSArray *DBFiles ;
 					
 					DBFiles = [ [ NSMutableArray alloc ] initWithCapacity:[ files count ] ] ;
 					
@@ -1724,7 +1774,7 @@ int main (int argc, const char * argv[]) {
 						{
 							while( ( nextFile = [ fileEnumerator nextObject ] ) )
 								{
-									if( [ nextFile hasSuffix:@"DB" ] == YES )
+									if( [ nextFile hasSuffix:@"X2DB" ] == YES )
 										{
 											[ DBFiles addObject:nextFile ] ;
 										}
@@ -1744,12 +1794,14 @@ int main (int argc, const char * argv[]) {
 							//DBFiles =  [ files filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF endswith 'DB.xml'" ] ] ;
 						}
 					
-					targetSignatures = [ [ NSMutableArray alloc ] initWithCapacity:[ DBFiles count ] ] ;
+					// Assume no more than 1000 per file 
+				
+					targetSignatures = [ [ NSMutableArray alloc ] initWithCapacity:1000 ] ;
 					
-					fileEnumerator = [ DBFiles objectEnumerator ] ;
+					//fileEnumerator = [ DBFiles objectEnumerator ] ;
 					
-					NSString *pathRoot = [ targetDB stringByAppendingString:@"/" ] ;
-					
+					//NSString *pathRoot = [ targetDB stringByAppendingString:@"/" ] ;
+					/*
 					while( ( nextFile = [ fileEnumerator nextObject ] ) )
 						{
 							NSString *nextPath = [ pathRoot stringByAppendingString:nextFile ] ;
@@ -1788,6 +1840,7 @@ int main (int argc, const char * argv[]) {
 										}
 								}
 						}
+					 */
 				}
 						
 			NSString *queryDBName = [ [ [ queryDB pathComponents ] lastObject ] retain ] ;
@@ -1873,35 +1926,239 @@ int main (int argc, const char * argv[]) {
 			
 			while( ( nextQuery = [ queryEnumerator nextObject ] ) )
 				{
-					
-					
 					[ hits removeAllObjects ] ;
-					
-					NSEnumerator *targetEnumerator = [ targetSignatures objectEnumerator ] ;
-					
-										
-					while( ( nextTarget = [ targetEnumerator nextObject ] ) )
+				
+					if( targetIsDirectory == NO )
 						{
-							NSAutoreleasePool * localPool = [[NSAutoreleasePool alloc] init];
-
-							NSArray *queryHits = [ X2Signature scoreQuerySignature:nextQuery againstTarget:nextTarget
-													usingTag:compareTag withCorrelation:useCorrelationScoring
-													useFragments:fragmentScoring fragmentGrouping:permitFragmentGrouping
-													bigFragmentSize:bigFragSize maxBigFragmentCount:maxBigFragCount ] ;
-													
-							// Merge into hit list
+							// Already collected signatures
+						
+							int count = 0 ;
+							int totalCount = [ targetSignatures count ] ;
+						
+							double currentPercent = 0. ;
+						
+							NSEnumerator *targetEnumerator = [ targetSignatures objectEnumerator ] ;
+						
+						
+							while( ( nextTarget = [ targetEnumerator nextObject ] ) )
+								{
+									NSAutoreleasePool * localPool = [[NSAutoreleasePool alloc] init];
 							
-							[ hitListItem merge:queryHits intoHitList:hits withMaxScore:maxScore 
-									maxPercentQueryUnmatched:maxPercentQueryUnmatched
-									maxPercentTargetUnmatched:maxPercentTargetUnmatched ] ;
-									
-							[ queryHits release ] ;
+									NSArray *queryHits = [ X2Signature scoreQuerySignature:nextQuery againstTarget:nextTarget
+																		  usingTag:compareTag withCorrelation:useCorrelationScoring
+																	  useFragments:fragmentScoring fragmentGrouping:permitFragmentGrouping
+																   bigFragmentSize:bigFragSize maxBigFragmentCount:maxBigFragCount ] ;
+								
+									++count ;
 							
-							[ localPool drain ] ;
+									if( ( ((double)count)/totalCount ) * 100 - currentPercent > 10. )
+										{
+											currentPercent += 10. ;
+											printf( "%f \% of targets - %s\n", currentPercent, 
+												[ nextTarget->sourceTree->treeName cString ]   ) ;
+										}
+								
+									// Merge into hit list
 							
-									
+									[ hitListItem merge:queryHits intoHitList:hits withMaxScore:maxScore 
+										maxPercentQueryUnmatched:maxPercentQueryUnmatched
+										maxPercentTargetUnmatched:maxPercentTargetUnmatched ] ;
 							
+									[ queryHits release ] ;
+							
+									[ localPool drain ] ;
+							
+							
+							
+								}
+						
 						}
+					else if( targetIsMySQLIDs == YES )
+						{
+							NSString *nextID ;
+							NSEnumerator *IDEnumerator = [ DBIDs objectEnumerator ] ;
+							int count = 0 ;
+						
+							// Make connection to database
+						
+							int totalCount = [ DBIDs count ] ;
+						
+							double currentPercent = 0. ;
+						
+							while( ( nextID = [ IDEnumerator nextObject ] ) )
+								{
+									NSAutoreleasePool * localPool = [ [ NSAutoreleasePool alloc ] init ];
+								
+									[ targetSignatures removeAllObjects ] ;
+								
+									// Check for blank
+								
+									NSString *useID = [ nextID stringByTrimmingCharactersInSet:
+													   [NSCharacterSet whitespaceAndNewlineCharacterSet ] ];
+									if ( [ useID length ] == 0 ) continue ;
+								
+									MYSQL *conn;
+									MYSQL_RES *result;
+									MYSQL_ROW row;
+									int num_fields;
+								
+									conn = mysql_init(NULL) ;
+								
+									mysql_real_connect(conn, [ MySQLHOST cString ], 
+											[ MySQLUSER cString ], [ MySQLPASSWORD cString ], 
+											[ MySQLDB cString ], 0, NULL, 0) ;
+								
+									char *sqlBuffer[10000] ;
+								
+									sprintf( sqlBuffer, "SELECT ZINCID, data FROM %s WHERE ID = %d",
+											[ MySQLTABLE cString ], [ nextID intValue ] ) ;
+								
+									mysql_query(conn, sqlBuffer ) ;
+									result = mysql_store_result(conn) ;
+									
+									num_fields = mysql_num_fields(result) ;
+								
+									++count ;
+								
+									row = mysql_fetch_row( result ) ;
+								
+									unsigned long *lengths = mysql_fetch_lengths( result ) ;
+								
+									if( ( ((double)count)/totalCount ) * 100 - currentPercent > 10. )
+										{
+											currentPercent += 10. ;
+											printf( "%f \% of target DB - %s\n", currentPercent, row[0] ) ;
+										}
+									
+									NSData *theData = [ NSData dataWithBytes:row[1] length:lengths[1] ] ;
+								
+									if( decompressDBs == YES )
+										{
+											theData = [ X2Signature decompress:theData ] ;
+										}
+									
+									NSString *errorString ;
+									NSPropertyListFormat theFormat ;
+									
+									NSArray *sourceArray = [ NSPropertyListSerialization propertyListFromData:theData 
+																							 mutabilityOption:0 format:&theFormat 
+																							 errorDescription:&errorString ] ;
+									
+									NSEnumerator *sourceArrayEnumerator = [ sourceArray objectEnumerator ] ;
+									
+									NSDictionary *nextSignatureDict ;
+									
+									while( ( nextSignatureDict = [ sourceArrayEnumerator nextObject ] ) )
+										{
+											X2Signature *nextSignature = [ [ X2Signature alloc ] 
+																		  initWithPropertyListDict:nextSignatureDict ] ;
+											
+											[ targetSignatures addObject:nextSignature ] ;
+											[ nextSignature release ] ;
+										}
+																			
+									mysql_free_result(result);
+										
+									[ localPool drain ] ;
+									
+								}
+						}
+					else
+						{
+							int count = 0 ;
+							int totalCount = [ DBFiles count ] ;
+							
+							double currentPercent = 0. ;
+						
+							NSEnumerator *fileEnumerator = [ DBFiles objectEnumerator ] ;
+							
+							NSString *pathRoot = [ targetDB stringByAppendingString:@"/" ] ;
+						
+							NSString *nextFile ;
+							
+							while( ( nextFile = [ fileEnumerator nextObject ] ) )
+								{
+									NSAutoreleasePool * localPool = [ [ NSAutoreleasePool alloc ] init ];
+									
+									// Memory leak for testing
+									//targetSignatures = [ [ NSMutableArray alloc ] initWithCapacity:2 ] ;
+									[ targetSignatures removeAllObjects ] ;
+								
+									NSString *nextPath = [ pathRoot stringByAppendingString:nextFile ] ;
+								
+									if( xmlIN == NO )
+										{
+											[ targetSignatures addObjectsFromArray:[ NSUnarchiver unarchiveObjectWithFile:nextPath ] ] ;
+										}
+									else
+										{
+											NSData *theData = [ NSData dataWithContentsOfFile:nextPath ] ;
+									
+											if( decompressDBs == YES )
+												{
+													theData = [ X2Signature decompress:theData ] ;
+												}
+									
+											NSString *errorString ;
+											NSPropertyListFormat theFormat ;
+									
+											NSArray *sourceArray = [ NSPropertyListSerialization propertyListFromData:theData 
+																							 mutabilityOption:0 format:&theFormat 
+																							 errorDescription:&errorString ] ;
+									
+											NSEnumerator *sourceArrayEnumerator = [ sourceArray objectEnumerator ] ;
+									
+											NSDictionary *nextSignatureDict ;
+									
+											while( ( nextSignatureDict = [ sourceArrayEnumerator nextObject ] ) )
+												{
+													X2Signature *nextSignature = [ [ X2Signature alloc ] 
+																	  initWithPropertyListDict:nextSignatureDict ] ;
+										
+													[ targetSignatures addObject:nextSignature ] ;
+													[ nextSignature release ] ;
+												}
+										}
+								
+									NSEnumerator *targetEnumerator = [ targetSignatures objectEnumerator ] ;
+								
+									++count ;
+								
+									if( ( ((double)count)/totalCount ) * 100 - currentPercent > 10. )
+										{
+											currentPercent += 10. ;
+											printf( "%f \% of target DB - %s\n", currentPercent, 
+												[ nextPath cString ] ) ;
+										}
+								
+									while ( ( nextTarget = [ targetEnumerator nextObject ] ) )
+										{
+											
+									
+											NSArray *queryHits = [ X2Signature scoreQuerySignature:nextQuery againstTarget:nextTarget
+																						  usingTag:compareTag withCorrelation:useCorrelationScoring
+																					  useFragments:fragmentScoring fragmentGrouping:permitFragmentGrouping
+																				   bigFragmentSize:bigFragSize maxBigFragmentCount:maxBigFragCount ] ;
+									
+											// Merge into hit list
+									
+											[ hitListItem merge:queryHits intoHitList:hits withMaxScore:maxScore 
+												maxPercentQueryUnmatched:maxPercentQueryUnmatched
+												maxPercentTargetUnmatched:maxPercentTargetUnmatched ] ;
+									
+											[ queryHits release ] ;
+									
+											
+									
+									
+									
+										}
+								
+									[ localPool drain ] ;
+								
+								}						
+						}
+					
 						
 					[ hitListItem sortHits:hits useWeightedScore:sortByFragmentWeightedScore
 							retainHits:maxHits  ] ;
@@ -1912,7 +2169,7 @@ int main (int argc, const char * argv[]) {
 					
 					hitListItem *nextHit ;
 					int count = 1 ;
-					
+				
 					fprintf( hitFILE, "*****HITS FOR QUERY MOLECULE:%s DB:%s\n", [ nextQuery->sourceTree->treeName cString ],
 						[ queryDBName cString ] ) ;
 					
@@ -1922,52 +2179,53 @@ int main (int argc, const char * argv[]) {
 								{
 									// Rank, target name, target DB, mean score, min score, max score, %query unmatched,
 									//				%target unmatched
-									
+								
 									fprintf( hitFILE, "%d\t%s\t%s\t%f\t%f\t%f\t%f\t%f\t", 
-										count, [ nextHit->mapping->target->hostBundle->sourceTree->treeName cString ],
+										count, [ nextHit->targetName cString ],
 										[ targetDBName cString ], nextHit->weightedScore, nextHit->minimumScore, 
 										nextHit->maximumScore, nextHit->percentQueryUnmatched, 
 										nextHit->percentTargetUnmatched ) ;
+									
 										
-									NSEnumerator *histoMatchEnumerator = [ nextHit->mapping->histoGroupPairs objectEnumerator ] ;
+									NSEnumerator *histoMatchEnumerator = [ nextHit->fragmentGroupPairs objectEnumerator ] ;
 									
-									NSArray *nextHistoGroupPair ;
+									NSArray *nextFragmentGroupPair ;
 									
-									while( ( nextHistoGroupPair = [ histoMatchEnumerator nextObject ] ) )
+									while( ( nextFragmentGroupPair = [ histoMatchEnumerator nextObject ] ) )
 										{
 											// Histo-histo score should have been added as third element of the
 											// histogram pair by call to scoreQuerySignature...
 											
-											histogramGroup *histoGroup1 = [ nextHistoGroupPair objectAtIndex:0 ] ;
-											histogramGroup *histoGroup2 = [ nextHistoGroupPair objectAtIndex:1 ] ;
+											NSArray *groupFragments1 = [ nextFragmentGroupPair objectAtIndex:0 ] ;
+											NSArray *groupFragments2 = [ nextFragmentGroupPair objectAtIndex:1 ] ;
+											double groupMatchScore = [ [ nextFragmentGroupPair objectAtIndex:2 ] doubleValue ] ;
+											int qCount = [ [ nextFragmentGroupPair objectAtIndex:3 ] intValue ] ;
+											int tCount = [ [ nextFragmentGroupPair objectAtIndex:4 ] intValue ] ;
 											
 											// If either group is empty, don't report this
 											
-											if( histoGroup1->segmentCount == 0 || histoGroup2->segmentCount == 0 ) continue ;
+											if( qCount == 0 || tCount == 0 ) continue ;
 											
 											fprintf(hitFILE,  "[(" ) ;
 											
-											NSArray *groupFragments = [ histoGroup1 sortedFragmentIndices ] ;
-											
 											int k ;
 											
-											for( k = 0 ; k < [ groupFragments count ] ; ++k )
+											for( k = 0 ; k < [ groupFragments1 count ] ; ++k )
 												{
-													fprintf( hitFILE, "%s", [ [ groupFragments objectAtIndex:k ] cString ] ) ;
-													if( k < [ groupFragments count ] - 1 ) fprintf(hitFILE,  "," ) ;
+													fprintf( hitFILE, "%s", [ [ groupFragments1 objectAtIndex:k ] cString ] ) ;
+													if( k < [ groupFragments1 count ] - 1 ) fprintf(hitFILE,  "," ) ;
 												}
 												
 											fprintf( hitFILE, ")-(" ) ;
 											
-											groupFragments = [ histoGroup2 sortedFragmentIndices ] ;
-											
-											for( k = 0 ; k < [ groupFragments count ] ; ++k )
+										
+											for( k = 0 ; k < [ groupFragments2 count ] ; ++k )
 												{
-													fprintf( hitFILE, "%s", [ [ groupFragments objectAtIndex:k ] cString ] ) ;
-													if( k < [ groupFragments count ] - 1 ) fprintf(hitFILE,  "," ) ;
+													fprintf( hitFILE, "%s", [ [ groupFragments2 objectAtIndex:k ] cString ] ) ;
+													if( k < [ groupFragments2 count ] - 1 ) fprintf(hitFILE,  "," ) ;
 												}
 												
-											fprintf( hitFILE, "):%f] ", [ [ nextHistoGroupPair objectAtIndex:2 ] doubleValue ] ) ;
+											fprintf( hitFILE, "):%f] ", groupMatchScore ) ;
 											
 										}
 										
@@ -1978,12 +2236,13 @@ int main (int argc, const char * argv[]) {
 									// Rank, target name, target DB, mean score
 									
 									fprintf( hitFILE, "%d\t%s\t%s\t%f\n", 
-										count, [ nextHit->mapping->target->hostBundle->sourceTree->treeName cString ],
+										count, [ nextHit->targetName cString ],
 										[ targetDBName cString ], nextHit->weightedScore ) ;
 								}
 								
 							++count ;
 						}
+				
 					
 				}
 				

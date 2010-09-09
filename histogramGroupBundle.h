@@ -17,7 +17,7 @@
 #import "histogramGroup.h"
 
 // This is a bundle of groups. Groups link together histograms (in accord with underlying source tree), 
-// a group bundle links together groups, again obeying the undelying chemical connectivity
+// a group bundle links together groups, again obeying the underlying chemical connectivity
 
 @interface histogramGroupBundle : NSObject 
 {
