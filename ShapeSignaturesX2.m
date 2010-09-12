@@ -195,6 +195,7 @@ int main (int argc, const char * argv[]) {
 			printf( "-info flags:\n" ) ;
 			printf( "\t-xmlIn <input XML database format (yes|no) ; default = NO>\n" ) ;
 			printf( "\t-decompress <decompress input signatures (yes|no); default = NO>\n") ;
+			printf( "\t-keyIncrement <key discretization increment; default = 0.05>\n" ) ;
 			printf( "\t-abbreviatedInfo <only report name and fragment keys (yes|no); default = YES>\n" ) ;
 			
 			exit(1) ;
@@ -337,7 +338,7 @@ int main (int argc, const char * argv[]) {
 								{
 									flagType = CORRELATIONSCORING ;
 								}
-							else if( strcasestr( &argv[i][1], "keyIncre" ) == &argv[i][1] )
+							else if( strcasestr( &argv[i][1], "keyIncr" ) == &argv[i][1] )
 								{
 									flagType = KEYINCREMENT ;
 								}
@@ -359,7 +360,7 @@ int main (int argc, const char * argv[]) {
 								}
 							else if( strcasestr( &argv[i][1], "targetmysql" ) == &argv[i][1] )
 								{
-									flagType = targetIsMySQLIDs ;
+									flagType = TARGETISMYSQLIDS ;
 								}
 							else if( strcasestr( &argv[i][1], "xmlin" ) == &argv[i][1] )
 								{
@@ -994,7 +995,7 @@ int main (int argc, const char * argv[]) {
 								break ;
 								
 							case KEYINCREMENT:
-								if( mode != CREATEMODE )
+								if( mode != CREATEMODE && mode != INFOMODE )
 									{
 										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 										exit(1) ;
@@ -1683,7 +1684,7 @@ int main (int argc, const char * argv[]) {
 			
 			NSMutableArray *targetSignatures = nil ;
 			
-			if( targetIsDirectory == NO )
+			if( targetIsDirectory == NO && targetIsMySQLIDs == NO  )
 				{
 					if( xmlIN == NO )
 						{
@@ -1734,7 +1735,9 @@ int main (int argc, const char * argv[]) {
 							exit(1) ;
 						}
 				
-					NSArray *DBIDs = [ fileContent componentsSeparatedByString:@"\n" ] ;
+					DBIDs = [ fileContent componentsSeparatedByString:@"\n" ] ;
+				
+					targetSignatures = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
 				}
 			else
 				{
@@ -1928,7 +1931,7 @@ int main (int argc, const char * argv[]) {
 				{
 					[ hits removeAllObjects ] ;
 				
-					if( targetIsDirectory == NO )
+					if( targetIsDirectory == NO && targetIsMySQLIDs == NO  )
 						{
 							// Already collected signatures
 						
@@ -1985,6 +1988,19 @@ int main (int argc, const char * argv[]) {
 						
 							double currentPercent = 0. ;
 						
+							MYSQL *conn;
+							MYSQL_RES *result;
+							MYSQL_ROW row;
+							int num_fields;
+							char *sqlBuffer[10000] ;
+							
+							conn = mysql_init(NULL) ;
+							
+							mysql_real_connect(conn, [ MySQLHOST cString ], 
+											   [ MySQLUSER cString ], [ MySQLPASSWORD cString ], 
+											   [ MySQLDB cString ], 0, NULL, 0) ;
+						
+						
 							while( ( nextID = [ IDEnumerator nextObject ] ) )
 								{
 									NSAutoreleasePool * localPool = [ [ NSAutoreleasePool alloc ] init ];
@@ -1996,19 +2012,6 @@ int main (int argc, const char * argv[]) {
 									NSString *useID = [ nextID stringByTrimmingCharactersInSet:
 													   [NSCharacterSet whitespaceAndNewlineCharacterSet ] ];
 									if ( [ useID length ] == 0 ) continue ;
-								
-									MYSQL *conn;
-									MYSQL_RES *result;
-									MYSQL_ROW row;
-									int num_fields;
-								
-									conn = mysql_init(NULL) ;
-								
-									mysql_real_connect(conn, [ MySQLHOST cString ], 
-											[ MySQLUSER cString ], [ MySQLPASSWORD cString ], 
-											[ MySQLDB cString ], 0, NULL, 0) ;
-								
-									char *sqlBuffer[10000] ;
 								
 									sprintf( sqlBuffer, "SELECT ZINCID, data FROM %s WHERE ID = %d",
 											[ MySQLTABLE cString ], [ nextID intValue ] ) ;
@@ -2027,7 +2030,7 @@ int main (int argc, const char * argv[]) {
 									if( ( ((double)count)/totalCount ) * 100 - currentPercent > 10. )
 										{
 											currentPercent += 10. ;
-											printf( "%f \% of target DB - %s\n", currentPercent, row[0] ) ;
+											printf( "%f %% of target signatures : at - %s\n", currentPercent, row[0] ) ;
 										}
 									
 									NSData *theData = [ NSData dataWithBytes:row[1] length:lengths[1] ] ;
@@ -2058,6 +2061,27 @@ int main (int argc, const char * argv[]) {
 										}
 																			
 									mysql_free_result(result);
+								
+									NSEnumerator *targetEnumerator = [ targetSignatures objectEnumerator ] ;
+								
+									while ( ( nextTarget = [ targetEnumerator nextObject ] ) )
+										{
+									
+									
+											NSArray *queryHits = [ X2Signature scoreQuerySignature:nextQuery againstTarget:nextTarget
+																						  usingTag:compareTag withCorrelation:useCorrelationScoring
+																					  useFragments:fragmentScoring fragmentGrouping:permitFragmentGrouping
+																				   bigFragmentSize:bigFragSize maxBigFragmentCount:maxBigFragCount ] ;
+									
+											// Merge into hit list
+									
+											[ hitListItem merge:queryHits intoHitList:hits withMaxScore:maxScore 
+												maxPercentQueryUnmatched:maxPercentQueryUnmatched
+												maxPercentTargetUnmatched:maxPercentTargetUnmatched ] ;
+									
+											[ queryHits release ] ;
+									
+										}
 										
 									[ localPool drain ] ;
 									
@@ -2127,7 +2151,7 @@ int main (int argc, const char * argv[]) {
 									if( ( ((double)count)/totalCount ) * 100 - currentPercent > 10. )
 										{
 											currentPercent += 10. ;
-											printf( "%f \% of target DB - %s\n", currentPercent, 
+											printf( "%f %% of target DB - %s\n", currentPercent, 
 												[ nextPath cString ] ) ;
 										}
 								
@@ -2308,7 +2332,7 @@ int main (int argc, const char * argv[]) {
 					printf( "@molecule:%s\n", [ nextQuery->sourceTree->treeName cString ] ) ;
 				
 					NSMutableString *keyString = [ [ nextQuery->histogramBundleForTag objectForKey:@"1DHISTO" ] 
-												  keyStringsForBundleWithIncrement:0.05 ]  ;
+												  keyStringsForBundleWithIncrement:keyIncrement ]  ;
 				
 					printf( "%s", [ keyString cString ] ) ;
 				
