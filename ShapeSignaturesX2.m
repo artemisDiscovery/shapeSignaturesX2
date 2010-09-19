@@ -39,7 +39,8 @@ int main (int argc, const char * argv[]) {
 							CORRELATIONSCORING, KEYTYPE, KEYINCREMENT, NEIGHBORLOWERBOUNDTOEXCLUDE,
 							MERGENEIGHBORRINGS, TARGETISDIRECTORY, TARGETISMYSQLIDS, PERMITFRAGMENTGROUPING, BIGFRAGMENTSIZE,
 							MAXBIGFRAGMENTCOUNT, XMLIN, XMLOUT, EXPLODEDB, RANGE, URLIN, URLOUT,
-							COMPRESS, DECOMPRESS, ABBREVIATEDINFO } ;
+							COMPRESS, DECOMPRESS, ABBREVIATEDINFO, MYSQLTABLENAME, MYSQLUSERNAME, MYSQLPASSWORD,
+							MYSQLDBNAME, MYSQLHOSTNAME } ;
 							
 	
 	enum { CREATEMODE, COMPAREMODE, INFOMODE, KEYSMODE, KMEANSMODE, CHECKMODE, CONVERTMODE, UNDEFINED } mode ;
@@ -169,6 +170,11 @@ int main (int argc, const char * argv[]) {
 			printf( "-compare flags:\n" ) ;
 			printf( "\t-targetdir <target DB is a directory (yes|no); default = NO >\n" ) ;
 			printf( "\t-targetmysqlIDs <target file holds molecule IDs for mysql database (yes|no); default = NO>\n" ) ;
+			printf( "\t-mysqlDB <mysql target database; default = 'ZINC'>\n" ) ;
+			printf( "\t-mysqlHost <mysql host; default = 'localhost'>\n" ) ;
+			printf( "\t-mysqlTableName <table name with shape sigs; default = 'compressedShapeSignatures'>\n" ) ;
+			printf( "\t-mysqlUserName <user name for mysql; default = 'root'>\n" ) ;
+			printf( "\t-mysqlPassword <passwd for mysql; default = (hidden)>\n" ) ;
 			printf( "\t-tag <histogram tag to use; default = 1DShape> \n" ) ;
 			printf( "\t-fragscore <use fragment-based scoring (yes|no); default = NO>\n" ) ;
 			printf( "\t-fraggroup <use fragment grouping w/ fragment scoring (yes|no); default = NO>\n" ) ;
@@ -397,6 +403,26 @@ int main (int argc, const char * argv[]) {
 							else if( strcasestr( &argv[i][1], "range" ) == &argv[i][1] )
 								{
 									flagType = RANGE ;
+								}
+							else if( strcasestr( &argv[i][1], "mysqltable" ) == &argv[i][1] )
+								{
+									flagType = MYSQLTABLENAME ;
+								}
+							else if( strcasestr( &argv[i][1], "mysqluser" ) == &argv[i][1] )
+								{
+									flagType = MYSQLUSERNAME ;
+								}
+							else if( strcasestr( &argv[i][1], "mysqlpass" ) == &argv[i][1] )
+								{
+									flagType = MYSQLPASSWORD ;
+								}
+							else if( strcasestr( &argv[i][1], "mysqlhost" ) == &argv[i][1] )
+								{
+									flagType = MYSQLHOSTNAME ;
+								}
+							else if( strcasestr( &argv[i][1], "mysqldb" ) == &argv[i][1] )
+								{
+									flagType = MYSQLDBNAME ;
 								}
 							else
 								{
@@ -1076,6 +1102,57 @@ int main (int argc, const char * argv[]) {
 										}
 									maxScore = atof( argv[i] ) ;
 									break ;
+							
+								case MYSQLTABLENAME:
+									if( mode != COMPAREMODE )
+										{
+											printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+											exit(1) ;
+										}
+							
+									MySQLTABLE = [ [ NSString alloc ] initWithCString:argv[i] ] ;
+									break ;
+							
+								case MYSQLUSERNAME:
+									if( mode != COMPAREMODE )
+										{
+											printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+											exit(1) ;
+										}
+									
+									MySQLUSER = [ [ NSString alloc ] initWithCString:argv[i] ] ;
+									break ;
+							
+								case MYSQLDBNAME:
+									if( mode != COMPAREMODE )
+										{
+											printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+											exit(1) ;
+										}
+									
+									MySQLDB = [ [ NSString alloc ] initWithCString:argv[i] ] ;
+									break ;
+
+								case MYSQLHOSTNAME:
+									if( mode != COMPAREMODE )
+										{
+											printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+											exit(1) ;
+										}
+									
+									MySQLHOST = [ [ NSString alloc ] initWithCString:argv[i] ] ;
+									break ;
+							
+								case MYSQLPASSWORD:
+									if( mode != COMPAREMODE )
+										{
+											printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+											exit(1) ;
+										}
+									
+									MySQLPASSWORD = [ [ NSString alloc ] initWithCString:argv[i] ] ;
+									break ;
+							
 									
 						}
 				}
