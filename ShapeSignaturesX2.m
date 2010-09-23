@@ -2092,9 +2092,18 @@ int main (int argc, const char * argv[]) {
 								
 									sprintf( sqlBuffer, "SELECT ZINCID, data FROM %s WHERE ID = %d",
 											[ MySQLTABLE cString ], [ nextID intValue ] ) ;
-								
+																
 									mysql_query(conn, sqlBuffer ) ;
 									result = mysql_store_result(conn) ;
+								
+									if( mysql_num_rows(result) != 1 )
+										{
+											printf( "WARNING - could not retrieve target ID = %s | %d\n",
+												   [nextID cString ], [ nextID intValue ] ) ;
+											mysql_free_result(result);
+											[ localPool drain ] ;
+											continue ;
+										}
 									
 									num_fields = mysql_num_fields(result) ;
 								
@@ -2163,6 +2172,7 @@ int main (int argc, const char * argv[]) {
 									[ localPool drain ] ;
 									
 								}
+							mysql_close(conn) ;
 						}
 					else
 						{
