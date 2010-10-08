@@ -2090,7 +2090,7 @@ int main (int argc, const char * argv[]) {
 													   [NSCharacterSet whitespaceAndNewlineCharacterSet ] ];
 									if ( [ useID length ] == 0 ) continue ;
 								
-									sprintf( sqlBuffer, "SELECT ZINCID, data FROM %s WHERE ID = %d",
+									sprintf( sqlBuffer, "SELECT NAME, data FROM %s WHERE ID = %d",
 											[ MySQLTABLE cString ], [ nextID intValue ] ) ;
 																
 									mysql_query(conn, sqlBuffer ) ;
