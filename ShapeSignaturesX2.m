@@ -2069,7 +2069,7 @@ int main (int argc, const char * argv[]) {
 							MYSQL_RES *result;
 							MYSQL_ROW row;
 							int num_fields;
-							char *sqlBuffer[10000] ;
+							char sqlBuffer[10000] ;
 							
 							conn = mysql_init(NULL) ;
 							
