@@ -2031,11 +2031,12 @@ int main (int argc, const char * argv[]) {
 								
 									++count ;
 							
-									if( ( ((double)count)/totalCount ) * 100 - currentPercent > 10. )
+									if( ( ((double)count)/totalCount ) * 100 - currentPercent > 5. )
 										{
-											currentPercent += 10. ;
+											currentPercent += 5. ;
 											printf( "%f \% of targets - %s\n", currentPercent, 
 												[ nextTarget->sourceTree->treeName cString ]   ) ;
+										
 										}
 								
 									// Merge into hit list
@@ -2113,10 +2114,11 @@ int main (int argc, const char * argv[]) {
 								
 									unsigned long *lengths = mysql_fetch_lengths( result ) ;
 								
-									if( ( ((double)count)/totalCount ) * 100 - currentPercent > 10. )
+									if( ( ((double)count)/totalCount ) * 100 - currentPercent > 5. )
 										{
-											currentPercent += 10. ;
+											currentPercent += 5. ;
 											printf( "%f %% of target signatures : at - %s\n", currentPercent, row[0] ) ;
+										
 										}
 									
 									NSData *theData = [ NSData dataWithBytes:row[1] length:lengths[1] ] ;
@@ -2235,11 +2237,12 @@ int main (int argc, const char * argv[]) {
 								
 									++count ;
 								
-									if( ( ((double)count)/totalCount ) * 100 - currentPercent > 10. )
+									if( ( ((double)count)/totalCount ) * 100 - currentPercent > 5. )
 										{
-											currentPercent += 10. ;
+											currentPercent += 5. ;
 											printf( "%f %% of target DB - %s\n", currentPercent, 
 												[ nextPath cString ] ) ;
+										
 										}
 								
 									while ( ( nextTarget = [ targetEnumerator nextObject ] ) )
@@ -2271,6 +2274,8 @@ int main (int argc, const char * argv[]) {
 						}
 					
 						
+					// Final sort 
+				
 					[ hitListItem sortHits:hits useWeightedScore:sortByFragmentWeightedScore
 							retainHits:maxHits  ] ;
 							

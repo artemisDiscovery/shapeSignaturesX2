@@ -3100,6 +3100,8 @@
 					
 				[ treeFragments addObject:theFragment ] ;
 			
+				[ theFragment release ] ;
+			
 				theFragment->sourceTree = self ;
 			}
 		

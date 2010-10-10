@@ -349,6 +349,8 @@ static NSString *version ;
 - (void) dealloc
 	{
 		if( identifier ) [ identifier release ] ;
+	
+		if( sourceTree ) [ sourceTree release ] ;
 		
 		[ histogramBundleForTag release ] ;
 		
@@ -435,6 +437,12 @@ static NSString *version ;
 				
 				NSArray *returnArray = [ [ NSArray alloc ] initWithObjects:theItem,nil ] ;
 				[ theItem release ] ;
+			
+				[ queryGroupBundle release ] ;
+				[ targetGroupBundle release ] ;
+			
+				[ queryGroup release ] ;
+				[ targetGroup release ] ;
 				
 				return returnArray ;
 			}
@@ -570,7 +578,11 @@ static NSString *version ;
 						[ returnArray addObject:theItem ] ;
 						[ theItem release ] ;
 					}
-					
+			
+				[ queryGroupBundles release ] ;
+				[ targetGroupBundles release ] ;
+				[ accumMappings release ] ;
+			
 				return returnArray ;
 			}
 					

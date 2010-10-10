@@ -197,7 +197,7 @@
 						
 						if( [ testSet count ] == 0 )
 							{
-								printf( "WARNING: SINGLE GROUP WITH ALL FRAGMENTS INCLUDED!\n" ) ;
+								//printf( "WARNING: SINGLE GROUP WITH ALL FRAGMENTS INCLUDED!\n" ) ;
 							}
 					}
 				

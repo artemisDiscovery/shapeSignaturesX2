@@ -154,7 +154,7 @@
 		
 		if( [ neighborFragmentIndices count ] == 0 )
 			{
-				printf( "WARNING: HAVE GROUP FRAGMENTS WITH NO NEIGHBORS\n" ) ;
+				//printf( "WARNING: HAVE GROUP FRAGMENTS WITH NO NEIGHBORS\n" ) ;
 			}
 		
 		// [ localSet release ] ;
