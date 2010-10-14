@@ -969,7 +969,39 @@ static NSArray *tagDescriptions ;
 			
 		return returnArray ;
 	}
-
+/*
+- (NSArray *) discretizeCumulativeWithIncrement:(double)probInc
+	{
+		if( [ histogram isTag2D:hostBundle->tag ] == YES ) return nil ;
+		
+		NSMutableArray *returnArray = [ NSMutableArray arrayWithCapacity:hostBundle->nLengthBins ] ;
+		
+		
+		int k ;
+		
+		if( hostBundle->nLengthBins < 2 || hostBundle->nLengthBins > 100 ) return nil ;
+		
+		// Readjust length in case of trailing zeroes
+		
+		k = hostBundle->nLengthBins - 1 ;
+		
+		while( binProbs[k] == 0. && k > 0 )
+			{
+			--k ;
+			}
+		
+		int nLengthToUse = k + 1 ;
+		
+		for( k = 0 ; k < nLengthToUse ; ++k )
+			{
+			NSNumber *nextBinHeight = [ NSNumber numberWithInt:floor( binProbs[k]/probInc ) ] ;
+			[ returnArray addObject:nextBinHeight ] ;
+			}
+		
+		
+		return returnArray ;
+	}
+*/
 
 - (NSString *) keyGroupStringWithIncrement:(double)probInc lowBin:(int)lo hiBin:(int)hi 
 	{
@@ -1000,12 +1032,15 @@ static NSArray *tagDescriptions ;
 			}
 			
 		// Check for missing on high side (I assume low side is covered)
+		// WAIT - why do I want to pad with zeros - not needed!
 		
+		/*
 		while( binCount <= hi )
 			{
 				[ returnString appendString:@"0:" ] ;
 				++binCount ;
 			}
+		*/
 			
 		return returnString ;
 	}	
