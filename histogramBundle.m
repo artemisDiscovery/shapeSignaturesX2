@@ -779,6 +779,8 @@ int MED3( int a, int b, int c )
 				[ returnString appendString:[ NSString stringWithFormat:@"%d", [ theFragment->fragmentNodes count ] ] ] ;
 				[ returnString appendString:@"\n@key:" ] ;
 				[ returnString appendString:[ theHisto keyStringWithIncrement:inc ] ] ;
+				[ returnString appendString:@"\n@cumKey:" ] ;
+				[ returnString appendString:[ theHisto cumulativeKeyStringWithIncrement:inc ] ] ;
 				[ returnString appendString:@"\n" ] ;
 			}
 			

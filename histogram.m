@@ -936,7 +936,27 @@ static NSArray *tagDescriptions ;
 			
 		return returnString ;
 	}
-	
+
+- (NSString *) cumulativeKeyStringWithIncrement:(double)probInc
+	{
+		// First convert to array of height values
+		
+		NSArray *heights = [ self discretizeCumulativeWithIncrement:probInc ] ;
+		
+		NSMutableString *returnString = [ NSMutableString stringWithCapacity:100 ] ;
+		
+		NSEnumerator *heightEnumerator = [ heights objectEnumerator ] ;
+		
+		NSNumber *nextHeight ;
+		
+		while( ( nextHeight = [ heightEnumerator nextObject ] ) )
+			{
+				[ returnString appendString:[ nextHeight stringValue ] ] ;
+				[ returnString appendString:@":" ] ;
+			}
+		
+		return returnString ;
+	}
 	
 - (NSArray *) discretizeWithIncrement:(double)probInc
 	{
@@ -969,9 +989,11 @@ static NSArray *tagDescriptions ;
 			
 		return returnArray ;
 	}
-/*
+
 - (NSArray *) discretizeCumulativeWithIncrement:(double)probInc
 	{
+		// Report discretized probability for bins greater than currnt
+	
 		if( [ histogram isTag2D:hostBundle->tag ] == YES ) return nil ;
 		
 		NSMutableArray *returnArray = [ NSMutableArray arrayWithCapacity:hostBundle->nLengthBins ] ;
@@ -990,18 +1012,23 @@ static NSArray *tagDescriptions ;
 			--k ;
 			}
 		
-		int nLengthToUse = k + 1 ;
+		// Make one less than full length, else we always have a trailing zero
+	
+		int nLengthToUse = k ;
+	
+		double cumProb = 1. ;
 		
 		for( k = 0 ; k < nLengthToUse ; ++k )
 			{
-			NSNumber *nextBinHeight = [ NSNumber numberWithInt:floor( binProbs[k]/probInc ) ] ;
-			[ returnArray addObject:nextBinHeight ] ;
+				cumProb -= binProbs[k] ;
+				NSNumber *nextBinHeight = [ NSNumber numberWithInt:floor( cumProb/probInc ) ] ;
+				[ returnArray addObject:nextBinHeight ] ;
 			}
 		
 		
 		return returnArray ;
 	}
-*/
+
 
 - (NSString *) keyGroupStringWithIncrement:(double)probInc lowBin:(int)lo hiBin:(int)hi 
 	{

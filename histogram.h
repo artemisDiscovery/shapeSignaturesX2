@@ -86,7 +86,9 @@ typedef struct { double lengthDelta ; double MEPDelta ; } histogramStyle ;
 + (BOOL) isTag2D:(NSString *)t ;
 
 - (NSString *) keyStringWithIncrement:(double)probInc ;
+- (NSString *) cumulativeKeyStringWithIncrement:(double)probInc ;
 - (NSArray *) discretizeWithIncrement:(double)probInc ;
+- (NSArray *) discretizeCumulativeWithIncrement:(double)probInc ;
 
 - (NSString *) keyGroupStringWithIncrement:(double)probInc lowBin:(int)lo hiBin:(int)hi ;
 
