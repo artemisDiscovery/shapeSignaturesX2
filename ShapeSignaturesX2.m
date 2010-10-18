@@ -43,7 +43,7 @@ int main (int argc, const char * argv[]) {
 							MYSQLDBNAME, MYSQLHOSTNAME } ;
 							
 	
-	enum { CREATEMODE, COMPAREMODE, INFOMODE, KEYSMODE, KMEANSMODE, CHECKMODE, CONVERTMODE, UNDEFINED } mode ;
+	enum { CREATEMODE, COMPAREMODE, INFOMODE, MEMORYRESOURCEMODE, KEYSMODE, KMEANSMODE, CHECKMODE, CONVERTMODE, UNDEFINED } mode ;
 	
 	mode = UNDEFINED ;
 	
@@ -145,6 +145,7 @@ int main (int argc, const char * argv[]) {
 			printf( "USAGE: shapeSigX -create [ flags ] <input directory> <output DB> \n" ) ;
 			printf( "USAGE: shapeSigX -compare [ flags ] <query DB> <target DB/directory/ID file> <hits file> \n" ) ;
 			printf( "USAGE: shapeSigX -convert [ flags ] <out DB/directory> <input 1> [<input 2>] ...\n" ) ;
+			printf( "USAGE: shapeSigX -memr [ flags ] <input directory>  \n" ) ;
 			printf( "USAGE: shapeSigX -info <query DB> \n" ) ;
 			printf( "USAGE: shapeSigX -keys [ flags ] <input directory> \n" ) ;
 			printf( "USAGE: shapeSigX -check [ flags ] <input directory> <output directory> \n" ) ;
@@ -198,6 +199,9 @@ int main (int argc, const char * argv[]) {
 			//printf( "\t-probIncrement <division for discretizing; default = 0.05> \n" ) ;
 			//printf( "\t-keyType <(g)lobal or (f)fragment histos; default = fragment> \n" ) ;
 			//printf( "\t-neighbors <probability lower bound to exclude> \n" ) ;
+			printf( "-memr (create memory resource) flags:\n" ) ;
+			printf( "\t-xmlIn <input XML database format (yes|no) ; default = NO>\n" ) ;
+			printf( "\t-decompress <decompress input signatures (yes|no); default = NO>\n") ;
 			printf( "-info flags:\n" ) ;
 			printf( "\t-xmlIn <input XML database format (yes|no) ; default = NO>\n" ) ;
 			printf( "\t-decompress <decompress input signatures (yes|no); default = NO>\n") ;
@@ -234,6 +238,11 @@ int main (int argc, const char * argv[]) {
 							else if( strcasestr( &argv[i][1], "convert" ) == &argv[i][1] )
 								{
 									mode = CONVERTMODE ;
+									parseState = GETTOKEN ;
+								}
+							else if( strcasestr( &argv[i][1], "memr" ) == &argv[i][1] )
+								{
+									mode = MEMORYRESOURCEMODE ;
 									parseState = GETTOKEN ;
 								}
 							else if( strcasestr( &argv[i][1], "info" ) == &argv[i][1] )
@@ -497,6 +506,19 @@ int main (int argc, const char * argv[]) {
 											exit(1) ;
 										}
 								}
+							else if( mode == MEMORYRESOURCEMODE )	
+								{
+									if( ! queryDB )
+										{
+											queryDB = [ [ NSString stringWithCString:argv[i] ] retain ] ;
+										}
+									else
+										{	
+											printf( "TOO MANY ARGUMENTS - Exit!\n" ) ;
+											exit(1) ;
+										}
+								}
+						
 							else if( mode == KEYSMODE )
 								{
 									if( ! XDBDirectory )
@@ -624,7 +646,8 @@ int main (int argc, const char * argv[]) {
 								break ;
 								
 							case XMLIN:
-								if( mode != COMPAREMODE && mode != CONVERTMODE && mode != INFOMODE )
+								if( mode != COMPAREMODE && mode != CONVERTMODE 
+									&& mode != INFOMODE && mode != MEMORYRESOURCEMODE )
 									{
 										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 										exit(1) ;
@@ -712,7 +735,8 @@ int main (int argc, const char * argv[]) {
 							break ;
 							
 							case DECOMPRESS :
-							if( mode != COMPAREMODE && mode != CONVERTMODE && mode != INFOMODE )
+							if( mode != COMPAREMODE && mode != CONVERTMODE && mode != INFOMODE
+										&& mode != MEMORYRESOURCEMODE )
 								{
 									printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 									exit(1) ;
@@ -2505,6 +2529,11 @@ int main (int argc, const char * argv[]) {
 
 
 				}
+		}
+	else if ( mode == MEMORYRESOURCEMODE )
+		{
+			// Create a memory resource using the "small" struct
+	
 		}
 	else
 		{
