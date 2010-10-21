@@ -16,6 +16,10 @@
 #include <math.h> 
 #import "libCURLUploader.h"
 #import "libCURLDownloader.h"
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+
 
 NSInteger fileNameCompare( id A, id B, void *ctxt ) ;
 
@@ -117,6 +121,7 @@ int main (int argc, const char * argv[]) {
 	NSString *queryDB = nil ;
 	NSString *targetDB = nil ;
 	NSString *outputDB = nil ;
+	NSString *resourceFile = nil ;
 	NSMutableArray *inputDBs = nil ;
 	NSString *hitsFile = nil ;
 	
@@ -511,6 +516,10 @@ int main (int argc, const char * argv[]) {
 									if( ! queryDB )
 										{
 											queryDB = [ [ NSString stringWithCString:argv[i] ] retain ] ;
+										}
+									else if( ! resourceFile )
+										{
+											resourceFile = [ [ NSString stringWithCString:argv[i] ] retain ] ;
 										}
 									else
 										{	
@@ -2532,7 +2541,373 @@ int main (int argc, const char * argv[]) {
 		}
 	else if ( mode == MEMORYRESOURCEMODE )
 		{
+			int shmID ;
+		
+			key_t rsrcKey ;
+		
+			// Does the resource file already exist? If so, create the shared segment and exit
+		
+			NSFileManager *fileManager = [ NSFileManager defaultManager ] ;
+		
+			if( [ fileManager fileExistsAtPath:resourceFile ] == YES )
+				{
+					rsrcKey = ftok( [ resourceFile cString ], 0 ) ;
+				
+					// Resource already exists?
+				
+					shmID = shmget( rsrcKey, 0, 0 ) ;
+				
+					if( shmID >= 0 )
+						{
+							printf( "Resource for %s already exists - nothing done - Exit!\n", 
+								   		[ resourceFile cString ] ) ;
+							exit(0) ;
+						}
+				
+					// Read the file and create resource for it
+				
+					NSData *fileContent = [ fileManager contentsAtPath:resourceFile ] ;
+				
+					void *inMem = (void *) [ fileContent bytes ] ;
+				
+					shmID = shmget( rsrcKey, [ fileContent length ], 0644 | IPC_CREAT) ;
+				
+					if( shmID < 0 )
+						{
+							printf( "ERROR - Could not create shared memory object based on file %s - Exit!\n",
+								   [ resourceFile cString ] ) ;
+							exit(1) ;
+						}
+				
+					// Map memory to our space
+				
+					void *sharedMem = shmat( shmID, (void *)0, 0 ) ;
+				
+					if( sharedMem < (void *)0 )
+						{
+							printf( "ERROR - Could not map shared memory object based on file %s - Exit!\n",
+							   [ resourceFile cString ] ) ;
+							exit(1) ;
+						}
+				
+					// Copy our data into shared memory 
+				
+					memcpy( sharedMem, (void *)inMem, [ fileContent length ] ) ;
+				
+					// Should be success!
+				
+					printf( "Finished creating shared memory segment - Bye!\n" ) ;
+					exit(0) ;
+					
+					
+				}
+		
+		
 			// Create a memory resource using the "small" struct
+		
+			// Enumerate all the files in the directory, collect just the 1D sigs for the fragments, 
+			// save in our in-memory struct
+		
+			NSError *error ;
+		
+			NSArray *files = [ fileManager contentsOfDirectoryAtPath:queryDB error:&error ] ;
+		
+			NSEnumerator *fileEnumerator = [ files objectEnumerator ] ;
+		
+			NSString *nextPath ;
+		
+			int count ;
+			int numFiles = [ files count ] ;
+			double percentComplete = 0. ;
+		
+			printf( "Begin import of %d files to create shared memory segment ...\n", numFiles ) ;
+		
+			int smallSigAlloc = 100000 ;
+		
+			void *inMem = (void *) malloc( smallSigAlloc ) ;
+		
+			void *inMemPtr = inMem ;
+		
+			// This is an incredibly stupid linear data structure - 
+			// First 8 bytes - bin width (as a double)
+			// Next 4 bytes - number of signatures (as unsigned int)
+			// Followed by (numSignatures X ):
+			// 		4 bytes (unsigned long) = Next mol ID
+			//		2 bytes (unsigned short) = number of frags next molecule
+			//		(num Frags X ):
+			//			2 bytes (unsigned short) = number of bins next signature
+			//			(num bins X):
+			//				(unsigned short)
+			//				if content = -1, use next 4 bytes (unsigned int), then switch back to original pattern
+		
+			double *binWidth = (double *)inMem ;
+			unsigned int *numSignatures = (unsigned int *)( inMem + sizeof( double ) ) ;
+			inMemPtr = inMem + sizeof( double ) + sizeof( unsigned int ) ;
+		
+			int smallSigUsed = sizeof( double ) + sizeof( unsigned int ) ;
+		
+			NSAutoreleasePool *localPool = [  [ NSAutoreleasePool alloc ] init ] ;
+		
+			while( ( nextPath = [ fileEnumerator nextObject ] ) )
+				{
+					
+					// Make sure path includes text X2DB, as sanity check
+				
+					NSRange theRange = [ nextPath rangeOfString:@"X2DB" ] ;
+				
+					if( theRange.location == NSNotFound )
+						{
+							printf( "Warning - file %s not processed \n", [ nextPath cString ] ) ;
+							continue ;
+						}
+				
+		
+					NSMutableArray *fileSignatures ;
+								
+					if( xmlIN == NO )
+						{
+							fileSignatures = [ NSUnarchiver unarchiveObjectWithFile:nextPath ] ;
+						}
+					else
+						{
+							fileSignatures = [ [ NSMutableArray alloc ] initWithCapacity:1000 ] ;
+					
+							NSData *theData = [ NSData dataWithContentsOfFile:nextPath ] ;
+					
+							if( decompressDBs == YES )
+								{
+									theData = [ X2Signature decompress:theData ] ;
+								}
+					
+							NSString *errorString ;
+							NSPropertyListFormat theFormat ;
+					
+							NSArray *fileArray = [ NSPropertyListSerialization propertyListFromData:theData 
+																			 mutabilityOption:0 format:&theFormat 
+																			 errorDescription:&errorString ] ;
+					
+							NSEnumerator *fileArrayEnumerator = [ fileArray objectEnumerator ] ;
+					
+							NSDictionary *nextSignatureDict ;
+					
+							while( ( nextSignatureDict = [ fileArrayEnumerator nextObject ] ) )
+								{
+									X2Signature *nextSignature = [ [ X2Signature alloc ] 
+													  initWithPropertyListDict:nextSignatureDict ] ;
+						
+									[ fileSignatures addObject:nextSignature ] ;
+									[ nextSignature release ] ;
+								}
+						}
+				
+					// Process all signatures
+				
+					X2Signature *nextSignature ;
+					NSEnumerator *signatureEnumerator = [ fileSignatures objectEnumerator ] ;
+				
+					short nBinsUsed[101] ;
+					histogram *fragHistos[101] ;
+					unsigned short minusOne = -1 ;
+					unsigned int intValue ;
+					unsigned short shortValue ;
+				
+					while( ( nextSignature = [ signatureEnumerator nextObject ] ) )
+						{
+							// We assume that ID is embedded in name - lame, but I do not feel like figuring out 
+							// anything smarter right now.
+						
+							NSString *IDString = [ nextSignature->sourceTree->treeName 
+												  	stringByTrimmingCharactersInSet:[ [ NSCharacterSet decimalDigitCharacterSet ] invertedSet ] ] ;
+						
+							// May have leading zeroes to deal with 
+						
+							char *ssID = [ IDString cString ] ;
+						
+							while( *ssID == '0' && *ssID != '\0' )
+								{
+									++ssID ;
+								}
+						
+							if( *ssID == '\0' )
+								{
+									// ID is all zeroes
+									--ssID ;
+								}
+						
+							unsigned int molID = (unsigned int) atoi( ssID ) ;
+						
+							unsigned int nFrags = (unsigned int) nextSignature->sourceTree->nFragments ;
+						
+							if( nFrags > 100 )
+								{
+									printf( "WARNING: Molecule %s has %d fragments - must skip it!\n",
+										   [ nextSignature->sourceTree->treeName cString ], (int)nFrags ) ;
+									continue ;
+								}
+						
+							int nFragsUsed  ;
+						
+							int jFrag ;
+						
+							histogramBundle *nextBundle = [ nextSignature->histogramBundleForTag objectForKey:@"1DHISTO" ] ;
+						
+							for( jFrag = 1 ; jFrag <= nFrags ; ++jFrag )
+								{
+									nBinsUsed[jFrag] = -1 ;
+								
+									NSString *keyString = [ NSString stringWithFormat:@"%d_%d",jFrag,jFrag ] ;
+								
+									fragHistos[jFrag] = 
+										[ nextBundle->sortedFragmentsToHistogram objectForKey:keyString ] ;
+									
+									if( ! fragHistos[jFrag] )
+										{
+											continue ;
+										}
+								
+									// How many bins to use?
+								
+									nBinsUsed[jFrag] = fragHistos[jFrag]->nBins ;
+								
+									int jBin = fragHistos[jFrag]->nBins - 1 ;
+								
+									while( fragHistos[jFrag]->binCounts[jBin] == 0 && jBin >= 0 )
+										{
+											--jBin ;
+											--nBinsUsed[jFrag] ;
+										}
+								
+									if( jBin < 0 )
+										{
+											nBinsUsed[jFrag] = -1 ; 
+											continue ;
+										}
+								
+									
+									
+								}
+						
+							nFragsUsed = nFrags ;
+							int totalBins = 0 ;
+						
+							for( jFrag = 1 ; jFrag <= nFrags ; ++jFrag )
+								{
+									if( nBinsUsed[jFrag] < 0 ) 
+										{
+											--nFragsUsed ;
+										}
+									else
+										{
+											totalBins += nBinsUsed[jFrag] ;
+										}
+								}
+						
+							// Worst case
+						
+							int addSize = sizeof( unsigned int ) + sizeof( unsigned short ) + 
+								nFragsUsed * sizeof( unsigned short ) + 
+								( totalBins * ( sizeof(unsigned short) + sizeof( unsigned int ) ) ) ;
+						
+							if( ( smallSigUsed + addSize  ) > smallSigAlloc )
+								{
+									smallSigAlloc += 100000 ;
+									inMem = (void *) realloc( inMem, smallSigAlloc ) ;
+								
+									if( ! inMem )
+										{
+											printf( "ERROR - COULD NOT EXPAND \"SMALL SIG\" DATA STRUCTURE - Exit!\n" ) ;
+											exit(1) ;
+										}
+								}
+						
+							memcpy( inMemPtr, &molID, sizeof( unsigned int ) ) ;
+							inMemPtr += sizeof( unsigned int ) ;
+							smallSigUsed += sizeof( unsigned int ) ;
+						
+							memcpy( inMemPtr, &nFragsUsed, sizeof( unsigned short ) ) ;
+							inMemPtr += sizeof( unsigned short ) ;
+							smallSigUsed += sizeof( unsigned short ) ;
+						
+							for( jFrag = 1 ; jFrag <= nFrags ; ++jFrag )
+								{
+									if( nBinsUsed[jFrag] < 0 ) continue ;
+								
+									memcpy( inMemPtr, &nBinsUsed[jFrag], sizeof( short ) ) ;
+									inMemPtr += sizeof( unsigned short ) ;
+									smallSigUsed += sizeof( unsigned short ) ;
+								
+									int jBin ;
+								
+									for( jBin = 0 ; jBin < nBinsUsed[jFrag] ; ++jBin )
+										{
+											if( fragHistos[jFrag]->binCounts <= 65535 )
+												{
+													shortValue = (unsigned short )fragHistos[jFrag]->binCounts[jBin] ;
+													memcpy( inMemPtr, & shortValue, sizeof( unsigned short ) ) ;
+													inMemPtr += sizeof( unsigned short ) ;
+													smallSigUsed += sizeof( unsigned short ) ;
+												}
+											else
+												{
+													memcpy( inMemPtr, &minusOne, sizeof( unsigned short ) ) ;
+													inMemPtr += sizeof( unsigned short ) ;
+													intValue = (unsigned int) fragHistos[jFrag]->binCounts[jBin] ;
+													memcpy( inMemPtr, & intValue, sizeof( unsigned int ) ) ;
+													inMemPtr += sizeof( unsigned int ) ;
+													smallSigUsed += sizeof( unsigned short ) + sizeof( unsigned int ) ;
+												}
+											
+										}
+								}
+						
+							++(*numSignatures) ;
+						}
+				
+					// File count 
+					++count ;
+				
+					if( ((double)count/numFiles)*100. > percentComplete + 10. )
+						{
+							percentComplete += 10. ;
+							printf( "%5.2f complete - Finished %s\n", percentComplete, [ nextPath cString ] ) ;
+							[ localPool release ] ;
+							localPool = [  [ NSAutoreleasePool alloc ] init ] ;
+						}
+					
+				}
+		
+			
+			// Now create shared memory resource and copy our data to it
+		
+			// First, save to file
+		
+			[ fileManager createFileAtPath:resourceFile contents:[ NSData dataWithBytes:(const void *)inMem length:smallSigUsed ] attributes:nil  ] ;
+		
+			rsrcKey = ftok( [ resourceFile cString ], 0 ) ;
+		
+			shmID = shmget( rsrcKey, smallSigUsed, 0644 | IPC_CREAT) ;
+		
+			if( shmID >= 0 )
+				{
+					printf( "COULD NOT CREATE SHARED RESOURCE - Exit!\n" ) ;
+					exit(1) ;
+				}
+		
+			void *shared_memory = shmat(shmID, (void *)0, 0);
+		
+			if( shared_memory == (void *)-1)
+				{
+					printf( "COULD NOT MAP TO SHARED RESOURCE - Exit!\n" ) ;
+					exit(1) ;
+				}
+		
+			printf( "Finished creating data structure, copy to shared resource ...\n" ) ;
+		
+			memcpy( shared_memory, inMem, smallSigUsed ) ;
+		
+			printf( "Finished!!\n" ) ;
+		
+			
 	
 		}
 	else
