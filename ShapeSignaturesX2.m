@@ -11,6 +11,7 @@
 #import "flatSurface.h"
 #import "rayTrace.h"
 #import "ctTree.h"
+#import "fragment.h"
 #import "shapeSignatureX2.h"
 #import "hitListItem.h"
 #include <math.h> 
@@ -19,9 +20,16 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
+typedef struct  
+{
+	int ID ;
+	double score ;
+} quickHit ;
 
 
 NSInteger fileNameCompare( id A, id B, void *ctxt ) ;
+
+int quickHitCompare( void *, void * ) ;
 
 int main (int argc, const char * argv[]) {
     NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
@@ -41,7 +49,7 @@ int main (int argc, const char * argv[]) {
 							SKIPSELFINTERSECTION, SCALE, COMPARETAG, NUMBEROFHITS, MAXHITS, MAXSCORE, FRAGSCORE,
 							SORTBYWEIGHTEDSCORE, MAXPERCENTQUERYUNMATCHED, MAXPERCENTTARGETUNMATCHED,
 							CORRELATIONSCORING, KEYTYPE, KEYINCREMENT, NEIGHBORLOWERBOUNDTOEXCLUDE,
-							MERGENEIGHBORRINGS, TARGETISDIRECTORY, TARGETISMYSQLIDS, PERMITFRAGMENTGROUPING, BIGFRAGMENTSIZE,
+							MERGENEIGHBORRINGS, TARGETISDIRECTORY, TARGETISMYSQLIDS, TARGETISMEMORYRSRC, PERMITFRAGMENTGROUPING, BIGFRAGMENTSIZE,
 							MAXBIGFRAGMENTCOUNT, XMLIN, XMLOUT, EXPLODEDB, RANGE, URLIN, URLOUT,
 							COMPRESS, DECOMPRESS, ABBREVIATEDINFO, MYSQLTABLENAME, MYSQLUSERNAME, MYSQLPASSWORD,
 							MYSQLDBNAME, MYSQLHOSTNAME } ;
@@ -56,8 +64,10 @@ int main (int argc, const char * argv[]) {
 	
 	BOOL insideTrace = YES ;
 	
+	BOOL targetIsFile = YES ;
 	BOOL targetIsDirectory = NO ;
 	BOOL targetIsMySQLIDs = NO ;
+	BOOL targetIsMemoryRsrc = NO ;
 	
 	double lengthDelta = 0.5 ;
 	double MEPDelta = 0.05 ;
@@ -75,6 +85,7 @@ int main (int argc, const char * argv[]) {
 	
 	int bigFragSize = 20 ;
 	int maxBigFragCount = -1 ; 
+	int smallFragmentSize = 5 ;
 	
 	BOOL sortByFragmentWeightedScore = YES ;
 	
@@ -148,7 +159,7 @@ int main (int argc, const char * argv[]) {
 	if( argc < 3 )
 		{
 			printf( "USAGE: shapeSigX -create [ flags ] <input directory> <output DB> \n" ) ;
-			printf( "USAGE: shapeSigX -compare [ flags ] <query DB> <target DB/directory/ID file> <hits file> \n" ) ;
+			printf( "USAGE: shapeSigX -compare [ flags ] <query DB> <target DB/directory/ID file/memrsrc> <hits file> \n" ) ;
 			printf( "USAGE: shapeSigX -convert [ flags ] <out DB/directory> <input 1> [<input 2>] ...\n" ) ;
 			printf( "USAGE: shapeSigX -memr [ flags ] <input directory>  \n" ) ;
 			printf( "USAGE: shapeSigX -info <query DB> \n" ) ;
@@ -176,6 +187,7 @@ int main (int argc, const char * argv[]) {
 			printf( "-compare flags:\n" ) ;
 			printf( "\t-targetdir <target DB is a directory (yes|no); default = NO >\n" ) ;
 			printf( "\t-targetmysqlIDs <target file holds molecule IDs for mysql database (yes|no); default = NO>\n" ) ;
+			printf( "\t-targetmem <target points to memory resource; quick compare, abbreviated output (yes|no); default = NO>\n" ) ;
 			printf( "\t-mysqlDB <mysql target database; default = 'ZINC'>\n" ) ;
 			printf( "\t-mysqlHost <mysql host; default = 'localhost'>\n" ) ;
 			printf( "\t-mysqlTableName <table name with shape sigs; default = 'compressedShapeSignatures'>\n" ) ;
@@ -381,6 +393,10 @@ int main (int argc, const char * argv[]) {
 							else if( strcasestr( &argv[i][1], "targetmysql" ) == &argv[i][1] )
 								{
 									flagType = TARGETISMYSQLIDS ;
+								}
+							else if( strcasestr( &argv[i][1], "targetmem" ) == &argv[i][1] )
+								{
+									flagType = TARGETISMEMORYRSRC ;
 								}
 							else if( strcasestr( &argv[i][1], "xmlin" ) == &argv[i][1] )
 								{
@@ -839,6 +855,8 @@ int main (int argc, const char * argv[]) {
 									{
 										targetIsDirectory = YES ;
 										targetIsMySQLIDs = NO ;
+										targetIsMemoryRsrc = NO ;
+										targetIsFile = NO ;
 									}
 								else
 									{
@@ -857,6 +875,8 @@ int main (int argc, const char * argv[]) {
 									{
 										targetIsMySQLIDs = YES ;
 										targetIsDirectory = NO ;
+										targetIsMemoryRsrc = NO ;
+										targetIsFile = NO ;
 									}
 								else
 									{
@@ -864,6 +884,28 @@ int main (int argc, const char * argv[]) {
 									}
 							
 							break ;
+							
+							case TARGETISMEMORYRSRC:
+							if( mode != COMPAREMODE )
+								{
+									printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+									exit(1) ;
+								}
+							
+							if( argv[i][0] == 'y' || argv[i][0] == 'Y' )
+								{
+									targetIsMemoryRsrc = YES ;
+									targetIsMySQLIDs = NO ;
+									targetIsDirectory = NO ;
+									targetIsFile = NO ;
+								}
+							else
+								{
+									targetIsMemoryRsrc = NO ;
+								}
+							
+							break ;
+							
 								
 							case MERGENEIGHBORRINGS:
 								if( mode != CREATEMODE )
@@ -1794,7 +1836,7 @@ int main (int argc, const char * argv[]) {
 			
 			NSMutableArray *targetSignatures = nil ;
 			
-			if( targetIsDirectory == NO && targetIsMySQLIDs == NO  )
+			if( targetIsFile == YES  )
 				{
 					if( xmlIN == NO )
 						{
@@ -1849,7 +1891,7 @@ int main (int argc, const char * argv[]) {
 				
 					targetSignatures = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
 				}
-			else
+			else if( targetIsDirectory == YES )
 				{
 					NSFileManager *fileManager = [ NSFileManager defaultManager ] ;
 			
@@ -1954,6 +1996,327 @@ int main (int argc, const char * argv[]) {
 								}
 						}
 					 */
+				}
+			else if( targetIsMemoryRsrc == YES )
+				{
+					// The design here is a little weak - this section will be "standalone" as it implements
+					// a very different approach to searching and scoring.
+				
+					// Basic strategy - fragment histos for all query molecules will be collected, and will
+					// be quickly compared against the contents of the data in the target memory resource.
+					// Score between query and target will be taken as the average of the best query fragment histo - vs
+					// target fragment histo score. Overall score for a target will be the best (lowest) of these
+					// average scores. Hits will be stored in a simple struct, and will be sorted at the end. maxHits
+					// will be recorded in a file which can be used for detailed compaison in 'Mysql' mode
+				
+				
+					int shmID ;
+				
+					key_t rsrcKey ;
+					
+					// Does the resource file exist?
+					
+					NSFileManager *fileManager = [ NSFileManager defaultManager ] ;
+					
+					if( [ fileManager fileExistsAtPath:targetDB ] == NO )
+						{
+							printf( "FILE FOR TARGET RESOURCE MISSING - Exit!\n" ) ;
+							exit(1) ;
+							
+						}
+				
+					rsrcKey = ftok( [ targetDB cString ], 0 ) ;
+						
+					shmID = shmget( rsrcKey, 0, 0 ) ;
+						
+					if( shmID < 0 )
+						{
+							printf( "Resource for %s not found in memory - Exit!\n", 
+						   		[ targetDB cString ] ) ;
+							exit(1) ;
+						}
+					
+					// Map memory to our space
+				
+					void *inMem = shmat( shmID, (void *)0, 0 ) ;
+				
+					if( inMem < (void *)0 )
+						{
+							printf( "ERROR - Could not map shared memory object based on file %s - Exit!\n",
+						   		[ targetDB cString ] ) ;
+							exit(1) ;
+						}
+				
+					// Collect histos from query
+				
+					int histoAlloc = 100 ;
+				
+					double **queryHistoBins = (double **) malloc( histoAlloc * sizeof( double * ) ) ;
+					int *queryHistoNBins = (int *) malloc( histoAlloc * sizeof( int  ) ) ;
+													 
+					int nQueryHistos = 0 ;
+													 
+					double currentBinWidth = 0. ;
+				
+					NSEnumerator *querySignatureEnumerator = [ querySignatures objectEnumerator ] ;
+				
+					X2Signature *nextQuery ;
+					NSMutableString *key = [ [ NSMutableString alloc ] initWithCapacity:10 ] ;
+				
+					while( ( nextQuery = [ querySignatureEnumerator nextObject ] ) )
+						{
+							histogramBundle *nextBundle = [ nextQuery->histogramBundleForTag objectForKey:@"1DHISTO" ] ;
+						
+							if( currentBinWidth == 0. )
+								{
+									currentBinWidth = nextBundle->lengthDelta ;
+								}
+							else if( nextBundle->lengthDelta != currentBinWidth )
+								{
+									printf( "BIN WIDTH MISMATCH WHILE PROCESSING QUERY HISTOGRAMS - Exit!\n" ) ;
+									exit(1) ;
+								}
+						
+							int nFrags = nextBundle->sourceTree->nFragments ;
+						
+							int jFrag ;
+						
+							for( jFrag = 1 ; jFrag <= nFrags ; ++jFrag )
+								{
+									[ key setString:@"" ] ;
+									[ key appendFormat:@"%d_%d",jFrag,jFrag ] ;
+								
+									histogram *nextHisto = 
+										[ nextBundle->sortedFragmentsToHistogram objectForKey:key ] ;
+								
+									// Get nonpadded length of histogram
+								
+									double *nextHistoData = nextHisto->binProbs ;
+									int actualLength = nextBundle->nLengthBins ;
+								
+									int jBin ;
+								
+									for( jBin = actualLength - 1; jBin >= 0 ; --jBin )
+										{
+											if ( nextHistoData[jBin] == 0. )
+												{
+													--actualLength ;
+												}
+											else
+												{
+													break ;
+												}
+										}
+								
+									if( actualLength > 0 )
+										{
+											// Add a histogram
+										
+											if( nQueryHistos == histoAlloc )
+												{
+													histoAlloc += 100 ;
+													
+													queryHistoBins = (double **) realloc( queryHistoBins, histoAlloc * sizeof( double * ) ) ;
+													queryHistoNBins = (int *) realloc( queryHistoNBins, histoAlloc * sizeof( int  ) ) ;
+												}
+																					  
+											queryHistoNBins[nQueryHistos] = actualLength ;
+											
+											queryHistoBins[nQueryHistos] = nextHisto->binProbs ;
+										
+											++nQueryHistos ;
+										}
+								}
+						
+						}
+														  
+					// Start parsing the memory resource
+				
+					double *resourceBinWidth = inMem ;
+					int *numTargetSignatures = (int *)( inMem + sizeof( double ) ) ;
+				
+					// Have less than 100 target fragments per signature
+					
+					double minScoreByFragment[100] ;
+					int segmentsByFragment[100] ;
+					
+					double nextTargetHistoProb[200] ;
+					int nextTargetHistoCount[200] ;
+					int nextNBin ;
+				
+					void *inMemPtr = inMem + sizeof( double ) + sizeof( int ) ;
+				
+					int iSig, jBin ;
+				
+					int hitAlloc = 2. * maxHits ;
+				
+					int numHits = 0 ;
+				
+					quickHit *hits = (quickHit *) malloc( hitAlloc * sizeof( quickHit ) ) ;
+				
+					unsigned int molID ;
+					unsigned short numTargetFrags ;
+					short numTargetBins ;
+					short shortVal ;
+					unsigned int intVal ;
+				
+					double nextQueryScore ;
+					double minQueryScore ;
+				
+					double percentComplete = 0. ;
+				
+					printf( "Compare %d query fragment histograms against %d target fragments --- \n\n",
+						   	nQueryHistos, *numTargetSignatures ) ;
+				
+					for( iSig = 0 ; iSig < *numTargetSignatures ; ++iSig )
+						{
+							// Scan next signature
+						
+							memcpy(&molID, inMemPtr, sizeof( unsigned int )  ) ;
+							inMemPtr += sizeof( unsigned int ) ;
+						
+							memcpy(&numTargetFrags, inMemPtr, sizeof( unsigned short )  ) ;
+							inMemPtr += sizeof( unsigned short ) ;
+						
+							int jFrag ;
+						
+							int totalSegmentsForSig = 0 ;
+						
+							for( jFrag = 0 ; jFrag < numTargetFrags ; ++jFrag )
+								{
+									segmentsByFragment[jFrag] = 0 ;
+								
+									memcpy(&numTargetBins, inMemPtr, sizeof( short )  ) ;
+									inMemPtr += sizeof(  short ) ;
+								
+									for( jBin = 0 ; jBin < numTargetBins ; ++jBin )
+										{
+											memcpy(&shortVal, inMemPtr, sizeof( short )  ) ;
+											inMemPtr += sizeof(  short ) ;
+										
+											if( shortVal == -1 )
+												{
+													memcpy(&intVal, inMemPtr, sizeof( unsigned int )  ) ;
+													inMemPtr += sizeof(  unsigned int ) ;
+												
+													nextTargetHistoCount[jBin] = intVal ;
+													segmentsByFragment[jFrag] += intVal ;
+													totalSegmentsForSig += intVal ;
+												}
+											else
+												{
+													nextTargetHistoCount[jBin] = shortVal ;
+													segmentsByFragment[jFrag] += shortVal ;
+													totalSegmentsForSig += shortVal ;
+												}
+										}
+								
+									for( jBin = 0 ; jBin < numTargetBins ; ++jBin )
+										{
+											nextTargetHistoProb[jBin] = ((double)nextTargetHistoCount[jBin])/segmentsByFragment[jFrag] ;
+										}
+								
+									minQueryScore = 2. ;
+									int iQueryHisto ;
+									int maxBins ;
+								
+									for( iQueryHisto = 0 ; iQueryHisto < nQueryHistos ; ++iQueryHisto )
+										{
+											nextQueryScore = 0. ;
+										
+											if( numTargetBins > queryHistoNBins[iQueryHisto] )
+												{
+													maxBins = numTargetBins ;
+												}
+											else
+												{
+													maxBins = queryHistoNBins[iQueryHisto] ;
+												}
+										
+											for( jBin = 0 ; jBin < maxBins ; ++jBin )
+												{
+													if( jBin >= queryHistoNBins[iQueryHisto] )
+														{
+															nextQueryScore += nextTargetHistoProb[jBin] ;
+														}
+													else if( jBin >= numTargetBins )
+														{
+															nextQueryScore += queryHistoBins[iQueryHisto][jBin] ;
+														}
+													else
+														{
+															nextQueryScore += fabs( nextTargetHistoProb[jBin] - queryHistoBins[iQueryHisto][jBin] ) ;
+														}
+												}
+										
+											if( nextQueryScore < minQueryScore ) minQueryScore = nextQueryScore ;
+											
+										}
+								
+									minScoreByFragment[jFrag] = minQueryScore ;
+								
+									
+								}
+						
+							// Compute overall score for this target signature
+						
+							double compositeScore = 0. ;
+						
+							for( jFrag = 0 ; jFrag < numTargetFrags ; ++jFrag )
+								{
+									compositeScore += (minScoreByFragment[jFrag] * segmentsByFragment[jFrag]) / totalSegmentsForSig ;
+								}
+						
+							hits[numHits].ID = molID ;
+							hits[numHits].score = compositeScore ;
+						
+							// Sort and cull if needed
+						
+							++numHits ;
+							
+							if( numHits == hitAlloc )
+								{
+									qsort(hits, hitAlloc, sizeof(quickHit), quickHitCompare ) ;
+								
+									numHits = maxHits ;
+								}
+							
+							if( (((double)iSig)/ *numTargetSignatures)*100. > percentComplete + 10. )
+								{
+									percentComplete += 10. ;
+									printf( "%5.1f %% complete, at mol ID = %d\n", percentComplete, molID ) ;
+								}
+						}
+						
+					// Now we have maxHits quick hits, write to output file. Format will be molID\tscore
+				
+					// Final sort
+				
+					qsort(hits, numHits, sizeof(quickHit), quickHitCompare ) ;
+				
+					if( numHits > maxHits ) numHits = maxHits ;
+				
+					FILE *hitFile = fopen( [ hitsFile cString ], "w" ) ;
+				
+					int iHit ;
+				
+					for( iHit = 0 ; iHit < numHits ; ++iHit )
+						{
+							fprintf( hitFile, "%d\t%f\n", hits[iHit].ID, hits[iHit].score ) ;
+						}
+				
+					fclose(hitFile) ;
+				
+					// Premature exit!
+				
+					exit(0) ;
+					
+				
+				}
+			else
+				{
+					printf( "ILLEGAL TARGET SPECIFICATION - Exit!\n" ) ;
+					exit(1) ;
 				}
 						
 			NSString *queryDBName = [ [ [ queryDB pathComponents ] lastObject ] retain ] ;
@@ -2123,6 +2486,15 @@ int main (int argc, const char * argv[]) {
 									NSString *useID = [ nextID stringByTrimmingCharactersInSet:
 													   [NSCharacterSet whitespaceAndNewlineCharacterSet ] ];
 									if ( [ useID length ] == 0 ) continue ;
+								
+									// Check for score after ID
+								
+									NSArray *words = [useID componentsSeparatedByString:@"\t" ] ;
+								
+									if( [ words count ] == 2 )
+										{
+											nextID = [ words objectAtIndex:0 ] ;
+										}
 								
 									sprintf( sqlBuffer, "SELECT NAME, data FROM %s WHERE ID = %d",
 											[ MySQLTABLE cString ], [ nextID intValue ] ) ;
@@ -2614,7 +2986,8 @@ int main (int argc, const char * argv[]) {
 		
 			NSEnumerator *fileEnumerator = [ files objectEnumerator ] ;
 		
-			NSString *nextPath ;
+			NSString *nextFile, *nextPath ;
+
 		
 			int count ;
 			int numFiles = [ files count ] ;
@@ -2648,10 +3021,20 @@ int main (int argc, const char * argv[]) {
 		
 			NSAutoreleasePool *localPool = [  [ NSAutoreleasePool alloc ] init ] ;
 		
-			while( ( nextPath = [ fileEnumerator nextObject ] ) )
+			*binWidth = 0. ;
+		
+			if( [ queryDB hasSuffix:@"/" ] == NO )
+				{
+					queryDB = [ [ queryDB stringByAppendingString:@"/" ] retain ] ;
+				}
+		
+			count = 0 ;
+		
+			while( ( nextFile = [ fileEnumerator nextObject ] ) )
 				{
 					
-					// Make sure path includes text X2DB, as sanity check
+					nextPath = [ queryDB stringByAppendingString:nextFile ] ;
+					   	
 				
 					NSRange theRange = [ nextPath rangeOfString:@"X2DB" ] ;
 				
@@ -2661,6 +3044,15 @@ int main (int argc, const char * argv[]) {
 							continue ;
 						}
 				
+				
+					// Make sure legal suffix
+					
+					if( [ nextPath hasSuffix:@"X2DB" ] == NO &&
+					   	[ nextPath hasSuffix:@".xml" ] == NO &&
+					    [ nextPath hasSuffix:@".xml.Z" ] == NO )
+						{
+							continue ;
+						}
 		
 					NSMutableArray *fileSignatures ;
 								
@@ -2670,7 +3062,7 @@ int main (int argc, const char * argv[]) {
 						}
 					else
 						{
-							fileSignatures = [ [ NSMutableArray alloc ] initWithCapacity:1000 ] ;
+							fileSignatures = [ NSMutableArray arrayWithCapacity:1000 ] ;
 					
 							NSData *theData = [ NSData dataWithContentsOfFile:nextPath ] ;
 					
@@ -2707,9 +3099,9 @@ int main (int argc, const char * argv[]) {
 				
 					short nBinsUsed[101] ;
 					histogram *fragHistos[101] ;
-					unsigned short minusOne = -1 ;
+					short minusOne = -1 ;
 					unsigned int intValue ;
-					unsigned short shortValue ;
+					short shortValue ;
 				
 					while( ( nextSignature = [ signatureEnumerator nextObject ] ) )
 						{
@@ -2751,16 +3143,32 @@ int main (int argc, const char * argv[]) {
 						
 							histogramBundle *nextBundle = [ nextSignature->histogramBundleForTag objectForKey:@"1DHISTO" ] ;
 						
+							if( *binWidth == 0. )
+								{
+									*binWidth = nextBundle->lengthDelta ;
+								}
+							else if( *binWidth != nextBundle->lengthDelta )
+								{
+									printf( "ERROR - BIN WIDTH MISMATCH ENCOUNTERED - Exit!\n" ) ;
+									exit(1) ;
+								}
+						
 							for( jFrag = 1 ; jFrag <= nFrags ; ++jFrag )
 								{
 									nBinsUsed[jFrag] = -1 ;
 								
+									int fragmentIndex = jFrag - 1 ;
+								
+									fragment *nextFragment = (fragment *)[ nextBundle->sourceTree->treeFragments objectAtIndex:fragmentIndex ] ;
+								
+									int fragCount = [ nextFragment->fragmentNodes count ] ;
+							
 									NSString *keyString = [ NSString stringWithFormat:@"%d_%d",jFrag,jFrag ] ;
 								
 									fragHistos[jFrag] = 
-										[ nextBundle->sortedFragmentsToHistogram objectForKey:keyString ] ;
+										(histogram *)[ nextBundle->sortedFragmentsToHistogram objectForKey:keyString ] ;
 									
-									if( ! fragHistos[jFrag] )
+									if( fragHistos[jFrag] == nil || fragCount < smallFragmentSize ) 
 										{
 											continue ;
 										}
@@ -2806,12 +3214,17 @@ int main (int argc, const char * argv[]) {
 						
 							int addSize = sizeof( unsigned int ) + sizeof( unsigned short ) + 
 								nFragsUsed * sizeof( unsigned short ) + 
-								( totalBins * ( sizeof(unsigned short) + sizeof( unsigned int ) ) ) ;
+								( totalBins * ( sizeof(short) + sizeof( unsigned int ) ) ) ;
 						
 							if( ( smallSigUsed + addSize  ) > smallSigAlloc )
 								{
 									smallSigAlloc += 100000 ;
 									inMem = (void *) realloc( inMem, smallSigAlloc ) ;
+									inMemPtr = inMem + smallSigUsed ;
+									binWidth = (double *)inMem ;
+									numSignatures = (unsigned int *)( inMem + sizeof( double ) ) ;
+								
+									
 								
 									if( ! inMem )
 										{
@@ -2833,28 +3246,28 @@ int main (int argc, const char * argv[]) {
 									if( nBinsUsed[jFrag] < 0 ) continue ;
 								
 									memcpy( inMemPtr, &nBinsUsed[jFrag], sizeof( short ) ) ;
-									inMemPtr += sizeof( unsigned short ) ;
-									smallSigUsed += sizeof( unsigned short ) ;
+									inMemPtr += sizeof( short ) ;
+									smallSigUsed += sizeof( short ) ;
 								
 									int jBin ;
 								
 									for( jBin = 0 ; jBin < nBinsUsed[jFrag] ; ++jBin )
 										{
-											if( fragHistos[jFrag]->binCounts <= 65535 )
+											if( fragHistos[jFrag]->binCounts[jBin] <= 32767 )
 												{
-													shortValue = (unsigned short )fragHistos[jFrag]->binCounts[jBin] ;
-													memcpy( inMemPtr, & shortValue, sizeof( unsigned short ) ) ;
-													inMemPtr += sizeof( unsigned short ) ;
-													smallSigUsed += sizeof( unsigned short ) ;
+													shortValue = (short )fragHistos[jFrag]->binCounts[jBin] ;
+													memcpy( inMemPtr, & shortValue, sizeof( short ) ) ;
+													inMemPtr += sizeof( short ) ;
+													smallSigUsed += sizeof( short ) ;
 												}
 											else
 												{
-													memcpy( inMemPtr, &minusOne, sizeof( unsigned short ) ) ;
-													inMemPtr += sizeof( unsigned short ) ;
+													memcpy( inMemPtr, &minusOne, sizeof( short ) ) ;
+													inMemPtr += sizeof( short ) ;
 													intValue = (unsigned int) fragHistos[jFrag]->binCounts[jBin] ;
 													memcpy( inMemPtr, & intValue, sizeof( unsigned int ) ) ;
 													inMemPtr += sizeof( unsigned int ) ;
-													smallSigUsed += sizeof( unsigned short ) + sizeof( unsigned int ) ;
+													smallSigUsed += sizeof( short ) + sizeof( unsigned int ) ;
 												}
 											
 										}
@@ -2887,7 +3300,7 @@ int main (int argc, const char * argv[]) {
 		
 			shmID = shmget( rsrcKey, smallSigUsed, 0644 | IPC_CREAT) ;
 		
-			if( shmID >= 0 )
+			if( shmID < 0 )
 				{
 					printf( "COULD NOT CREATE SHARED RESOURCE - Exit!\n" ) ;
 					exit(1) ;
@@ -2928,4 +3341,21 @@ NSInteger fileNameCompare( id A, id B, void *ctxt )
 		NSString *bName = [ [ fB componentsSeparatedByString:@"." ] objectAtIndex:0 ] ;
 
 		return (NSInteger) [ aName compare:bName ] ;
+	}
+
+
+int quickHitCompare( void *quick1, void *quick2 )
+	{
+		if( ( ( quickHit *)quick1 )->score < ( ( quickHit *)quick2 )->score )
+			{
+				return -1 ;
+			}
+		else if( ( ( quickHit *)quick1 )->score > ( ( quickHit *)quick2 )->score )
+			{
+				return 1 ;
+			}
+		else
+			{
+				return 0 ;
+			}
 	}
