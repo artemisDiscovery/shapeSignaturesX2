@@ -1704,7 +1704,7 @@ int main (int argc, const char * argv[]) {
 						
 					// Always trash surface object and rayTrace object
 					
-					[ nextTree release ] ;
+					//[ nextTree release ] ;
 					[ nextRayTrace release ] ;
 					[ nextSurface release ] ;
 				}
