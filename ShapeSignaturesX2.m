@@ -1399,8 +1399,8 @@ int main (int argc, const char * argv[]) {
 							exit(1) ;
 						}
 						
-					if( [ fileManager createDirectoryAtPath:createDB withIntermediateDirectories:NO 
-						attributes:nil error:NULL ] == NO )
+					if( [ fileManager createDirectoryAtPath:createDB /* withIntermediateDirectories:NO */
+						attributes:nil /*error:NULL */ ] == NO )
 						{
 							printf( "DIRECTORY CREATION FAILED - Exit!\n" ) ;
 							exit(1) ;
