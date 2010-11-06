@@ -1877,9 +1877,13 @@ int main (int argc, const char * argv[]) {
 			else if( targetIsMySQLIDs == YES )
 				{
 					NSError *error = nil ;
-				
+#ifdef LINUX
+					NSString *fileContent = [ NSString stringWithContentsOfFile:targetDB ] ;
+													// encoding:NSASCIIStringEncoding error:&error ] ;
+#else
 					NSString *fileContent = [ NSString stringWithContentsOfFile:targetDB 
-													encoding:NSASCIIStringEncoding error:&error ] ;
+						encoding:NSASCIIStringEncoding error:&error ] ;
+#endif
 				
 					if( error )
 						{
@@ -2982,7 +2986,11 @@ int main (int argc, const char * argv[]) {
 		
 			NSError *error ;
 		
+#ifdef LINUX
+			NSArray *files = [ fileManager contentsOfDirectoryAtPath:queryDB  ] ;
+#else
 			NSArray *files = [ fileManager contentsOfDirectoryAtPath:queryDB error:&error ] ;
+#endif
 		
 			NSEnumerator *fileEnumerator = [ files objectEnumerator ] ;
 		
