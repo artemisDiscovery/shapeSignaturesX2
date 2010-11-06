@@ -1391,7 +1391,7 @@ int main (int argc, const char * argv[]) {
 							exit(1) ;
 						}
 						
-					printf( "\nAttempt to create output directory database %s ...\n", [ outputDB cString ] ) ;
+					printf( "\nAttempt to create output directory database %s ...\n", [ createDB cString ] ) ;
 					
 					if( [ fileManager fileExistsAtPath:createDB ] == YES )
 						{
