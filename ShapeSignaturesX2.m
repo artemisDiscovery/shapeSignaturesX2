@@ -52,7 +52,7 @@ int main (int argc, const char * argv[]) {
 							MERGENEIGHBORRINGS, TARGETISDIRECTORY, TARGETISMYSQLIDS, TARGETISMEMORYRSRC, PERMITFRAGMENTGROUPING, BIGFRAGMENTSIZE,
 							MAXBIGFRAGMENTCOUNT, XMLIN, XMLOUT, EXPLODEDB, RANGE, URLIN, URLOUT,
 							COMPRESS, DECOMPRESS, ABBREVIATEDINFO, MYSQLTABLENAME, MYSQLUSERNAME, MYSQLPASSWORD,
-							MYSQLDBNAME, MYSQLHOSTNAME } ;
+							MYSQLDBNAME, MYSQLHOSTNAME, LOADMEMORYRESOURCE } ;
 							
 	
 	enum { CREATEMODE, COMPAREMODE, INFOMODE, MEMORYRESOURCEMODE, KEYSMODE, KMEANSMODE, CHECKMODE, CONVERTMODE, UNDEFINED } mode ;
@@ -68,6 +68,7 @@ int main (int argc, const char * argv[]) {
 	BOOL targetIsDirectory = NO ;
 	BOOL targetIsMySQLIDs = NO ;
 	BOOL targetIsMemoryRsrc = NO ;
+	BOOL loadMemoryRsrc = YES ;
 	
 	double lengthDelta = 0.5 ;
 	double MEPDelta = 0.05 ;
@@ -161,7 +162,7 @@ int main (int argc, const char * argv[]) {
 			printf( "USAGE: shapeSigX -create [ flags ] <input directory> <output DB> \n" ) ;
 			printf( "USAGE: shapeSigX -compare [ flags ] <query DB> <target DB/directory/ID file/memrsrc> <hits file> \n" ) ;
 			printf( "USAGE: shapeSigX -convert [ flags ] <out DB/directory> <input 1> [<input 2>] ...\n" ) ;
-			printf( "USAGE: shapeSigX -memr [ flags ] <input directory>  \n" ) ;
+			printf( "USAGE: shapeSigX -memr [ flags ] <resourcefile> [<input directory>]  \n" ) ;
 			printf( "USAGE: shapeSigX -info <query DB> \n" ) ;
 			printf( "USAGE: shapeSigX -keys [ flags ] <input directory> \n" ) ;
 			printf( "USAGE: shapeSigX -check [ flags ] <input directory> <output directory> \n" ) ;
@@ -219,6 +220,7 @@ int main (int argc, const char * argv[]) {
 			printf( "-memr (create memory resource) flags:\n" ) ;
 			printf( "\t-xmlIn <input XML database format (yes|no) ; default = NO>\n" ) ;
 			printf( "\t-decompress <decompress input signatures (yes|no); default = NO>\n") ;
+			printf( "\t-loadmemr <load resource in memory (yes|no); default = YES>\n" ) ;
 			printf( "-info flags:\n" ) ;
 			printf( "\t-xmlIn <input XML database format (yes|no) ; default = NO>\n" ) ;
 			printf( "\t-decompress <decompress input signatures (yes|no); default = NO>\n") ;
@@ -454,6 +456,10 @@ int main (int argc, const char * argv[]) {
 								{
 									flagType = MYSQLDBNAME ;
 								}
+							else if( strcasestr( &argv[i][1], "loadmem" ) == &argv[i][1] )
+								{
+									flagType = LOADMEMORYRESOURCE ;
+								}
 							else
 								{
 									printf( "CAN'T INTERPRET FLAG - Exit!\n" ) ;
@@ -529,13 +535,13 @@ int main (int argc, const char * argv[]) {
 								}
 							else if( mode == MEMORYRESOURCEMODE )	
 								{
-									if( ! queryDB )
-										{
-											queryDB = [ [ NSString stringWithCString:argv[i] ] retain ] ;
-										}
-									else if( ! resourceFile )
+									if( ! resourceFile )
 										{
 											resourceFile = [ [ NSString stringWithCString:argv[i] ] retain ] ;
+										}
+									else if( ! queryDB )
+										{
+											queryDB = [ [ NSString stringWithCString:argv[i] ] retain ] ;
 										}
 									else
 										{	
@@ -1228,6 +1234,21 @@ int main (int argc, const char * argv[]) {
 									MySQLPASSWORD = [ [ NSString alloc ] initWithCString:argv[i] ] ;
 									break ;
 							
+								case LOADMEMORYRESOURCE:
+								if( mode != MEMORYRESOURCEMODE )
+									{
+										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+										exit(1) ;
+									}
+								if( argv[i][0] == 'y' || argv[i][0] == 'Y' )
+									{
+										loadMemoryRsrc = YES ;
+									}
+								else 
+									{
+										loadMemoryRsrc = NO  ;
+									}
+								break ;
 									
 						}
 				}
@@ -2941,6 +2962,13 @@ int main (int argc, const char * argv[]) {
 						}
 				
 					// Read the file and create resource for it
+					
+					if( loadMemoryRsrc == NO )
+						{
+							printf( "Resource file %s exists, but no-load option is set - nothing done - Exit!\n",
+										[ resourceFile cString ] ) ;
+							exit(0) ;
+						}
 				
 					NSData *fileContent = [ fileManager contentsAtPath:resourceFile ] ;
 				
@@ -3303,6 +3331,13 @@ int main (int argc, const char * argv[]) {
 			// First, save to file
 		
 			[ fileManager createFileAtPath:resourceFile contents:[ NSData dataWithBytes:(const void *)inMem length:smallSigUsed ] attributes:nil  ] ;
+			
+			if( loadMemoryRsrc == NO )
+				{
+					printf( "Resource file %s created, but no-load option set - finished - Bye!\n", 
+						[ resourceFile cString ] ) ;
+					exit(0) ;
+				}
 		
 			rsrcKey = ftok( [ resourceFile cString ], 0 ) ;
 		
