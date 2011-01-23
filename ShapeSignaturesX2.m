@@ -143,7 +143,7 @@ int main (int argc, const char * argv[]) {
 	NSString *MySQLUSER = @"root" ;
 	NSString *MySQLPASSWORD = @"vr9tr74m" ;
 	NSString *MySQLHOST = @"localhost" ;
-	NSString *MySQLTABLE = @"compressedShapeSignatures" ;
+	NSString *MySQLTABLE = @"shapeSignatures" ;
 	
 							
 	// Calculation parameters
@@ -191,7 +191,7 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-targetmem <target points to memory resource; quick compare, abbreviated output (yes|no); default = NO>\n" ) ;
 			printf( "\t-mysqlDB <mysql target database; default = 'ZINC'>\n" ) ;
 			printf( "\t-mysqlHost <mysql host; default = 'localhost'>\n" ) ;
-			printf( "\t-mysqlTableName <table name with shape sigs; default = 'compressedShapeSignatures'>\n" ) ;
+			printf( "\t-mysqlTableName <table name with shape sigs; default = 'shapeSignatures'>\n" ) ;
 			printf( "\t-mysqlUserName <user name for mysql; default = 'root'>\n" ) ;
 			printf( "\t-mysqlPassword <passwd for mysql; default = (hidden)>\n" ) ;
 			printf( "\t-tag <histogram tag to use; default = 1DShape> \n" ) ;
@@ -2063,7 +2063,7 @@ int main (int argc, const char * argv[]) {
 					
 					// Map memory to our space
 				
-					void *inMem = shmat( shmID, (void *)0, 0 ) ;
+					void *inMem = shmat( shmID, (void *)0, SHM_RDONLY ) ;
 				
 					if( inMem < (void *)0 )
 						{
@@ -2521,7 +2521,7 @@ int main (int argc, const char * argv[]) {
 											nextID = [ words objectAtIndex:0 ] ;
 										}
 								
-									sprintf( sqlBuffer, "SELECT NAME, data FROM %s WHERE ID = %d",
+									sprintf( sqlBuffer, "SELECT MOLID, data FROM %s WHERE ID = %d",
 											[ MySQLTABLE cString ], [ nextID intValue ] ) ;
 																
 									mysql_query(conn, sqlBuffer ) ;

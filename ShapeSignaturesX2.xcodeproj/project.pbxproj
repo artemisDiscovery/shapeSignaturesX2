@@ -1,0 +1,352 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 44;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		8DD76F9C0486AA7600D96B5E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 08FB779EFE84155DC02AAC07 /* Foundation.framework */; };
+		8DD76F9F0486AA7600D96B5E /* ShapeSignaturesX2.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C6859EA3029092ED04C91782 /* ShapeSignaturesX2.1 */; };
+		E81F76E11277210E00045CB5 /* bondPath.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76B91277210D00045CB5 /* bondPath.m */; };
+		E81F76E21277210E00045CB5 /* ctBond.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76BB1277210D00045CB5 /* ctBond.m */; };
+		E81F76E31277210E00045CB5 /* ctNode.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76BD1277210D00045CB5 /* ctNode.m */; };
+		E81F76E41277210E00045CB5 /* ctTree.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76BF1277210D00045CB5 /* ctTree.m */; };
+		E81F76E51277210E00045CB5 /* elementCollection.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76C11277210D00045CB5 /* elementCollection.m */; };
+		E81F76E61277210E00045CB5 /* flatSurface.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76C41277210D00045CB5 /* flatSurface.m */; };
+		E81F76E71277210E00045CB5 /* fragment.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76C61277210D00045CB5 /* fragment.m */; };
+		E81F76E81277210E00045CB5 /* fragmentConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76C81277210D00045CB5 /* fragmentConnection.m */; };
+		E81F76E91277210E00045CB5 /* histogram.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76CA1277210D00045CB5 /* histogram.m */; };
+		E81F76EA1277210E00045CB5 /* histogramBundle.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76CC1277210D00045CB5 /* histogramBundle.m */; };
+		E81F76EB1277210E00045CB5 /* histogramGroup.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76CE1277210D00045CB5 /* histogramGroup.m */; };
+		E81F76EC1277210E00045CB5 /* histogramGroupBundle.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76D01277210D00045CB5 /* histogramGroupBundle.m */; };
+		E81F76ED1277210E00045CB5 /* hitListItem.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76D21277210D00045CB5 /* hitListItem.m */; };
+		E81F76EE1277210E00045CB5 /* libCURLDownloader.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76D41277210D00045CB5 /* libCURLDownloader.m */; };
+		E81F76EF1277210E00045CB5 /* libCURLUploader.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76D61277210D00045CB5 /* libCURLUploader.m */; };
+		E81F76F01277210E00045CB5 /* rayTrace.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76D91277210D00045CB5 /* rayTrace.m */; };
+		E81F76F11277210E00045CB5 /* ShapeSignaturesX2.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76DA1277210D00045CB5 /* ShapeSignaturesX2.m */; };
+		E81F76F21277210E00045CB5 /* shapeSignatureX2.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76DC1277210D00045CB5 /* shapeSignatureX2.m */; };
+		E81F76F31277210E00045CB5 /* vector3.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76DE1277210D00045CB5 /* vector3.m */; };
+		E81F76F41277210E00045CB5 /* X2SignatureMapping.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76E01277210D00045CB5 /* X2SignatureMapping.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8DD76F9E0486AA7600D96B5E /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 8;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+				8DD76F9F0486AA7600D96B5E /* ShapeSignaturesX2.1 in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		08FB779EFE84155DC02AAC07 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
+		32A70AAB03705E1F00C91783 /* ShapeSignaturesX2_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ShapeSignaturesX2_Prefix.pch; sourceTree = "<group>"; };
+		8DD76FA10486AA7600D96B5E /* ShapeSignaturesX2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ShapeSignaturesX2; sourceTree = BUILT_PRODUCTS_DIR; };
+		C6859EA3029092ED04C91782 /* ShapeSignaturesX2.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = ShapeSignaturesX2.1; sourceTree = "<group>"; };
+		E81F76B81277210D00045CB5 /* bondPath.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bondPath.h; sourceTree = "<group>"; };
+		E81F76B91277210D00045CB5 /* bondPath.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = bondPath.m; sourceTree = "<group>"; };
+		E81F76BA1277210D00045CB5 /* ctBond.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ctBond.h; sourceTree = "<group>"; };
+		E81F76BB1277210D00045CB5 /* ctBond.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ctBond.m; sourceTree = "<group>"; };
+		E81F76BC1277210D00045CB5 /* ctNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ctNode.h; sourceTree = "<group>"; };
+		E81F76BD1277210D00045CB5 /* ctNode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ctNode.m; sourceTree = "<group>"; };
+		E81F76BE1277210D00045CB5 /* ctTree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ctTree.h; sourceTree = "<group>"; };
+		E81F76BF1277210D00045CB5 /* ctTree.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ctTree.m; sourceTree = "<group>"; };
+		E81F76C01277210D00045CB5 /* elementCollection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = elementCollection.h; sourceTree = "<group>"; };
+		E81F76C11277210D00045CB5 /* elementCollection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = elementCollection.m; sourceTree = "<group>"; };
+		E81F76C21277210D00045CB5 /* FFToolTypeDefs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FFToolTypeDefs.h; sourceTree = "<group>"; };
+		E81F76C31277210D00045CB5 /* flatSurface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = flatSurface.h; sourceTree = "<group>"; };
+		E81F76C41277210D00045CB5 /* flatSurface.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = flatSurface.m; sourceTree = "<group>"; };
+		E81F76C51277210D00045CB5 /* fragment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fragment.h; sourceTree = "<group>"; };
+		E81F76C61277210D00045CB5 /* fragment.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = fragment.m; sourceTree = "<group>"; };
+		E81F76C71277210D00045CB5 /* fragmentConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fragmentConnection.h; sourceTree = "<group>"; };
+		E81F76C81277210D00045CB5 /* fragmentConnection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = fragmentConnection.m; sourceTree = "<group>"; };
+		E81F76C91277210D00045CB5 /* histogram.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = histogram.h; sourceTree = "<group>"; };
+		E81F76CA1277210D00045CB5 /* histogram.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = histogram.m; sourceTree = "<group>"; };
+		E81F76CB1277210D00045CB5 /* histogramBundle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = histogramBundle.h; sourceTree = "<group>"; };
+		E81F76CC1277210D00045CB5 /* histogramBundle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = histogramBundle.m; sourceTree = "<group>"; };
+		E81F76CD1277210D00045CB5 /* histogramGroup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = histogramGroup.h; sourceTree = "<group>"; };
+		E81F76CE1277210D00045CB5 /* histogramGroup.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = histogramGroup.m; sourceTree = "<group>"; };
+		E81F76CF1277210D00045CB5 /* histogramGroupBundle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = histogramGroupBundle.h; sourceTree = "<group>"; };
+		E81F76D01277210D00045CB5 /* histogramGroupBundle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = histogramGroupBundle.m; sourceTree = "<group>"; };
+		E81F76D11277210D00045CB5 /* hitListItem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hitListItem.h; sourceTree = "<group>"; };
+		E81F76D21277210D00045CB5 /* hitListItem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = hitListItem.m; sourceTree = "<group>"; };
+		E81F76D31277210D00045CB5 /* libCURLDownloader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = libCURLDownloader.h; sourceTree = "<group>"; };
+		E81F76D41277210D00045CB5 /* libCURLDownloader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = libCURLDownloader.m; sourceTree = "<group>"; };
+		E81F76D51277210D00045CB5 /* libCURLUploader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = libCURLUploader.h; sourceTree = "<group>"; };
+		E81F76D61277210D00045CB5 /* libCURLUploader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = libCURLUploader.m; sourceTree = "<group>"; };
+		E81F76D71277210D00045CB5 /* platform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = platform.h; sourceTree = "<group>"; };
+		E81F76D81277210D00045CB5 /* rayTrace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rayTrace.h; sourceTree = "<group>"; };
+		E81F76D91277210D00045CB5 /* rayTrace.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = rayTrace.m; sourceTree = "<group>"; };
+		E81F76DA1277210D00045CB5 /* ShapeSignaturesX2.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ShapeSignaturesX2.m; sourceTree = "<group>"; };
+		E81F76DB1277210D00045CB5 /* shapeSignatureX2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = shapeSignatureX2.h; sourceTree = "<group>"; };
+		E81F76DC1277210D00045CB5 /* shapeSignatureX2.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = shapeSignatureX2.m; sourceTree = "<group>"; };
+		E81F76DD1277210D00045CB5 /* vector3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = vector3.h; sourceTree = "<group>"; };
+		E81F76DE1277210D00045CB5 /* vector3.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = vector3.m; sourceTree = "<group>"; };
+		E81F76DF1277210D00045CB5 /* X2SignatureMapping.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = X2SignatureMapping.h; sourceTree = "<group>"; };
+		E81F76E01277210D00045CB5 /* X2SignatureMapping.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = X2SignatureMapping.m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8DD76F9B0486AA7600D96B5E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8DD76F9C0486AA7600D96B5E /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		08FB7794FE84155DC02AAC07 /* ShapeSignaturesX2 */ = {
+			isa = PBXGroup;
+			children = (
+				08FB7795FE84155DC02AAC07 /* Source */,
+				C6859EA2029092E104C91782 /* Documentation */,
+				08FB779DFE84155DC02AAC07 /* External Frameworks and Libraries */,
+				1AB674ADFE9D54B511CA2CBB /* Products */,
+			);
+			name = ShapeSignaturesX2;
+			sourceTree = "<group>";
+		};
+		08FB7795FE84155DC02AAC07 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				E81F76B81277210D00045CB5 /* bondPath.h */,
+				E81F76B91277210D00045CB5 /* bondPath.m */,
+				E81F76BA1277210D00045CB5 /* ctBond.h */,
+				E81F76BB1277210D00045CB5 /* ctBond.m */,
+				E81F76BC1277210D00045CB5 /* ctNode.h */,
+				E81F76BD1277210D00045CB5 /* ctNode.m */,
+				E81F76BE1277210D00045CB5 /* ctTree.h */,
+				E81F76BF1277210D00045CB5 /* ctTree.m */,
+				E81F76C01277210D00045CB5 /* elementCollection.h */,
+				E81F76C11277210D00045CB5 /* elementCollection.m */,
+				E81F76C21277210D00045CB5 /* FFToolTypeDefs.h */,
+				E81F76C31277210D00045CB5 /* flatSurface.h */,
+				E81F76C41277210D00045CB5 /* flatSurface.m */,
+				E81F76C51277210D00045CB5 /* fragment.h */,
+				E81F76C61277210D00045CB5 /* fragment.m */,
+				E81F76C71277210D00045CB5 /* fragmentConnection.h */,
+				E81F76C81277210D00045CB5 /* fragmentConnection.m */,
+				E81F76C91277210D00045CB5 /* histogram.h */,
+				E81F76CA1277210D00045CB5 /* histogram.m */,
+				E81F76CB1277210D00045CB5 /* histogramBundle.h */,
+				E81F76CC1277210D00045CB5 /* histogramBundle.m */,
+				E81F76CD1277210D00045CB5 /* histogramGroup.h */,
+				E81F76CE1277210D00045CB5 /* histogramGroup.m */,
+				E81F76CF1277210D00045CB5 /* histogramGroupBundle.h */,
+				E81F76D01277210D00045CB5 /* histogramGroupBundle.m */,
+				E81F76D11277210D00045CB5 /* hitListItem.h */,
+				E81F76D21277210D00045CB5 /* hitListItem.m */,
+				E81F76D31277210D00045CB5 /* libCURLDownloader.h */,
+				E81F76D41277210D00045CB5 /* libCURLDownloader.m */,
+				E81F76D51277210D00045CB5 /* libCURLUploader.h */,
+				E81F76D61277210D00045CB5 /* libCURLUploader.m */,
+				E81F76D71277210D00045CB5 /* platform.h */,
+				E81F76D81277210D00045CB5 /* rayTrace.h */,
+				E81F76D91277210D00045CB5 /* rayTrace.m */,
+				E81F76DA1277210D00045CB5 /* ShapeSignaturesX2.m */,
+				E81F76DB1277210D00045CB5 /* shapeSignatureX2.h */,
+				E81F76DC1277210D00045CB5 /* shapeSignatureX2.m */,
+				E81F76DD1277210D00045CB5 /* vector3.h */,
+				E81F76DE1277210D00045CB5 /* vector3.m */,
+				E81F76DF1277210D00045CB5 /* X2SignatureMapping.h */,
+				E81F76E01277210D00045CB5 /* X2SignatureMapping.m */,
+				32A70AAB03705E1F00C91783 /* ShapeSignaturesX2_Prefix.pch */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		08FB779DFE84155DC02AAC07 /* External Frameworks and Libraries */ = {
+			isa = PBXGroup;
+			children = (
+				08FB779EFE84155DC02AAC07 /* Foundation.framework */,
+			);
+			name = "External Frameworks and Libraries";
+			sourceTree = "<group>";
+		};
+		1AB674ADFE9D54B511CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8DD76FA10486AA7600D96B5E /* ShapeSignaturesX2 */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C6859EA2029092E104C91782 /* Documentation */ = {
+			isa = PBXGroup;
+			children = (
+				C6859EA3029092ED04C91782 /* ShapeSignaturesX2.1 */,
+			);
+			name = Documentation;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8DD76F960486AA7600D96B5E /* ShapeSignaturesX2 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1DEB927408733DD40010E9CD /* Build configuration list for PBXNativeTarget "ShapeSignaturesX2" */;
+			buildPhases = (
+				8DD76F990486AA7600D96B5E /* Sources */,
+				8DD76F9B0486AA7600D96B5E /* Frameworks */,
+				8DD76F9E0486AA7600D96B5E /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ShapeSignaturesX2;
+			productInstallPath = "$(HOME)/bin";
+			productName = ShapeSignaturesX2;
+			productReference = 8DD76FA10486AA7600D96B5E /* ShapeSignaturesX2 */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		08FB7793FE84155DC02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = 1DEB927808733DD40010E9CD /* Build configuration list for PBXProject "ShapeSignaturesX2" */;
+			compatibilityVersion = "Xcode 3.0";
+			hasScannedForEncodings = 1;
+			mainGroup = 08FB7794FE84155DC02AAC07 /* ShapeSignaturesX2 */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8DD76F960486AA7600D96B5E /* ShapeSignaturesX2 */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8DD76F990486AA7600D96B5E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E81F76E11277210E00045CB5 /* bondPath.m in Sources */,
+				E81F76E21277210E00045CB5 /* ctBond.m in Sources */,
+				E81F76E31277210E00045CB5 /* ctNode.m in Sources */,
+				E81F76E41277210E00045CB5 /* ctTree.m in Sources */,
+				E81F76E51277210E00045CB5 /* elementCollection.m in Sources */,
+				E81F76E61277210E00045CB5 /* flatSurface.m in Sources */,
+				E81F76E71277210E00045CB5 /* fragment.m in Sources */,
+				E81F76E81277210E00045CB5 /* fragmentConnection.m in Sources */,
+				E81F76E91277210E00045CB5 /* histogram.m in Sources */,
+				E81F76EA1277210E00045CB5 /* histogramBundle.m in Sources */,
+				E81F76EB1277210E00045CB5 /* histogramGroup.m in Sources */,
+				E81F76EC1277210E00045CB5 /* histogramGroupBundle.m in Sources */,
+				E81F76ED1277210E00045CB5 /* hitListItem.m in Sources */,
+				E81F76EE1277210E00045CB5 /* libCURLDownloader.m in Sources */,
+				E81F76EF1277210E00045CB5 /* libCURLUploader.m in Sources */,
+				E81F76F01277210E00045CB5 /* rayTrace.m in Sources */,
+				E81F76F11277210E00045CB5 /* ShapeSignaturesX2.m in Sources */,
+				E81F76F21277210E00045CB5 /* shapeSignatureX2.m in Sources */,
+				E81F76F31277210E00045CB5 /* vector3.m in Sources */,
+				E81F76F41277210E00045CB5 /* X2SignatureMapping.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB927508733DD40010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = ShapeSignaturesX2_Prefix.pch;
+				HEADER_SEARCH_PATHS = /usr/local/mysql/include;
+				INSTALL_PATH = /usr/local/bin;
+				LIBRARY_SEARCH_PATHS = /usr/local/mysql/lib;
+				OTHER_LDFLAGS = (
+					"-lmysqlclient",
+					"-lm",
+					"-lz",
+					"-lcurl",
+				);
+				PRODUCT_NAME = ShapeSignaturesX2;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		1DEB927608733DD40010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = ShapeSignaturesX2_Prefix.pch;
+				HEADER_SEARCH_PATHS = /usr/local/mysql/include;
+				INSTALL_PATH = /usr/local/bin;
+				LIBRARY_SEARCH_PATHS = /usr/local/mysql/lib;
+				OTHER_LDFLAGS = (
+					"-lmysqlclient",
+					"-lm",
+					"-lz",
+					"-lcurl",
+				);
+				PRODUCT_NAME = ShapeSignaturesX2;
+			};
+			name = Release;
+		};
+		1DEB927908733DD40010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.5.sdk";
+			};
+			name = Debug;
+		};
+		1DEB927A08733DD40010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					ppc,
+					i386,
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.5.sdk";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB927408733DD40010E9CD /* Build configuration list for PBXNativeTarget "ShapeSignaturesX2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB927508733DD40010E9CD /* Debug */,
+				1DEB927608733DD40010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1DEB927808733DD40010E9CD /* Build configuration list for PBXProject "ShapeSignaturesX2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB927908733DD40010E9CD /* Debug */,
+				1DEB927A08733DD40010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 08FB7793FE84155DC02AAC07 /* Project object */;
+}
