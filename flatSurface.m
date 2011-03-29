@@ -445,7 +445,8 @@ static short *testIntersect = NULL ;
 		// ONLY do this if sites not in use! Otherwise we assume a "big" molecule not
 		// amenable to fragmentation
 		
-		if( s ) return self ;
+		// NO! I need to press on here - else, how can we ray-trace?
+		//if( s ) return self ;
 		
 		//[ t  assignNodesToFragments ] ;
 		

@@ -132,6 +132,16 @@
 							++badIntersectCount ;
 							continue ;
 						}
+			
+				// If exterior trace, assume site in effect - we can only intersect an active element
+			
+				if ( inside == NO ) {
+					if ( surf->elemActive[intersectElem] == NO ) {
+						needsInitialized = TRUE ;
+						++badIntersectCount ;
+						continue ;
+					}
+				}
 						
 				// Check for startPoint and intersectPoint too close together - may be 
 				// caused by "needle-like" element

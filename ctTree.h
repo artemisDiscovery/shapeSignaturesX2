@@ -85,7 +85,7 @@
 
 //- (int) ringClosureIndexForNode:(ctNode *)n1 andNode:(ctNode *)n2 ;
 
-- (void) assignNodesToFragmentsByMergingNeighborRings:(BOOL)merge ;
+- (void) assignNodesToFragmentsByMergingNeighborRings:(BOOL)merge forceOneFragment:(BOOL)oneFrag ;
 
 - (void) makeFragmentConnections ;
 

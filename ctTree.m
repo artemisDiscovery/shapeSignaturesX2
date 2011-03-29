@@ -959,7 +959,7 @@
 */
 
 
-- (void) assignNodesToFragmentsByMergingNeighborRings:(BOOL)merge
+- (void) assignNodesToFragmentsByMergingNeighborRings:(BOOL)merge forceOneFragment:(BOOL)oneFrag
 	{
 	
 #define MAX_SUBST_SIZE 5
@@ -976,12 +976,12 @@
 		
 		// We need to make sure we have maximal trees and rings
 		
-		if( haveRingClosures == NO )
+		if( haveRingClosures == NO && oneFrag == NO )
 			{
 				[ self makeRingClosures ] ;
 			}
 			
-		if( nOutputRingClosures == 0 )
+		if( nOutputRingClosures == 0 || oneFrag == YES )
 			{	
 			
 				// The whole thing is one big fragment

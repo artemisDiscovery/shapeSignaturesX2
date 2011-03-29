@@ -1490,9 +1490,9 @@ int main (int argc, const char * argv[]) {
 							continue ;
 						}
 						
-					// Assign atoms to fragments
+					// Assign atoms to fragments - note if using site file (exterior raytrace) we can only have one fragment
 					
-					[ nextTree assignNodesToFragmentsByMergingNeighborRings:mergeNeighborRings ] ;
+					[ nextTree assignNodesToFragmentsByMergingNeighborRings:mergeNeighborRings forceOneFragment:useSites ] ;
 						
 					// Sites file?
 					
