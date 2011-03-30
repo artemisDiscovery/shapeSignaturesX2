@@ -2027,12 +2027,17 @@ int main (int argc, const char * argv[]) {
 					// The design here is a little weak - this section will be "standalone" as it implements
 					// a very different approach to searching and scoring.
 				
+					// Fragment scoring ENABLED - 
 					// Basic strategy - fragment histos for all query molecules will be collected, and will
 					// be quickly compared against the contents of the data in the target memory resource.
 					// Score between query and target will be taken as the average of the best query fragment histo - vs
 					// target fragment histo score. Overall score for a target will be the best (lowest) of these
 					// average scores. Hits will be stored in a simple struct, and will be sorted at the end. maxHits
 					// will be recorded in a file which can be used for detailed compaison in 'Mysql' mode
+				
+					// Fragment scoring DISABLED - 
+					// This is mainly for receptors - take the GLOBAL query histogram, and assemble the global target histogram
+					// for the memory resource using the fragment contributions.
 				
 				
 					int shmID ;
@@ -2106,23 +2111,25 @@ int main (int argc, const char * argv[]) {
 						
 							int jFrag ;
 						
-							for( jFrag = 1 ; jFrag <= nFrags ; ++jFrag )
-								{
-									[ key setString:@"" ] ;
-									[ key appendFormat:@"%d_%d",jFrag,jFrag ] ;
-								
-									histogram *nextHisto = 
+						
+							if (fragmentScoring == YES ) {
+								for( jFrag = 1 ; jFrag <= nFrags ; ++jFrag )
+									{
+										[ key setString:@"" ] ;
+										[ key appendFormat:@"%d_%d",jFrag,jFrag ] ;
+										
+										histogram *nextHisto = 
 										[ nextBundle->sortedFragmentsToHistogram objectForKey:key ] ;
-								
-									// Get nonpadded length of histogram
-								
-									double *nextHistoData = nextHisto->binProbs ;
-									int actualLength = nextBundle->nLengthBins ;
-								
-									int jBin ;
-								
-									for( jBin = actualLength - 1; jBin >= 0 ; --jBin )
-										{
+										
+										// Get nonpadded length of histogram
+										
+										double *nextHistoData = nextHisto->binProbs ;
+										int actualLength = nextBundle->nLengthBins ;
+										
+										int jBin ;
+									
+										for( jBin = actualLength - 1; jBin >= 0 ; --jBin )
+											{
 											if ( nextHistoData[jBin] == 0. )
 												{
 													--actualLength ;
@@ -2131,12 +2138,12 @@ int main (int argc, const char * argv[]) {
 												{
 													break ;
 												}
-										}
-								
-									if( actualLength > 0 )
-										{
-											// Add a histogram
+											}
 										
+										if( actualLength > 0 )
+											{
+											// Add a histogram
+											
 											if( nQueryHistos == histoAlloc )
 												{
 													histoAlloc += 100 ;
@@ -2144,18 +2151,66 @@ int main (int argc, const char * argv[]) {
 													queryHistoBins = (double **) realloc( queryHistoBins, histoAlloc * sizeof( double * ) ) ;
 													queryHistoNBins = (int *) realloc( queryHistoNBins, histoAlloc * sizeof( int  ) ) ;
 												}
-																					  
+											
 											queryHistoNBins[nQueryHistos] = actualLength ;
 											
 											queryHistoBins[nQueryHistos] = nextHisto->binProbs ;
-										
+											
 											++nQueryHistos ;
 										}
-								}
+									}
+							}
+						else {
+								[ key setString:@"GLOBAL" ] ;
+								
+								histogram *nextHisto = 
+								[ nextBundle->sortedFragmentsToHistogram objectForKey:key ] ;
+								
+								// Get nonpadded length of histogram
+								
+								double *nextHistoData = nextHisto->binProbs ;
+								int actualLength = nextBundle->nLengthBins ;
+								
+								int jBin ;
+								
+								for( jBin = actualLength - 1; jBin >= 0 ; --jBin )
+									{
+										if ( nextHistoData[jBin] == 0. )
+											{
+												--actualLength ;
+											}
+										else
+											{
+												break ;
+											}
+									}
+								
+								if( actualLength > 0 )
+									{
+										// Add the histogram
+										
+										if( nQueryHistos == histoAlloc )
+											{
+												histoAlloc += 100 ;
+												
+												queryHistoBins = (double **) realloc( queryHistoBins, histoAlloc * sizeof( double * ) ) ;
+												queryHistoNBins = (int *) realloc( queryHistoNBins, histoAlloc * sizeof( int  ) ) ;
+											}
+										
+										queryHistoNBins[nQueryHistos] = actualLength ;
+										
+										queryHistoBins[nQueryHistos] = nextHisto->binProbs ;
+										
+										++nQueryHistos ;
+									}
+
+							}
 						
 						}
 														  
 					// Start parsing the memory resource
+						
+					// IF no fragment scoring, we will sum the histos together
 				
 					double *resourceBinWidth = inMem ;
 					int *numTargetSignatures = (int *)( inMem + sizeof( double ) ) ;
@@ -2167,6 +2222,8 @@ int main (int argc, const char * argv[]) {
 					
 					double nextTargetHistoProb[200] ;
 					int nextTargetHistoCount[200] ;
+					int accumTargetHistoCount[200] ;
+					double accumTargetHistoProb[200] ;
 					int nextNBin ;
 				
 					void *inMemPtr = inMem + sizeof( double ) + sizeof( int ) ;
@@ -2192,6 +2249,9 @@ int main (int argc, const char * argv[]) {
 				
 					printf( "Compare %d query fragment histograms against %d target fragments --- \n\n",
 						   	nQueryHistos, *numTargetSignatures ) ;
+						
+					int maxTargetBins = 0 ;
+
 				
 					for( iSig = 0 ; iSig < *numTargetSignatures ; ++iSig )
 						{
@@ -2203,9 +2263,18 @@ int main (int argc, const char * argv[]) {
 							memcpy(&numTargetFrags, inMemPtr, sizeof( unsigned short )  ) ;
 							inMemPtr += sizeof( unsigned short ) ;
 						
+							if (fragmentScoring == NO ) {
+								for( jBin = 0 ; jBin < 200 ; ++jBin ) {
+									accumTargetHistoCount[jBin] = 0 ;
+								}
+								
+							}
+						
 							int jFrag ;
 						
 							int totalSegmentsForSig = 0 ;
+							int maxBins ;
+						
 						
 							for( jFrag = 0 ; jFrag < numTargetFrags ; ++jFrag )
 								{
@@ -2213,6 +2282,10 @@ int main (int argc, const char * argv[]) {
 								
 									memcpy(&numTargetBins, inMemPtr, sizeof( short )  ) ;
 									inMemPtr += sizeof(  short ) ;
+								
+									if (numTargetBins > maxTargetBins) {
+										maxTargetBins = numTargetBins ;
+									}
 								
 									for( jBin = 0 ; jBin < numTargetBins ; ++jBin )
 										{
@@ -2227,90 +2300,135 @@ int main (int argc, const char * argv[]) {
 													nextTargetHistoCount[jBin] = intVal ;
 													segmentsByFragment[jFrag] += intVal ;
 													totalSegmentsForSig += intVal ;
+													accumTargetHistoCount[jBin] += intVal ; // ONLY USED if not scoring by fragment
 												}
 											else
 												{
 													nextTargetHistoCount[jBin] = shortVal ;
 													segmentsByFragment[jFrag] += shortVal ;
 													totalSegmentsForSig += shortVal ;
+													accumTargetHistoCount[jBin] += shortVal ; // ONLY USED if not scoring by fragment
 												}
 										}
-								
-									for( jBin = 0 ; jBin < numTargetBins ; ++jBin )
-										{
-											nextTargetHistoProb[jBin] = ((double)nextTargetHistoCount[jBin])/segmentsByFragment[jFrag] ;
-										}
-								
-									minQueryScore = 2. ;
-									int iQueryHisto ;
-									int maxBins ;
-								
-									for( iQueryHisto = 0 ; iQueryHisto < nQueryHistos ; ++iQueryHisto )
-										{
-											nextQueryScore = 0. ;
-										
-											if( numTargetBins > queryHistoNBins[iQueryHisto] )
-												{
-													maxBins = numTargetBins ;
-												}
-											else
-												{
-													maxBins = queryHistoNBins[iQueryHisto] ;
-												}
-										
-											for( jBin = 0 ; jBin < maxBins ; ++jBin )
-												{
-													if( jBin >= queryHistoNBins[iQueryHisto] )
-														{
-															nextQueryScore += nextTargetHistoProb[jBin] ;
-														}
-													else if( jBin >= numTargetBins )
-														{
-															nextQueryScore += queryHistoBins[iQueryHisto][jBin] ;
-														}
-													else
-														{
-															nextQueryScore += fabs( nextTargetHistoProb[jBin] - queryHistoBins[iQueryHisto][jBin] ) ;
-														}
-												}
-										
-											if( nextQueryScore < minQueryScore ) minQueryScore = nextQueryScore ;
-											
-										}
-								
-									minScoreByFragment[jFrag] = minQueryScore ;
 								
 									
+									if (fragmentScoring == YES ) {
+										
+										for( jBin = 0 ; jBin < numTargetBins ; ++jBin )
+											{
+												nextTargetHistoProb[jBin] = ((double)nextTargetHistoCount[jBin])/segmentsByFragment[jFrag] ;
+											}
+										
+										minQueryScore = 2. ;
+										int iQueryHisto ;
+										
+										
+										for( iQueryHisto = 0 ; iQueryHisto < nQueryHistos ; ++iQueryHisto )
+											{
+												nextQueryScore = 0. ;
+											
+												if( numTargetBins > queryHistoNBins[iQueryHisto] )
+													{
+														maxBins = numTargetBins ;
+													}
+												else
+													{
+														maxBins = queryHistoNBins[iQueryHisto] ;
+													}
+												
+												for( jBin = 0 ; jBin < maxBins ; ++jBin )
+													{
+														if( jBin >= queryHistoNBins[iQueryHisto] )
+															{
+																nextQueryScore += nextTargetHistoProb[jBin] ;
+															}
+														else if( jBin >= numTargetBins )
+															{
+																nextQueryScore += queryHistoBins[iQueryHisto][jBin] ;
+															}
+														else
+															{
+																nextQueryScore += fabs( nextTargetHistoProb[jBin] - queryHistoBins[iQueryHisto][jBin] ) ;
+															}
+													}
+												
+												if( nextQueryScore < minQueryScore ) minQueryScore = nextQueryScore ;
+											
+											}
+										
+										minScoreByFragment[jFrag] = minQueryScore ;
+										
+										
+									}
+								
 								}
 						
 							// Compute overall score for this target signature
+
+							// Separate handling if NOT using fragment scoring
 						
 							double compositeScore = 0. ;
-						
-							for( jFrag = 0 ; jFrag < numTargetFrags ; ++jFrag )
-								{
-									compositeScore += (minScoreByFragment[jFrag] * segmentsByFragment[jFrag]) / totalSegmentsForSig ;
-								}
-						
-							hits[numHits].ID = molID ;
-							hits[numHits].score = compositeScore ;
-						
-							// Sort and cull if needed
-						
-							++numHits ;
 							
-							if( numHits == hitAlloc )
-								{
-									qsort(hits, hitAlloc, sizeof(quickHit), quickHitCompare ) ;
+							if (fragmentScoring == NO ) {
 								
-									numHits = maxHits ;
+								for( jBin = 0 ; jBin < maxTargetBins ; ++jBin ) {
+									accumTargetHistoProb[jBin] = ((double)accumTargetHistoCount[jBin]) / totalSegmentsForSig ;
+									
 								}
+																
+								int iQueryHisto = 0 ; // Should only be one histogram, the global one
+								
+								if (maxTargetBins > queryHistoNBins[iQueryHisto]) {
+									maxBins = maxTargetBins ;
+								}
+								else {
+									maxBins = queryHistoNBins[iQueryHisto] ;
+								}
+								
+								for( jBin = 0 ; jBin < maxBins ; ++jBin )
+									{
+									if( jBin >= queryHistoNBins[iQueryHisto] )
+										{
+											compositeScore += accumTargetHistoProb[jBin] ;
+										}
+									else if( jBin >= maxTargetBins )
+										{
+											compositeScore += queryHistoBins[iQueryHisto][jBin] ;
+										}
+									else
+										{
+											compositeScore += fabs( accumTargetHistoProb[jBin] - queryHistoBins[iQueryHisto][jBin] ) ;
+										}
+									}
+							}
+						else {
+								for( jFrag = 0 ; jFrag < numTargetFrags ; ++jFrag )
+									{
+										compositeScore += (minScoreByFragment[jFrag] * segmentsByFragment[jFrag]) / totalSegmentsForSig ;
+									}
+						}
+
+						hits[numHits].ID = molID ;
+						hits[numHits].score = compositeScore ;
+					
+						// Sort and cull if needed
+					
+						++numHits ;
+						
+						if( numHits == hitAlloc )
+							{
+								qsort(hits, hitAlloc, sizeof(quickHit), quickHitCompare ) ;
 							
-							if( (((double)iSig)/ *numTargetSignatures)*100. > percentComplete + 10. )
-								{
-									percentComplete += 10. ;
-									printf( "%5.1f %% complete, at mol ID = %d\n", percentComplete, molID ) ;
-								}
+								numHits = maxHits ;
+							}
+						
+						if( (((double)iSig)/ *numTargetSignatures)*100. > percentComplete + 10. )
+							{
+								percentComplete += 10. ;
+								printf( "%5.1f %% complete, at mol ID = %d\n", percentComplete, molID ) ;
+							}
+						
+						// Next target signature
 						}
 						
 					// Now we have maxHits quick hits, write to output file. Format will be molID\tscore
