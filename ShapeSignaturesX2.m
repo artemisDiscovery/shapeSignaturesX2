@@ -2121,16 +2121,6 @@ int main (int argc, const char * argv[]) {
 										histogram *nextHisto = 
 										[ nextBundle->sortedFragmentsToHistogram objectForKey:key ] ;
 										
-<<<<<<< Updated upstream:ShapeSignaturesX2.m
-										// Get nonpadded length of histogram
-										
-										double *nextHistoData = nextHisto->binProbs ;
-										int actualLength = nextBundle->nLengthBins ;
-										
-										int jBin ;
-									
-										for( jBin = actualLength - 1; jBin >= 0 ; --jBin )
-											{
 									// Possible to have missing histogram?
 									
 									if( ! nextHisto ) continue ;
