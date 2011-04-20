@@ -48,6 +48,8 @@
 	
 	double maxTwoSegmentLength ;
 	
+	double scaleFactor ;
+	
 }
 
 - (id) initWithSurface:(flatSurface *)surf andNumSegments:(int)nSegments cullingEnabled:(BOOL)cull

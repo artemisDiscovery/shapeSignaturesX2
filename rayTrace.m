@@ -13,11 +13,13 @@
 @implementation rayTrace
 
 - (id) initWithSurface:(flatSurface *)surf andNumSegments:(int)nSeg cullingEnabled:(BOOL)cull
-		skipSelfIntersectingSurface:(BOOL)ss insideTrace:(BOOL)inside randomizationAngle:(double)randAngle
+skipSelfIntersectingSurface:(BOOL)ss insideTrace:(BOOL)inside randomizationAngle:(double)randAngle scaleFactor:(double)sf
 	{
 		self = [ super init ] ;
 		
 		theSurface = surf ;
+	
+		scaleFactor = sf ;
 		
 		unsigned long int divisor = 2147483648 ;
 		
@@ -74,15 +76,16 @@
 						// Pick element
 						
 						// If no "dead surface" just use all first nContact elements; if dead surface
-						// need to pick from the siteContactElements
+						// need to pick from the siteElements (not just contact elements, as that has proved restrictive)
 						
 						if( surf->haveDeadSurface == YES )
 							{
-								i = (int) (((double)random()/divisor) * surf->nSiteContactElems ) ;
-								theElem = surf->siteContactElems[i] ;
+								i = (int) (((double)random()/divisor) * surf->nSiteElems ) ;
+								theElem = surf->siteElems[i] ;
 							}
 						else
 							{
+								// DO I need to ever restrict to contact
 								theElem = (int) (((double)random()/divisor) * surf->nContact ) ;
 							}
 							
@@ -158,7 +161,8 @@
 						++badIntersectCount ;
 						continue ;
 					}
-						
+				
+				/* Take this out for now
 				if( ss == YES && surf->elemSelfIntersecting[intersectElem] == YES )
 						{
 							needsInitialized = TRUE ;
@@ -166,7 +170,8 @@
 							++nSelfIntSkipIntersect ;
 							continue ;
 						}
-						
+				*/
+			
 				// If culling enabled...
 
 				if( cull == YES )
@@ -234,14 +239,16 @@
 				
 				double length = [ self addReflectionAtPosition:startPoint withMEP:mep inPartition:surf->partitionForElement[intersectElem]
 									atStart:NO ] ;
+			
+				double scaledLength = scaleFactor * length ;
 									
-				if( length > maxSegmentLength ) maxSegmentLength = length ;
+				if( scaledLength > maxSegmentLength ) maxSegmentLength = scaledLength ;
 				
-				double twoLength = prevSegmentLength + length ;
+				double twoLength = prevSegmentLength + scaledLength ;
 				
 				if( twoLength > maxTwoSegmentLength ) maxTwoSegmentLength = twoLength ;
 			
-				prevSegmentLength = length ;
+				prevSegmentLength = scaledLength ;
 			
 				++nSegments ;
 			}

@@ -342,6 +342,9 @@ static short *testIntersect = NULL ;
 				// must be assigned to a partition. The partition with the most votes wins
 				
 				// Instead of vote, find closest distance to elem midpoint
+			
+				int nContactSiteElems = 0 ;
+				int nNoncontactSiteElems = 0 ;
 				
 				for( i = 0 ; i < nElements ; ++i )
 					{
@@ -390,6 +393,14 @@ static short *testIntersect = NULL ;
 								elemActive[i] = YES ;
 								//partitionForElement[i] = [ flatSurface winningPartition ] ;
 								partitionForElement[i] = minPartition ;
+							
+								if (nAtomsForElement[i] > 1) {
+									++nNoncontactSiteElems ;
+								}
+								else {
+									++nContactSiteElems ;
+								}
+
 							}
 						else
 							{
@@ -398,45 +409,46 @@ static short *testIntersect = NULL ;
 							}
 					}
 					
+				printf("\nFound %d contact site elements, %d non-contact...\n", nContactSiteElems, nNoncontactSiteElems );
 				// Done with siteAtom array
 				
 				free( partitionForAtom ) ;
 				
-				// Make siteContactElems array
+				// Make siteElems array
 				
 				if( haveDeadSurface == YES )	
 					{
-						siteContactElems = (int *) malloc( nContact * sizeof( int ) ) ;
+						siteElems = (int *) malloc( nContact * sizeof( int ) ) ;
 						
-						nSiteContactElems = 0 ;
+						nSiteElems = 0 ;
 						
-						for( i = 0 ; i < nContact ; ++i )
+						for( i = 0 ; i < nElements ; ++i )
 							{
-								if( type[i] != CONTACT ) continue ;
+								//if( type[i] != CONTACT ) continue ;
 								
 								if( elemActive[i] == NO ) continue ;
 								
-								siteContactElems[nSiteContactElems] = i ;
+								siteElems[nSiteElems] = i ;
 								
-								++nSiteContactElems ;
+								++nSiteElems ;
 							}
 					}
 				else
 					{
 						haveDeadSurface = NO ;
 				
-						siteContactElems = nil ;
+						siteElems = nil ;
 						
-						nSiteContactElems = 0 ;
+						nSiteElems = 0 ;
 					}
 			}
 		else
 			{
 				haveDeadSurface = NO ;
 				
-				siteContactElems = nil ;
+				siteElems = nil ;
 				
-				nSiteContactElems = 0 ;
+				nSiteElems = 0 ;
 			}
 			
 			
@@ -678,7 +690,7 @@ static short *testIntersect = NULL ;
 		
 		free( partitionForElement ) ;
 		
-		if( siteContactElems ) free( siteContactElems ) ;
+		if( siteElems ) free( siteElems ) ;
 		
 		
 		

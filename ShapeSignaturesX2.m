@@ -1548,7 +1548,7 @@ int main (int argc, const char * argv[]) {
 					
 					rayTrace *nextRayTrace = [ [ rayTrace alloc ] initWithSurface:nextSurface andNumSegments:numSegments 
 							cullingEnabled:segmentCulling skipSelfIntersectingSurface:skipSelfIntersection 
-							insideTrace:insideTrace randomizationAngle:randomA ] ;						
+							insideTrace:insideTrace randomizationAngle:randomA scaleFactor:scaleFactor ] ;						
 					
 					if( [ printOption isEqualToString:@"printRaytrace" ] == YES )
 						{

@@ -71,8 +71,8 @@ typedef enum {CONTACT, REENTRANT, SADDLE } elemType ;
 	
 	// I guess I need this
 	
-	int *siteContactElems ;
-	int nSiteContactElems ;
+	int *siteElems ;
+	int nSiteElems ;
 	
 	
 	// To support overlay of grid

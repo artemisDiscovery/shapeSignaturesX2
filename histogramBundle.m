@@ -52,6 +52,8 @@ int MED3( int a, int b, int c )
 		NSAutoreleasePool *localPool = [ [ NSAutoreleasePool alloc ] init ] ;
 		
 		sourceTree = rt->theSurface->theTree ;
+	
+		double scaleFactor = rt->scaleFactor ;
 		
 		sourceSignature = sig ;
 		
@@ -214,7 +216,7 @@ int MED3( int a, int b, int c )
 						double dy = yCoord[iReflect + 1] - yCoord[iReflect] ;
 						double dz = zCoord[iReflect + 1] - zCoord[iReflect] ;
 						
-						double d = sqrt( dx*dx + dy*dy + dz*dz ) ;
+						double d = scaleFactor * sqrt( dx*dx + dy*dy + dz*dz ) ;
 						
 						
 						int iBin = (int) floor( d / lengthDelta ) ;
@@ -316,13 +318,13 @@ int MED3( int a, int b, int c )
 						double dy = yCoord[iReflect + 1] - yCoord[iReflect] ;
 						double dz = zCoord[iReflect + 1] - zCoord[iReflect] ;
 						
-						double d1 = sqrt( dx*dx + dy*dy + dz*dz ) ;
+						double d1 = scaleFactor * sqrt( dx*dx + dy*dy + dz*dz ) ;
 						
 						dx = xCoord[iReflect + 2] - xCoord[iReflect + 1] ;
 						dy = yCoord[iReflect + 2] - yCoord[iReflect + 1] ;
 						dz = zCoord[iReflect + 2] - zCoord[iReflect + 1] ;
 						
-						double d2 = sqrt( dx*dx + dy*dy + dz*dz ) ;
+						double d2 = scaleFactor * sqrt( dx*dx + dy*dy + dz*dz ) ;
 						
 						int lenBin = (int) floor( ( d1 + d2 ) / lengthDelta ) ;
 						int MEPBin = (int) floor( ( mep[iReflect + 1] - minMEP ) / MEPDelta ) ;
@@ -430,13 +432,13 @@ int MED3( int a, int b, int c )
 						double dy = yCoord[iReflect + 1] - yCoord[iReflect] ;
 						double dz = zCoord[iReflect + 1] - zCoord[iReflect] ;
 						
-						double d1 = sqrt( dx*dx + dy*dy + dz*dz ) ;
+						double d1 = scaleFactor * sqrt( dx*dx + dy*dy + dz*dz ) ;
 						
 						dx = xCoord[iReflect + 2] - xCoord[iReflect + 1] ;
 						dy = yCoord[iReflect + 2] - yCoord[iReflect + 1] ;
 						dz = zCoord[iReflect + 2] - zCoord[iReflect + 1] ;
 						
-						double d2 = sqrt( dx*dx + dy*dy + dz*dz ) ;
+						double d2 = scaleFactor * sqrt( dx*dx + dy*dy + dz*dz ) ;
 						
 						int lenBin = (int) floor( ( d1 + d2 ) / lengthDelta ) ;
 						
@@ -554,13 +556,13 @@ int MED3( int a, int b, int c )
 						double dy = yCoord[iReflect + 1] - yCoord[iReflect] ;
 						double dz = zCoord[iReflect + 1] - zCoord[iReflect] ;
 						
-						double d1 = sqrt( dx*dx + dy*dy + dz*dz ) ;
+						double d1 = scaleFactor * sqrt( dx*dx + dy*dy + dz*dz ) ;
 						
 						dx = xCoord[iReflect + 2] - xCoord[iReflect + 1] ;
 						dy = yCoord[iReflect + 2] - yCoord[iReflect + 1] ;
 						dz = zCoord[iReflect + 2] - zCoord[iReflect + 1] ;
 						
-						double d2 = sqrt( dx*dx + dy*dy + dz*dz ) ;
+						double d2 = scaleFactor * sqrt( dx*dx + dy*dy + dz*dz ) ;
 						
 						int lenBin = (int) floor( ( d1 + d2 ) / lengthDelta ) ;
 						
