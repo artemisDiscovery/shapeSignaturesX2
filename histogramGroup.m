@@ -280,9 +280,19 @@
 		double Score = 0. ;
 		
 		// Check for empty group
+	
+		histogramClass type = hostBundle->type ;
 		
-		if( segmentCount == 0 || target->segmentCount == 0 ) return 1. ;
-		if( segmentCount == 0 && target->segmentCount == 0 ) return 0. ;
+		if (type == ONE_DIMENSIONAL ) {
+			if( segmentCount == 0 && target->segmentCount == 0 ) return 0. ;
+			if( segmentCount == 0 || target->segmentCount == 0 ) return 1. ;
+		}
+		else {
+			if( segmentPairCount == 0 && target->segmentPairCount == 0 ) return 0. ;
+			if( segmentPairCount == 0 || target->segmentPairCount == 0 ) return 1. ;
+		}
+		
+		
 		
 		double *TProb = target->binProbs ;
 		double *QProb = binProbs ;
@@ -301,7 +311,7 @@
 		
 		// Note that this object is defined as the "query"
 		
-		histogramClass type = hostBundle->type ;
+		
 		
 		if( type == TWO_DIMENSIONAL )
 			{

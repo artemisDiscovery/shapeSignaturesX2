@@ -32,10 +32,10 @@ static short *testIntersect = NULL ;
 		return ;
 	}
 
-- (id) initWithFlatFile: (NSString *)f andTree: (ctTree *) t andSiteFile:(NSString *) s andGridSpacing:(double)del
+- (id) initWithFlatFile: (NSString *)f andTree: (ctTree *) t haveFragmentFile:(BOOL) customFrag andGridSpacing:(double)del
     {
         FILE *flats ;
-		NSString *siteFile ;
+		NSString *fragmentFile ;
 		NSScanner *fileScanner ;
         char buffer[1000] ;
         char *word ;
@@ -248,9 +248,9 @@ static short *testIntersect = NULL ;
 						return nil ;
 					}
 					
-				// Sites file?
+				// Fragment file?
 				
-				if( s )
+				if( customFrag )
 					{
 						elemActive[i] = NO ;
 					}
@@ -291,55 +291,13 @@ static short *testIntersect = NULL ;
 			}
         
 		
-		if( s )
+		if( customFrag )
 			{
 				haveDeadSurface = NO ;
 				
-				// Need to set up site atom array
-				
-				// We will assume that atoms are numbered starting at 1 in the file
-				
-				siteFile = [ NSString stringWithContentsOfFile:s ] ;
-				
-				if( ! siteFile ) return nil ;
-				
-				fileScanner = [ NSScanner scannerWithString:siteFile ] ;
-				
-				[ fileScanner setCharactersToBeSkipped:[ NSCharacterSet whitespaceAndNewlineCharacterSet ] ] ;
-				
-				// Note that atoms in the file are assumed indexed starting at 1 
-				
-				partitionForAtom = (int *) malloc( t->nNodes * sizeof( int ) ) ;
-				
-				// Assign all atoms to default (inactive) site with index -1 
-				
-				for( i = 0 ; i <= t->nNodes ; ++i )
-					{
-						partitionForAtom[i] = -1 ;
-					}
-				
-				// Format: <atom index> <partition>
-				// Partitions start at 1 (to match my assumption about fragments - why oh why?)
-				
-				while( [ fileScanner scanInt:&atomNum ] == YES )
-					{
-						if( [ fileScanner scanInt:&partitionNum ] == NO )
-							{
-								printf( "ERROR - Site file format messed up!\n" ) ;
-								return nil ;
-							}
-							
-						partitionForAtom[ atomNum - 1 ] = partitionNum ;
-					}
-					
-				if( [ fileScanner isAtEnd ] == NO )
-					{
-						printf( "ERROR - Site file format messed up!\n" ) ;
-						return nil ;
-					}
 					
 				// Set each element as being in the site or not.  At least one of the atoms for an element
-				// must be assigned to a partition. The partition with the most votes wins
+				// must be assigned to a partition with index > 0. The partition with the most votes wins
 				
 				// Instead of vote, find closest distance to elem midpoint
 			
@@ -362,10 +320,10 @@ static short *testIntersect = NULL ;
 						for( j = 0 ; j < nAtomsForElement[i] ; ++j )
 							{
 								int jAtom = elementAtoms[i][j] ;
-								int p = partitionForAtom[ jAtom ] ;
+								int p = t->nodes[jAtom]->fragmentIndex ;
 								
-								if( p > 0 ) 
-									{
+								//if( p > 0 ) 
+								//	{
 										
 										double dx = xc - theTree->nodes[jAtom]->coord[0] ;
 										double dy = yc - theTree->nodes[jAtom]->coord[1] ;
@@ -380,19 +338,20 @@ static short *testIntersect = NULL ;
 											}
 										
 										//[ flatSurface addVoteForPartition:p ] ;
-									}
-								else
-									{
-										fail = YES ;
-										break ;
-									}
+								//	}
+								//else
+								//	{
+								//		fail = YES ;
+								//		break ;
+								//	}
 							}
 									
-						if( fail == NO )
+						partitionForElement[i] = minPartition ;
+					
+						if( minPartition > 0 )
 							{
 								elemActive[i] = YES ;
 								//partitionForElement[i] = [ flatSurface winningPartition ] ;
-								partitionForElement[i] = minPartition ;
 							
 								if (nAtomsForElement[i] > 1) {
 									++nNoncontactSiteElems ;
@@ -411,8 +370,6 @@ static short *testIntersect = NULL ;
 					
 				printf("\nFound %d contact site elements, %d non-contact...\n", nContactSiteElems, nNoncontactSiteElems );
 				// Done with siteAtom array
-				
-				free( partitionForAtom ) ;
 				
 				// Make siteElems array
 				
@@ -465,7 +422,7 @@ static short *testIntersect = NULL ;
 		ctNode **theNodes = t->nodes ;
 		
 		// Assume 1-1 coorespondance between atom indices for elements and nodes in the tree
-		
+		/*
 		for( i = 0 ; i < nElements ; ++i )
 			{
 				//[ flatSurface clearPartitionsForVote ] ;
@@ -502,7 +459,7 @@ static short *testIntersect = NULL ;
 				partitionForElement[i] = minPartition ;
 							
 			}
-			
+		*/
 		// Set up a grid over the molecule
 		
        delta = del ;

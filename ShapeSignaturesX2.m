@@ -149,11 +149,11 @@ int main (int argc, const char * argv[]) {
 	// Calculation parameters
 	
 	// Note that we will accept for input a directory of mol2 files (NOT multimol), with each mol2 
-	// file paired with a surface file (and potentially an atom site file)
+	// file paired with a surface file (and potentially an fragment file that assigns atoms to user-specified fragments)
 	// File name format:
 	//		<mol>.mol2
 	//		<mol>.flats
-	//		<mol>.site (optional)
+	//		<mol>.frag (optional)
 	
 	
 	
@@ -1272,7 +1272,7 @@ int main (int argc, const char * argv[]) {
 	if( mode == CREATEMODE )
 		{
 			// First step - collect all files from directory. We need mol2 files (*.mol2), flats files
-			// (*.flats) and potentially atom site files (*.site) 
+			// (*.flats) and potentially atom fragment files (*.frag) 
 				
 			NSFileManager *fileManager = [ NSFileManager defaultManager ] ;
 			
@@ -1341,7 +1341,7 @@ int main (int argc, const char * argv[]) {
 				}
 				
 				
-			// Collect all mol2 files, flats and site files
+			// Collect all mol2 files, flats and fragment files
 			
 			// To support GNUStep I am going to back off using predicates
 			
@@ -1351,7 +1351,7 @@ int main (int argc, const char * argv[]) {
 			
 			NSMutableArray *mol2Files = [ [ NSMutableArray alloc ] initWithCapacity:[ files count ] ] ;
 			NSMutableArray *flatsFiles = [ [ NSMutableArray alloc ] initWithCapacity:[ files count ] ] ;
-			NSMutableArray *siteFiles = [ [ NSMutableArray alloc ] initWithCapacity:[ files count ] ] ;
+			NSMutableArray *fragmentFiles = [ [ NSMutableArray alloc ] initWithCapacity:[ files count ] ] ;
 			
 			//[ mol2Files retain ] ;
 			//[ flatsFiles retain ] ;
@@ -1370,17 +1370,17 @@ int main (int argc, const char * argv[]) {
 						{
 								[ flatsFiles addObject:nextFile ] ;
 						}
-					 else if( [ nextFile hasSuffix:@".site" ] == YES )
+					 else if( [ nextFile hasSuffix:@".frag" ] == YES )
 						{
-								[ siteFiles addObject:nextFile ] ;
+								[ fragmentFiles addObject:nextFile ] ;
 						}
 				}
 
 			[ mol2Files sortUsingFunction:fileNameCompare context:nil ] ;
 			[ flatsFiles sortUsingFunction:fileNameCompare context:nil ] ;
-			[ siteFiles  sortUsingFunction:fileNameCompare context:nil ] ;
+			[ fragmentFiles  sortUsingFunction:fileNameCompare context:nil ] ;
 			
-			// We can assume that mol2 files and their associated flats, sites files occur in the same 
+			// We can assume that mol2 files and their associated flats, fragment files occur in the same 
 			// order - I will not allow possibility of gaps
 			
 			int mol2Count = [ mol2Files count ] ;
@@ -1438,31 +1438,31 @@ int main (int argc, const char * argv[]) {
 					exit(1) ;
 				}
 			
-			BOOL useSites = NO ;
+			BOOL useCustomFragments = NO ;
 			
-			int siteCount = [ siteFiles count ] ;
+			int fragmentFileCount = [ fragmentFiles count ] ;
 			
-			if( siteCount == 0 )
+			if( fragmentFileCount == 0 )
 				{
 					if( insideTrace == YES )
 						{
-							printf( "\nNo sites files specified - OK, inside raytrace in use. \n" ) ;
+							printf( "\nNo custom fragment files specified - OK, inside raytrace in use. \n" ) ;
 						}
 					else
 						{
-							printf( "\nWARNING: Using exterior raytrace, but no atom site files in place!\n" ) ;
+							printf( "\nWARNING: Using exterior raytrace, but no atom fragment files in place!\n" ) ;
 						}
 				}
-			else if( siteCount != mol2Count )
+			else if( fragmentFileCount != mol2Count )
 				{
-					printf( "\nERROR - wrong number ( %d ) of site files present, does not match mol2 files - Aborting - No database created!\n",
-								siteCount ) ;
+					printf( "\nERROR - wrong number ( %d ) of fragment files present, does not match mol2 files - Aborting - No database created!\n",
+								fragmentFileCount ) ;
 					exit(1) ;
 				}
 			else
 				{
-					useSites = YES ;
-					printf( "\nAtom site files are present and will be applied to limit the raytrace.\n" ) ;
+					useCustomFragments = YES ;
+					printf( "\nAtom fragment files are present and will be applied to limit the raytrace.\n" ) ;
 				}
 			
 			
@@ -1490,28 +1490,27 @@ int main (int argc, const char * argv[]) {
 							continue ;
 						}
 						
-					// Assign atoms to fragments - note if using site file (exterior raytrace) we can only have one fragment
+					// Assign atoms to fragments - 
 					
-					[ nextTree assignNodesToFragmentsByMergingNeighborRings:mergeNeighborRings forceOneFragment:useSites ] ;
-						
-					// Sites file?
-					
-					NSString *nextSiteFile = nil ;
-					
-					if( useSites == YES )
-						{
-							NSString *nextSiteName = [ siteFiles objectAtIndex:mol2Index ] ;
-							nextSiteFile = [ mol2Directory stringByAppendingString:nextSiteName ] ;
+					if (useCustomFragments == NO ) {
+						[ nextTree assignNodesToFragmentsByMergingNeighborRings:mergeNeighborRings forceOneFragment:NO ] ;
+					}
+					else {
+							NSString *nextFragmentFileName = [ fragmentFiles objectAtIndex:mol2Index ] ;
+							nextFragmentFile = [ mol2Directory stringByAppendingString:nextFragmentFileName ] ;
 							
-							NSString *siteRoot = [ [ nextSiteName componentsSeparatedByString:@"." ] objectAtIndex:0 ] ;
+							NSString *fragmentRoot = [ [ nextFragmentFile componentsSeparatedByString:@"." ] objectAtIndex:0 ] ;
 							
-							if( [ mol2Root isEqualToString:siteRoot ] == NO )
+							if( [ mol2Root isEqualToString:fragmentRoot ] == NO )
 								{	
-									printf( "WARNING: NAME OF NEXT SITE FILE %s UNEXPECTED - mol2 name = %s ...\n",
-										[ siteRoot cString ], [ mol2Root cString ] ) ;
+									printf( "WARNING: NAME OF NEXT CUSTOM FRAGMENT FILE \' %s \' UNEXPECTED - mol2 name = %s ...\n",
+										   [ fragmentRoot cString ], [ mol2Root cString ] ) ;
 								}
-						}
+							[ nextTree assignNodesToFragmentsUsingFile:nextFragmentFile		] ;			
+					}
+
 					
+											
 						
 					// Surface - check that file name matches mol2 - warning if not
 					
@@ -1533,7 +1532,7 @@ int main (int argc, const char * argv[]) {
 					nextSurfaceFile = [ mol2Directory stringByAppendingString:[ flatsFiles objectAtIndex:mol2Index ] ] ;
 						
 					flatSurface *nextSurface = [ [ flatSurface alloc ] initWithFlatFile:nextSurfaceFile andTree:nextTree
-													andSiteFile:nextSiteFile andGridSpacing:gridSpacing ] ;
+													haveFragmentFile:useCustomFragments andGridSpacing:gridSpacing ] ;
 					
 					if( ! nextSurface )
 						{

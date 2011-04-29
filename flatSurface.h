@@ -57,15 +57,15 @@ typedef enum {CONTACT, REENTRANT, SADDLE } elemType ;
 	
 	int **elementAtoms ;
 	
-		// Active? (only used if site atoms defined)
+	// Active? (only used if site atoms defined)
 		
 	BOOL *elemActive ;
 	
-		// Involved in potential self-intersection?
+	// Involved in potential self-intersection?
 		
 	BOOL *elemSelfIntersecting ;
 	
-	// We can use either fragment or site information to assign element to partition
+	// We can use fragmentinformation to assign element to partition
 	
 	int *partitionForElement ;
 	
@@ -88,7 +88,7 @@ typedef enum {CONTACT, REENTRANT, SADDLE } elemType ;
 
 }
 
-- (id) initWithFlatFile: (NSString *)f andTree: (ctTree *) t andSiteFile:(NSString *) s andGridSpacing:(double)d ;
+- (id) initWithFlatFile: (NSString *)f andTree: (ctTree *) t haveFragmentFile:(BOOL) customFrag andGridSpacing:(double)d ;
 
 - (void) position:(double [])p andMEP:(double *)mep inElement:(int)idx forR:(double)r S:(double)s ;
 

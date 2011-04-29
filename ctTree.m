@@ -1528,7 +1528,188 @@
 		return ;
 		
 	}
+
+- (void) assignNodesToFragmentsUsingFile:(NSString *)frag 
+	{
+		// This will allow custom assignment of atoms to fragments. I am breaking with tradition, and assigning all 
+		// atoms to "fragment 0" if not explictly assigned. Fragment 0 is ignored when generating ray traces (associate with 
+		// "dead" molecular surface)
 	
+		NSAutoreleasePool *localPool = [ [ NSAutoreleasePool alloc ] init ] ;
+	
+		if( ! treeFragments )
+			{
+				treeFragments = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
+				fragmentToNeighborData = [ [ NSMutableDictionary alloc ] initWithCapacity:10 ] ;
+			}
+		
+		nFragments = 0 ;
+		
+		// Assign nodes to fragment index first
+		
+		int j, atomNum, fragNum ;
+		
+		for ( j = 0 ; j < nNodes ; ++j ) {
+			
+			nodes[j]->fragmentIndex = 0 ;
+		}
+		
+		// Parse the file, assign nodes to fragments
+		// (Simple format, 1-based atom index followed by fragment index)
+		
+		NSString *fragmentFile = [ NSString stringWithContentsOfFile:frag ] ;
+		
+		if( ! fragmentFile ) return nil ;
+		
+		fileScanner = [ NSScanner scannerWithString:fragmentFile ] ;
+		
+		[ fileScanner setCharactersToBeSkipped:[ NSCharacterSet whitespaceAndNewlineCharacterSet ] ] ;
+		
+		int maxFrag = 0 ;
+		
+		while( [ fileScanner scanInt:&atomNum ] == YES )
+			{
+				if( [ fileScanner scanInt:&fragNum ] == NO )
+					{
+						printf( "ERROR - Fragment file format messed up!\n" ) ;
+						return nil ;
+					}
+			
+				if ( fragNum > maxFrag ) {
+					maxFrag = fragNum ;
+				}
+				
+				nodes[ atomNum - 1 ]->fragmentIndex = fragNum ;
+			}
+		
+		if( [ fileScanner isAtEnd ] == NO )
+			{
+				printf( "ERROR - Fragment file format messed up!\n" ) ;
+				return nil ;
+			}
+		
+		NSMutableSet **fragNumToBonds = (NSMutableSet **) malloc(( maxFrag + 1) * sizeof( NSMutableSet * ) ) ;
+		
+		for( j = 1 ; j <= maxFrag ; ++j )
+			{
+				fragNumToBonds[j] = [ NSMutableSet setWithCapacity:nBonds ] ;
+			}
+		
+		// Collect bonds for each fragment, make the trees
+		
+		NSMutableSet *remainingBonds = [ [ NSMutableSet alloc ] initWithObjects:bonds count:nBonds ] ;
+		
+		// Any bond that involves same fragment ID adds to that bond set
+		
+		for( j = 0 ; j < nBonds ; ++j ) {
+			
+			if ( bonds[j]->node1->fragmentIndex == bonds[j]->node2->fragmentIndex  )   {
+				[ fragNumToBonds[bonds[j]->node1->fragmentIndex] addObject:bonds[j] ] ;
+			}
+		}
+		
+		// Remove the fragment bonds from the starting bond set - what is left over are bonds that connect different fragments
+		
+		for( j = 0 ; j <= maxFrag ; ++j ) {
+			[ remainingBonds minusSet:fragNumToBonds[j] ] ;
+		}
+	
+		// Add fragments to tree
+	
+		// Note we will ignore fragment 0
+	
+		for( j = 1 ; j <= maxFrag ; ++j ) {
+			fragment *nextFragment = [ [ fragment alloc ] initWithBonds:fragNumToBonds[j] 
+																andType:NONRING inTree:self ] ;
+			[ treeFragments addObject:nextFragment ] ;
+			[ nextFragment release ] ;
+		}
+	
+		// Fragment neighbors will be determined by remaining bonds. Note that it is possible for remaining
+		// bonds to define the same fragment neighbor relationships multiple times. Build a fragment neighbor dictionary using the
+		// fragment indices in sorted order, then add the neighbor information to the tree
+	
+		NSMutableDictionary *connectionDict = [ [ NSMutableDictionary alloc ] initWithCapacity:maxFrag ] ;
+	
+		for ( ctBond *nextBond in remainingBonds ) {
+			int index1, index2 ;
+			fragment *frag1, *frag2 ;
+			ctNode *node1, *node2 ;
+			
+			if (nextBond->node1->fragmentIndex == 0 || nextBond->node2->fragmentIndex == 0) {
+				continue ;
+			}
+			
+			if (nextBond->node1->fragmentIndex < nextBond->node2->fragmentIndex) {
+				index1 = nextBond->node1->fragmentIndex ;
+				frag1 = [ treeFragments objectAtIndex:(index1 - 1) ] ; // No fragment 0
+				node1 = nextBond->node1 ;
+				index2 = nextBond->node2->fragmentIndex ;
+				frag2 = [ treeFragments objectAtIndex:(index2 - 1) ] ; // No fragment 0
+				node2 = nextBond->node2 ;
+			}
+			else {
+				index1 = nextBond->node2->fragmentIndex ;
+				frag1 = [ treeFragments objectAtIndex:(index2 - 1) ] ;	// No fragment 0
+				node1 = nextBond->node2 ;
+				index2 = nextBond->node1->fragmentIndex ;
+				frag2 = [ treeFragments objectAtIndex:(index1 - 1) ] ;	// No fragment 0
+				node2 = nextBond->node1 ;
+			}
+			
+			NSString *key = [ NSString stringWithFormat:@"%d_%d",index1,index2 ] ;
+			
+			if (! [ connectionDict objectForKey:key ] ) {
+				[ connectionDict setObject:[ NSArray arrayWithObjects:[ NSArray arrayWithObjects:frag2,frag1,node2,nil ],
+											[ NSArray arrayWithObjects:frag1,frag2,node1,nil ],nil ]  forKey:key ] ;
+			}
+		}
+	
+		// Add the neighbor relationships
+	
+		for( NSArray *neighborArray in [ connectionDict allValues ] ) {
+			for( NSArray *neighbor in neighborArray ) {
+				fragment *fOne = [ neighbor objectAtIndex:0 ] ;
+				fragment *fTwo = [ neighbor objectAtIndex:1 ] ;
+				ctNode *nodeOne = [ neighbor objectAtIndex:2 ] ;
+				
+				if (! [ fragmentToNeighborData objectForKey:[ NSValue valueWithPointer:fOne ] ] ) {
+					[ fragmentToNeighborData setObject:[ NSMutableArray arrayWithCapacity:maxFrag forKey:[ NSValue valueWithPointer:fOne ] ] ] ;
+				}
+				
+				[ [ fragmentToNeighborData objectForKey:[ NSValue valueWithPointer:fOne ] ]
+				 addObject:[ NSArray arrayWithObjects:fTwo,
+							[ NSSet setWithObjects:nodeOne,nil ] ,nil] ] ;
+			}
+			
+			
+		}
+	
+		nFragments = [ treeFragments count ] ;
+		
+		// Still need some additional stuff here
+		
+		// For later convenience, we set a set of all the neighbor fragment indices, saved as strings
+		
+		for( fragment *nextFragment in treeFragments  )
+			{
+				[ nextFragment assignNeighborFragmentIndices ] ;
+			}
+		
+		// For later generation of histogram groups, generate connection objects between fragments
+		
+		[ self makeFragmentConnections ] ;		
+	
+		[ remainingBonds release ] ;
+	
+		free( fragNumToBonds ) ;
+		
+		
+		return ;
+		
+		
+	
+	}
 	
 - (void) makeFragmentConnections
 	{

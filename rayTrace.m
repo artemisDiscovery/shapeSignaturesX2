@@ -172,9 +172,9 @@ skipSelfIntersectingSurface:(BOOL)ss insideTrace:(BOOL)inside randomizationAngle
 						}
 				*/
 			
-				// If culling enabled...
+				// If culling enabled... only allowed for interior trace
 
-				if( cull == YES )
+				if( inside == YES && cull == YES )
 					{
 						// Check if theElem and intersectElem share atoms
 						
