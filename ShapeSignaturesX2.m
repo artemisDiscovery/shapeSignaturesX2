@@ -1497,7 +1497,7 @@ int main (int argc, const char * argv[]) {
 					}
 					else {
 							NSString *nextFragmentFileName = [ fragmentFiles objectAtIndex:mol2Index ] ;
-							nextFragmentFile = [ mol2Directory stringByAppendingString:nextFragmentFileName ] ;
+							NSString *nextFragmentFile = [ mol2Directory stringByAppendingString:nextFragmentFileName ] ;
 							
 							NSString *fragmentRoot = [ [ nextFragmentFile componentsSeparatedByString:@"." ] objectAtIndex:0 ] ;
 							

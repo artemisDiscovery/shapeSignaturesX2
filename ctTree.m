@@ -1561,7 +1561,7 @@
 		
 		if( ! fragmentFile ) return nil ;
 		
-		fileScanner = [ NSScanner scannerWithString:fragmentFile ] ;
+		NSScanner *fileScanner = [ NSScanner scannerWithString:fragmentFile ] ;
 		
 		[ fileScanner setCharactersToBeSkipped:[ NSCharacterSet whitespaceAndNewlineCharacterSet ] ] ;
 		
@@ -1621,6 +1621,7 @@
 		for( j = 1 ; j <= maxFrag ; ++j ) {
 			fragment *nextFragment = [ [ fragment alloc ] initWithBonds:fragNumToBonds[j] 
 																andType:NONRING inTree:self ] ;
+			nextFragment->index = j ;
 			[ treeFragments addObject:nextFragment ] ;
 			[ nextFragment release ] ;
 		}
@@ -1650,10 +1651,10 @@
 			}
 			else {
 				index1 = nextBond->node2->fragmentIndex ;
-				frag1 = [ treeFragments objectAtIndex:(index2 - 1) ] ;	// No fragment 0
+				frag1 = [ treeFragments objectAtIndex:(index1 - 1) ] ;	// No fragment 0
 				node1 = nextBond->node2 ;
 				index2 = nextBond->node1->fragmentIndex ;
-				frag2 = [ treeFragments objectAtIndex:(index1 - 1) ] ;	// No fragment 0
+				frag2 = [ treeFragments objectAtIndex:(index2 - 1) ] ;	// No fragment 0
 				node2 = nextBond->node1 ;
 			}
 			
@@ -1674,7 +1675,7 @@
 				ctNode *nodeOne = [ neighbor objectAtIndex:2 ] ;
 				
 				if (! [ fragmentToNeighborData objectForKey:[ NSValue valueWithPointer:fOne ] ] ) {
-					[ fragmentToNeighborData setObject:[ NSMutableArray arrayWithCapacity:maxFrag forKey:[ NSValue valueWithPointer:fOne ] ] ] ;
+					[ fragmentToNeighborData setObject:[NSMutableArray arrayWithCapacity:maxFrag ] forKey:[ NSValue valueWithPointer:fOne ] ]  ;
 				}
 				
 				[ [ fragmentToNeighborData objectForKey:[ NSValue valueWithPointer:fOne ] ]

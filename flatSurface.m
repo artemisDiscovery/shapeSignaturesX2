@@ -291,8 +291,8 @@ static short *testIntersect = NULL ;
 			}
         
 		
-		if( customFrag )
-			{
+		//if( customFrag )
+		//	{
 				haveDeadSurface = NO ;
 				
 					
@@ -392,21 +392,20 @@ static short *testIntersect = NULL ;
 					}
 				else
 					{
-						haveDeadSurface = NO ;
-				
+					
 						siteElems = nil ;
 						
 						nSiteElems = 0 ;
 					}
-			}
-		else
-			{
-				haveDeadSurface = NO ;
+			//}
+		//else
+		//	{
+		//		haveDeadSurface = NO ;
 				
-				siteElems = nil ;
+		//		siteElems = nil ;
 				
-				nSiteElems = 0 ;
-			}
+		//		nSiteElems = 0 ;
+		//	}
 			
 			
 		// Also, assign fragment to element - use majority vote
@@ -419,7 +418,7 @@ static short *testIntersect = NULL ;
 		
 		//[ t  assignNodesToFragments ] ;
 		
-		ctNode **theNodes = t->nodes ;
+		//ctNode **theNodes = t->nodes ;
 		
 		// Assume 1-1 coorespondance between atom indices for elements and nodes in the tree
 		/*
