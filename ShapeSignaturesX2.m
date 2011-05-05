@@ -55,7 +55,7 @@ int main (int argc, const char * argv[]) {
 							MYSQLDBNAME, MYSQLHOSTNAME, LOADMEMORYRESOURCE } ;
 							
 	
-	enum { CREATEMODE, COMPAREMODE, INFOMODE, MEMORYRESOURCEMODE, KEYSMODE, KMEANSMODE, CHECKMODE, CONVERTMODE, UNDEFINED } mode ;
+	enum { CREATEMODE, COMPAREMODE, INFOMODE, MEMORYRESOURCEMODE, KEYSMODE, KMEANSMODE, CHECKMODE, CONVERTMODE, MOL2MODE, UNDEFINED } mode ;
 	
 	mode = UNDEFINED ;
 	
@@ -126,6 +126,8 @@ int main (int argc, const char * argv[]) {
 		
 	NSString *mol2Directory = nil ;
 	
+	NSString *signatureDirectoryOrIDFile ;
+	
 	NSString *errorDirectory = nil ;
 	
 	NSString *XDBDirectory = nil ;
@@ -166,6 +168,7 @@ int main (int argc, const char * argv[]) {
 			printf( "USAGE: shapeSigX -info <query DB> \n" ) ;
 			printf( "USAGE: shapeSigX -keys [ flags ] <input directory> \n" ) ;
 			printf( "USAGE: shapeSigX -check [ flags ] <input directory> <output directory> \n" ) ;
+			printf( "USAGE: shapeSigX -mol2 <input directory|IDs file> \n" ) ;
 			printf( "-create flags:\n" ) ;
 			printf( "\t-numseg <number of raytrace segments; default = 100000>\n" ) ;
 			printf( "\t-gridspace <grid spacing; default = 1.0>\n" ) ;
@@ -273,6 +276,11 @@ int main (int argc, const char * argv[]) {
 								{
 									mode = KEYSMODE ;
 									parseState = GETTOKEN ;
+								}
+							else if( strcasestr( &argv[i][1], "mol2" ) == &argv[i][1] )
+								{
+								mode = MOL2MODE ;
+								parseState = GETTOKEN ;
 								}
 							else if( strcasestr( &argv[i][1], "kmeans" ) == &argv[i][1] )
 								{
@@ -594,6 +602,15 @@ int main (int argc, const char * argv[]) {
 											exit(1) ;
 										}
 								}
+							else if( mode == MOL2MODE ) {
+								if( ! signatureDirectoryOrIDFile ) {
+									signatureDirectoryOrIDFile = [ [ NSString stringWithCString:argv[i] ] retain ] ;
+								}
+								else {
+									printf( "TOO MANY ARGUMENTS - Exit!\n" ) ;
+									exit(1) ;
+								}
+							}
 							else
 								{
 									printf( "FLAG -create, -compare, -convert OR -info MUST APPEAR FIRST - Exit!\n" ) ;
@@ -678,7 +695,8 @@ int main (int argc, const char * argv[]) {
 								
 							case XMLIN:
 								if( mode != COMPAREMODE && mode != CONVERTMODE 
-									&& mode != INFOMODE && mode != MEMORYRESOURCEMODE )
+									&& mode != INFOMODE && mode != MEMORYRESOURCEMODE
+								   	&& mode != MOL2MODE )
 									{
 										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 										exit(1) ;
@@ -748,7 +766,7 @@ int main (int argc, const char * argv[]) {
 							break ;
 							
 							case COMPRESS :
-							if( mode != CREATEMODE && mode != CONVERTMODE )
+							if( mode != CREATEMODE && mode != CONVERTMODE  )
 								{
 								printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 								exit(1) ;
@@ -767,7 +785,7 @@ int main (int argc, const char * argv[]) {
 							
 							case DECOMPRESS :
 							if( mode != COMPAREMODE && mode != CONVERTMODE && mode != INFOMODE
-										&& mode != MEMORYRESOURCEMODE )
+										&& mode != MEMORYRESOURCEMODE && mode != MOL2MODE)
 								{
 									printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 									exit(1) ;
@@ -852,7 +870,7 @@ int main (int argc, const char * argv[]) {
 								break ;
 								
 							case TARGETISDIRECTORY:
-								if( mode != COMPAREMODE )
+								if( mode != COMPAREMODE && mode != MOL2MODE )
 									{
 										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 										exit(1) ;
@@ -872,7 +890,7 @@ int main (int argc, const char * argv[]) {
 								break ;
 							
 							case TARGETISMYSQLIDS:
-								if( mode != COMPAREMODE )
+								if( mode != COMPAREMODE && mode != MOL2MODE )
 									{
 										printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 										exit(1) ;
@@ -1185,7 +1203,7 @@ int main (int argc, const char * argv[]) {
 									break ;
 							
 								case MYSQLTABLENAME:
-									if( mode != COMPAREMODE )
+									if( mode != COMPAREMODE && mode != MOL2MODE )
 										{
 											printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 											exit(1) ;
@@ -1195,7 +1213,7 @@ int main (int argc, const char * argv[]) {
 									break ;
 							
 								case MYSQLUSERNAME:
-									if( mode != COMPAREMODE )
+									if( mode != COMPAREMODE && mode != MOL2MODE )
 										{
 											printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 											exit(1) ;
@@ -1205,7 +1223,7 @@ int main (int argc, const char * argv[]) {
 									break ;
 							
 								case MYSQLDBNAME:
-									if( mode != COMPAREMODE )
+									if( mode != COMPAREMODE && mode != MOL2MODE )
 										{
 											printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 											exit(1) ;
@@ -1215,7 +1233,7 @@ int main (int argc, const char * argv[]) {
 									break ;
 
 								case MYSQLHOSTNAME:
-									if( mode != COMPAREMODE )
+									if( mode != COMPAREMODE && mode != MOL2MODE )
 										{
 											printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 											exit(1) ;
@@ -1225,7 +1243,7 @@ int main (int argc, const char * argv[]) {
 									break ;
 							
 								case MYSQLPASSWORD:
-									if( mode != COMPAREMODE )
+									if( mode != COMPAREMODE && mode != MOL2MODE )
 										{
 											printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
 											exit(1) ;
@@ -3487,9 +3505,250 @@ int main (int argc, const char * argv[]) {
 			
 	
 		}
+	else if (mode == MOL2MODE ) {
+		
+		if( ! signatureDirectoryOrIDFile )
+			{
+				printf( "FATAL ERROR - Exit!\n" ) ;
+				exit(1) ;
+			}
+		
+		if( targetmysqlIDs == NO ) {
+			// Our target is a directory
+			
+			NSFileManager *fileManager = [ NSFileManager defaultManager ] ;
+			
+			NSError *fileError ;
+						
+#ifdef LINUX
+			NSArray *files = [ fileManager directoryContentsAtPath:signatureDirectoryOrIDFile ] ;
+#else
+			NSArray *files = [ fileManager contentsOfDirectoryAtPath:signatureDirectoryOrIDFile error:&fileError ] ;
+#endif
+			
+			if( ! files )
+				{
+					printf( "DIRECTORY DOES NOT EXIST - Exit!\n" ) ;
+					exit(1) ;
+				}
+			
+			if( [ files count ] == 0 )
+				{
+					printf( "EMPTY DIRECTORY - Exit!\n" ) ;
+					exit(1) ;
+				}
+			
+			NSMutableArray *signatureFiles = [ [ NSMutableArray alloc ] initWithCapacity:[ files count ] ] ;
+			
+			for( NSString *nextFile in files ) {
+				if( [ nextFile hasSuffix:@".X2DB" ] == YES ||  [ nextFile hasSuffix:@".X2DB.Z" ] == YES)
+					{
+						[ signatureFiles addObject:nextFile ] ;
+					}
+			}
+			
+			// Process all the files in the directory
+			
+			NSMutableArray *theSignatures ;
+			
+			for( NSString *nextSignatureFile in signatureFiles ) {
+				if( xmlIN == NO )
+					{
+						theSignatures = [ NSUnarchiver unarchiveObjectWithFile:nextSignatureFile ] ;
+					}
+				else
+					{
+						theSignatures = [ [ NSMutableArray alloc ] initWithCapacity:1000 ] ;
+						
+						NSData *theData = [ NSData dataWithContentsOfFile:nextSignatureFile ] ;
+						
+						if( decompressDBs == YES )
+							{
+								theData = [ X2Signature decompress:theData ] ;
+							}
+						
+						NSString *errorString ;
+						NSPropertyListFormat theFormat ;
+						
+						NSArray *sourceArray = [ NSPropertyListSerialization propertyListFromData:theData 
+																				 mutabilityOption:0 format:&theFormat 
+																				 errorDescription:&errorString ] ;
+						
+						NSEnumerator *sourceArrayEnumerator = [ sourceArray objectEnumerator ] ;
+						
+						NSDictionary *nextSignatureDict ;
+						
+						while( ( nextSignatureDict = [ sourceArrayEnumerator nextObject ] ) )
+							{
+								X2Signature *nextSignature = [ [ X2Signature alloc ] 
+															  initWithPropertyListDict:nextSignatureDict ] ;
+								
+								[ theSignatures addObject:nextSignature ] ;
+								[ nextSignature release ] ;
+							}
+					}
+				
+				// Process each signature, export mol2 file
+				
+				for( X2Signature *nextSignature in theSignatures ) {
+					NSString *mol2File = [ NSString stringWithFormat:@"%s/%s.mol2",[ signatureDirectoryOrIDFile cString ],
+						nextSignature->sourceTree->treeName ] ;
+					[ nextSignature->sourceTree exportAsMOL2File:mol2File ] ;
+				}
+				
+				[ theSignatures release ] ;
+				
+					
+			}
+			
+			
+		}
+		else {
+				// Target is file of database IDs ; mol2 files will export to current working directory
+				
+				NSError *error = nil ;
+#ifdef LINUX
+				NSString *fileContent = [ NSString stringWithContentsOfFile:targetDB ] ;
+				// encoding:NSASCIIStringEncoding error:&error ] ;
+#else
+				NSString *fileContent = [ NSString stringWithContentsOfFile:targetDB 
+											encoding:NSASCIIStringEncoding error:&error ] ;
+#endif
+			
+			if( error )
+				{
+					printf( "ERROR READING FILE OF TARGET IDs - Exit!\n" ) ;
+					exit(1) ;
+				}
+			
+			NSArray *DBIDs = [ fileContent componentsSeparatedByString:@"\n" ] ;
+			
+			NSMutableArray *targetSignatures = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
+			
+			NSString *nextID ;
+			NSEnumerator *IDEnumerator = [ DBIDs objectEnumerator ] ;
+			int count = 0 ;
+			
+			// Make connection to database
+			
+			int totalCount = [ DBIDs count ] ;
+			MYSQL *conn;
+			MYSQL_RES *result;
+			MYSQL_ROW row;
+			int num_fields;
+			char sqlBuffer[10000] ;
+			
+			conn = mysql_init(NULL) ;
+			
+			mysql_real_connect(conn, [ MySQLHOST cString ], 
+							   [ MySQLUSER cString ], [ MySQLPASSWORD cString ], 
+							   [ MySQLDB cString ], 0, NULL, 0) ;
+			
+			
+			while( ( nextID = [ IDEnumerator nextObject ] ) )
+				{
+				NSAutoreleasePool * localPool = [ [ NSAutoreleasePool alloc ] init ];
+				
+				[ targetSignatures removeAllObjects ] ;
+				
+				// Check for blank
+				
+				NSString *useID = [ nextID stringByTrimmingCharactersInSet:
+								   [NSCharacterSet whitespaceAndNewlineCharacterSet ] ];
+				if ( [ useID length ] == 0 ) continue ;
+				
+				// Check for score after ID
+				
+				NSArray *words = [useID componentsSeparatedByString:@"\t" ] ;
+				
+				if( [ words count ] == 2 )
+					{
+						nextID = [ words objectAtIndex:0 ] ;
+					}
+				
+				sprintf( sqlBuffer, "SELECT MOLID, data FROM %s WHERE ID = %d",
+						[ MySQLTABLE cString ], [ nextID intValue ] ) ;
+				
+				mysql_query(conn, sqlBuffer ) ;
+				result = mysql_store_result(conn) ;
+				
+				if( mysql_num_rows(result) != 1 )
+					{
+						printf( "WARNING - could not retrieve target ID = %s | %d\n",
+							   [nextID cString ], [ nextID intValue ] ) ;
+						mysql_free_result(result);
+						[ localPool drain ] ;
+						continue ;
+					}
+				
+				num_fields = mysql_num_fields(result) ;
+				
+				++count ;
+				
+				row = mysql_fetch_row( result ) ;
+				
+				unsigned long *lengths = mysql_fetch_lengths( result ) ;
+				
+				if( ( ((double)count)/totalCount ) * 100 - currentPercent > 5. )
+					{
+						currentPercent += 5. ;
+						printf( "%f %% of target signatures : at - %s\n", currentPercent, row[0] ) ;
+					
+					}
+				
+				NSData *theData = [ NSData dataWithBytes:row[1] length:lengths[1] ] ;
+				
+				if( decompressDBs == YES )
+					{
+						theData = [ X2Signature decompress:theData ] ;
+					}
+				
+				NSString *errorString ;
+				NSPropertyListFormat theFormat ;
+				
+				NSArray *sourceArray = [ NSPropertyListSerialization propertyListFromData:theData 
+																		 mutabilityOption:0 format:&theFormat 
+																		 errorDescription:&errorString ] ;
+				
+				NSEnumerator *sourceArrayEnumerator = [ sourceArray objectEnumerator ] ;
+				
+				NSDictionary *nextSignatureDict ;
+				
+				while( ( nextSignatureDict = [ sourceArrayEnumerator nextObject ] ) )
+					{
+						X2Signature *nextSignature = [ [ X2Signature alloc ] 
+													  initWithPropertyListDict:nextSignatureDict ] ;
+						
+						[ targetSignatures addObject:nextSignature ] ;
+						[ nextSignature release ] ;
+					}
+				
+				mysql_free_result(result);
+				
+				NSEnumerator *targetEnumerator = [ targetSignatures objectEnumerator ] ;
+				
+				while ( ( nextTarget = [ targetEnumerator nextObject ] ) )
+					{
+						NSString *mol2File = [ NSString stringWithFormat:@"%s.mol2",
+											  nextTarget->sourceTree->treeName ] ;
+						[ nextTarget->sourceTree exportAsMOL2File:mol2File ] ;
+					}
+				
+				[ localPool drain ] ;
+				
+				}
+			
+			mysql_close(conn) ;
+			
+			
+		}
+		
+		
+		
+	}
 	else
 		{
-			printf( "SORRY, only create and compare modes supported right now!\n" ) ;
+			printf( "SORRY, execution mode not recognized!\n" ) ;
 		}
 
     [pool drain];

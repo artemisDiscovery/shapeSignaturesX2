@@ -121,4 +121,6 @@
 
 - (id) initWithPropertyListDict:(NSDictionary *)pListDict ;
 
+- (void) exportAsMOL2File:(NSString *)f ;
+
 @end

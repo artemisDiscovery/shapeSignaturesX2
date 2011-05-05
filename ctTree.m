@@ -3370,7 +3370,89 @@
 		return self ;
 	}
 		
+- (void) exportAsMOL2File:(NSString *)f 
+	{
+		// Pull everything out of the tree structure. I could save fragment data as sets ...
+	
+		FILE *outFile = fopen([ f cString ], "w" ) ;
+	
+		if( ! outFile ) {
+			printf( "COULD NOT OPEN MOL2 OUTPUT FILE - Export failed!\n" ) ;
+			return ;
+		}
+	
+		fprintf( outFile, "@<TRIPOS>MOLECULE\n" ) ;
+		fprintf( outFile, "%s\n", [ treeName cString ] ) ;
+		fprintf( outFile, "%5d%5d%5d%5d%5d\n", nNodes, nBonds, 0, 0, nFragments  ) ;
+		fprintf( outFile, "SMALL\n" ) ;
+		fprintf( outFile, "USER_CHARGES\n" ) ;
+		fprintf( outFile, "@<TRIPOS>ATOM\n" ) ;
 		
+		int jNode, jBond ;
+	
+		for( jNode = 0 ; jNode < nNodes ; ++jNode ) {
+			fprintf( outFile, "%7d%-8s%10.4f%10.4f%10.4f %-4s      1 <0>       %7.4f\n",
+				   (jNode + 1), [ [ nodes[jNode]->properties objectForKey:@"atomName" ] cString ],
+					nodes[jNode]->coord[0], nodes[jNode]->coord[1], nodes[jNode]->coord[2],
+					[ [ nodes[jNode]->properties objectForKey:@"importType" ] cString ],
+					nodes[jNode]->charge ) ;
+					
+		}
+	
+		fprintf( outFile, "@<TRIPOS>BOND\n" ) ;
+	
+		for( jBond = 0 ; jBond < nBonds ; ++jBond ) {
+			fprintf( outFile, "%6d%5d%5d", (jBond + 1), bonds[jBond]->node1->index,  bonds[jBond]->node2->index ) ;
+			
+			switch( bonds[jBond]->type ) {
+				case SINGLE :
+					fprintf( outFile, " 1\n" ) ;
+					break ;
+				case DOUBLE :
+					fprintf( outFile, " 2\n" ) ;
+					break ;
+				case TRIPLE :
+					fprintf( outFile, " 3\n" ) ;
+					break ;
+				case AROMATIC :
+					fprintf( outFile, " ar\n" ) ;
+					break ;
+				case AMIDE :
+					fprintf( outFile, " am\n" ) ;
+					break ;
+				default :
+					fprintf( outFile, " un\n" ) ;
+			}
+		}
+	
+		fprintf( outFile, "@<TRIPOS>SET\n" ) ;
+	
+		for( fragment *nextFrag in treeFragments ) {
+			fprintf( outFile, "@<TRIPOS>SET\nSTATIC fragment%d ATOMS\n" ) ;
+			fprintf( outFile, "%d", [ nextFrag->fragmentNodes count ] ) ;
+			
+			int count = 0 ;
+			
+			// Max of 20 atoms per line
+			
+			for( ctNode *nextNode in nextFrag->fragmentNodes ) {
+				fprintf( outFile, " %d", nextNode->index ) ;
+				++count ;
+				
+				if( count % 20 == 0 ) {
+					fprintf( outFile, "\n") ;
+				}
+			}
+			
+			printf( "\n" ) ;
+			
+		}
+	
+		
+		fclose(outFile) ;
+	
+		
+	}
 		
 
 @end
