@@ -126,7 +126,7 @@ int main (int argc, const char * argv[]) {
 		
 	NSString *mol2Directory = nil ;
 	
-	NSString *signatureDirectoryOrIDFile ;
+	NSString *signatureDirectoryOrIDFile = nil ;
 	
 	NSString *errorDirectory = nil ;
 	
@@ -3513,8 +3513,11 @@ int main (int argc, const char * argv[]) {
 				exit(1) ;
 			}
 		
-		if( targetmysqlIDs == NO ) {
+		
+		if( targetIsMySQLIDs == NO ) {
 			// Our target is a directory
+			
+			signatureDirectoryOrIDFile = [ signatureDirectoryOrIDFile stringByAppendingString:@"/" ] ; 
 			
 			NSFileManager *fileManager = [ NSFileManager defaultManager ] ;
 			
@@ -3541,9 +3544,10 @@ int main (int argc, const char * argv[]) {
 			NSMutableArray *signatureFiles = [ [ NSMutableArray alloc ] initWithCapacity:[ files count ] ] ;
 			
 			for( NSString *nextFile in files ) {
-				if( [ nextFile hasSuffix:@".X2DB" ] == YES ||  [ nextFile hasSuffix:@".X2DB.Z" ] == YES)
+				if( [ nextFile hasSuffix:@"_X2DB" ] == YES ||  [ nextFile hasSuffix:@"_X2DB.Z" ] == YES ||
+					[ nextFile hasSuffix:@"_X2DB.xml" ] == YES || [ nextFile hasSuffix:@"_X2DB.xml.Z" ] )
 					{
-						[ signatureFiles addObject:nextFile ] ;
+						[ signatureFiles addObject:[ signatureDirectoryOrIDFile stringByAppendingString:nextFile ] ] ;
 					}
 			}
 			
@@ -3592,7 +3596,7 @@ int main (int argc, const char * argv[]) {
 				
 				for( X2Signature *nextSignature in theSignatures ) {
 					NSString *mol2File = [ NSString stringWithFormat:@"%s/%s.mol2",[ signatureDirectoryOrIDFile cString ],
-						nextSignature->sourceTree->treeName ] ;
+						[ nextSignature->sourceTree->treeName cString ] ] ;
 					[ nextSignature->sourceTree exportAsMOL2File:mol2File ] ;
 				}
 				
@@ -3605,6 +3609,8 @@ int main (int argc, const char * argv[]) {
 		}
 		else {
 				// Target is file of database IDs ; mol2 files will export to current working directory
+			
+				
 				
 				NSError *error = nil ;
 #ifdef LINUX
@@ -3628,6 +3634,8 @@ int main (int argc, const char * argv[]) {
 			NSString *nextID ;
 			NSEnumerator *IDEnumerator = [ DBIDs objectEnumerator ] ;
 			int count = 0 ;
+			
+			double currentPercent ;
 			
 			// Make connection to database
 			
@@ -3726,6 +3734,7 @@ int main (int argc, const char * argv[]) {
 				mysql_free_result(result);
 				
 				NSEnumerator *targetEnumerator = [ targetSignatures objectEnumerator ] ;
+				X2Signature *nextTarget ;
 				
 				while ( ( nextTarget = [ targetEnumerator nextObject ] ) )
 					{

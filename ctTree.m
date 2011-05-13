@@ -3391,7 +3391,7 @@
 		int jNode, jBond ;
 	
 		for( jNode = 0 ; jNode < nNodes ; ++jNode ) {
-			fprintf( outFile, "%7d%-8s%10.4f%10.4f%10.4f %-4s      1 <0>       %7.4f\n",
+			fprintf( outFile, "%7d %-8s%10.4f%10.4f%10.4f %-4s      1 <0>       %7.4f\n",
 				   (jNode + 1), [ [ nodes[jNode]->properties objectForKey:@"atomName" ] cString ],
 					nodes[jNode]->coord[0], nodes[jNode]->coord[1], nodes[jNode]->coord[2],
 					[ [ nodes[jNode]->properties objectForKey:@"importType" ] cString ],
@@ -3425,10 +3425,8 @@
 			}
 		}
 	
-		fprintf( outFile, "@<TRIPOS>SET\n" ) ;
-	
 		for( fragment *nextFrag in treeFragments ) {
-			fprintf( outFile, "@<TRIPOS>SET\nSTATIC fragment%d ATOMS\n" ) ;
+			fprintf( outFile, "@<TRIPOS>SET\nSTATIC fragment%d ATOMS\n", nextFrag->index ) ;
 			fprintf( outFile, "%d", [ nextFrag->fragmentNodes count ] ) ;
 			
 			int count = 0 ;
@@ -3444,7 +3442,7 @@
 				}
 			}
 			
-			printf( "\n" ) ;
+			fprintf( outFile, "\n" ) ;
 			
 		}
 	
