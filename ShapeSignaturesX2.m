@@ -206,8 +206,8 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-maxhits <maximum number of hits to return; default = 100> \n" ) ;
 			printf( "\t-maxscore <maximum shape signature score to return; default = 2.0> \n" ) ;
 			printf( "\t-sortBy <how to sort signatures; (minFrag | weightedFrag); default = weightedFrag> \n" ) ;
-			printf( "\t-maxQueryUnmatched <max. %% query unmatched ; default = 100. (no constraint)> \n" ) ;
-			printf( "\t-maxTargetUnmatched <max. %% target unmatched ; default = 100. (no constraint)> \n" ) ;
+			printf( "\t-maxQueryUnused <max. %% query unmatched ; default = 100. (no constraint)> \n" ) ;
+			printf( "\t-maxTargetUnused <max. %% target unmatched ; default = 100. (no constraint)> \n" ) ;
 			printf( "\t-xmlIn <input XML database format (yes|no) ; default = NO>\n" ) ;
 			printf( "\t-decompress <decompress XML input signatures (yes|no) ; default = NO ; sets xmlIn = YES >\n" ) ;
 			printf( "-convert flags:\n" ) ;
@@ -368,11 +368,11 @@ int main (int argc, const char * argv[]) {
 								{
 									flagType = SORTBYWEIGHTEDSCORE ;
 								}
-							else if( strcasestr( &argv[i][1], "queryunma" ) == &argv[i][1] )
+							else if( strcasestr( &argv[i][1], "maxqueryun" ) == &argv[i][1] )
 								{
 									flagType = MAXPERCENTQUERYUNMATCHED ;
 								}
-							else if( strcasestr( &argv[i][1], "targetunma" ) == &argv[i][1] )
+							else if( strcasestr( &argv[i][1], "maxtargetun" ) == &argv[i][1] )
 								{
 									flagType = MAXPERCENTTARGETUNMATCHED ;
 								}
