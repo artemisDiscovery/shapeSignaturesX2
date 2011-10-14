@@ -52,7 +52,7 @@ int main (int argc, const char * argv[]) {
 							MERGENEIGHBORRINGS, TARGETISDIRECTORY, TARGETISMYSQLIDS, TARGETISMEMORYRSRC, PERMITFRAGMENTGROUPING, BIGFRAGMENTSIZE,
 							MAXBIGFRAGMENTCOUNT, XMLIN, XMLOUT, EXPLODEDB, RANGE, URLIN, URLOUT,
 							COMPRESS, DECOMPRESS, ABBREVIATEDINFO, MYSQLTABLENAME, MYSQLUSERNAME, MYSQLPASSWORD,
-							MYSQLDBNAME, MYSQLHOSTNAME, LOADMEMORYRESOURCE } ;
+							MYSQLDBNAME, MYSQLHOSTNAME, LOADMEMORYRESOURCE, USERELATIVETARGETFRAGMENTCOUNT } ;
 							
 	
 	enum { CREATEMODE, COMPAREMODE, INFOMODE, MEMORYRESOURCEMODE, KEYSMODE, KMEANSMODE, CHECKMODE, CONVERTMODE, MOL2MODE, UNDEFINED } mode ;
@@ -83,6 +83,9 @@ int main (int argc, const char * argv[]) {
  	double maxScore = 2.0 ;
 	int maxHits = 100 ;
 	BOOL fragmentScoring = NO ;
+	
+	BOOL useRelativeTargetFragmentCount = NO ;
+	int relativeTargetFragmentCount = 0 ;
 	
 	int bigFragSize = 20 ;
 	int maxBigFragCount = -1 ; 
@@ -199,6 +202,7 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-mysqlPassword <passwd for mysql; default = (hidden)>\n" ) ;
 			printf( "\t-tag <histogram tag to use; default = 1DShape> \n" ) ;
 			printf( "\t-fragscore <use fragment-based scoring (yes|no); default = NO>\n" ) ;
+			printf( "\t-relativeFragmentCount <rel frag count; default not used>\n" ) ;
 			printf( "\t-fraggroup <use fragment grouping w/ fragment scoring (yes|no); default = NO>\n" ) ;
 			printf( "\t-bigfragsize <size of a \"big\" fragment (heavy atom count); default = 20 \n" ) ;
 			printf( "\t-maxbigfragcount <maximum number of \"big\" fragments to group; default = -1 (no limit) \n" ) ;
@@ -351,6 +355,10 @@ int main (int argc, const char * argv[]) {
 							else if( strcasestr( &argv[i][1], "fragscore" ) == &argv[i][1] )
 								{
 									flagType = FRAGSCORE ;
+								}
+							else if( strcasestr( &argv[i][1], "relative" ) == &argv[i][1] )
+								{
+									flagType = USERELATIVETARGETFRAGMENTCOUNT ;
 								}
 							else if( strcasestr( &argv[i][1], "fraggroup" ) == &argv[i][1] )
 								{
@@ -1191,6 +1199,16 @@ int main (int argc, const char * argv[]) {
 											exit(1) ;
 										}
 									maxHits = atoi( argv[i] ) ;
+									break ;
+									
+								case USERELATIVETARGETFRAGMENTCOUNT:
+									if( mode != COMPAREMODE )
+										{
+											printf( "ILLEGAL OPTION FOR SELECTED MODE - Exit!\n" ) ;
+											exit(1) ;
+										}
+									useRelativeTargetFragmentCount = YES ;
+									relativeTargetFragmentCount = atoi( argv[i] ) ;
 									break ;
 									
 								case MAXSCORE:
@@ -2100,8 +2118,13 @@ int main (int argc, const char * argv[]) {
 				
 					double **queryHistoBins = (double **) malloc( histoAlloc * sizeof( double * ) ) ;
 					int *queryHistoNBins = (int *) malloc( histoAlloc * sizeof( int  ) ) ;
+					int *queryHistoSegmentCount = (int *) malloc( histoAlloc * sizeof( int  ) ) ;
+					double *minScoreForQueryHisto = (double *) malloc( histoAlloc * sizeof( double ) ) ;
+					int *minTargetFragmentForQueryHisto = (int *) malloc( histoAlloc * sizeof( int  ) ) ;
 													 
 					int nQueryHistos = 0 ;
+					
+					int totalQuerySegmentCount = 0 ;
 													 
 					double currentBinWidth = 0. ;
 				
@@ -2109,6 +2132,8 @@ int main (int argc, const char * argv[]) {
 				
 					X2Signature *nextQuery ;
 					NSMutableString *key = [ [ NSMutableString alloc ] initWithCapacity:10 ] ;
+					
+					int numBigQueryFragments, numBigTargetFragments ;
 				
 					while( ( nextQuery = [ querySignatureEnumerator nextObject ] ) )
 						{
@@ -2127,6 +2152,8 @@ int main (int argc, const char * argv[]) {
 							int nFrags = nextBundle->sourceTree->nFragments ;
 						
 							int jFrag ;
+							
+							
 						
 						
 							if (fragmentScoring == YES ) {
@@ -2171,11 +2198,22 @@ int main (int argc, const char * argv[]) {
 													
 													queryHistoBins = (double **) realloc( queryHistoBins, histoAlloc * sizeof( double * ) ) ;
 													queryHistoNBins = (int *) realloc( queryHistoNBins, histoAlloc * sizeof( int  ) ) ;
+													queryHistoSegmentCount = (int *) realloc( queryHistoSegmentCount, histoAlloc * sizeof( int  ) ) ;
+													minScoreForQueryHisto = (double *) realloc( minScoreForQueryHisto,  histoAlloc * sizeof( double ) ) ;
+													minTargetFragmentForQueryHisto = (int *) realloc( minTargetFragmentForQueryHisto, histoAlloc * sizeof( int  ) ) ;
 												}
 											
 											queryHistoNBins[nQueryHistos] = actualLength ;
 											
 											queryHistoBins[nQueryHistos] = nextHisto->binProbs ;
+											
+											queryHistoSegmentCount[nQueryHistos] = 0 ;
+										
+											for( jBin = 0 ; jBin < actualLength ; ++jBin ) {
+												queryHistoSegmentCount[nQueryHistos] += nextHisto->binCounts[jBin] ;
+											}
+											
+											totalQuerySegmentCount += queryHistoSegmentCount[nQueryHistos] ;
 											
 											++nQueryHistos ;
 										}
@@ -2214,13 +2252,24 @@ int main (int argc, const char * argv[]) {
 											{
 												histoAlloc += 100 ;
 												
+												queryHistoSegmentCount = (int *) realloc( queryHistoSegmentCount, histoAlloc * sizeof( int  ) ) ;
 												queryHistoBins = (double **) realloc( queryHistoBins, histoAlloc * sizeof( double * ) ) ;
 												queryHistoNBins = (int *) realloc( queryHistoNBins, histoAlloc * sizeof( int  ) ) ;
+												minScoreForQueryHisto = (double *) realloc( minScoreForQueryHisto,  histoAlloc * sizeof( double ) ) ;
+												minTargetFragmentForQueryHisto = (int *) realloc( minTargetFragmentForQueryHisto, histoAlloc * sizeof( int  ) ) ;
 											}
 										
 										queryHistoNBins[nQueryHistos] = actualLength ;
 										
 										queryHistoBins[nQueryHistos] = nextHisto->binProbs ;
+										
+										queryHistoSegmentCount[nQueryHistos] = 0 ;
+										
+										for( jBin = 0 ; jBin < actualLength ; ++jBin ) {
+											queryHistoSegmentCount[nQueryHistos] += nextHisto->binCounts[jBin] ;
+										}
+										
+										totalQuerySegmentCount += queryHistoSegmentCount[nQueryHistos] ;
 										
 										++nQueryHistos ;
 									}
@@ -2228,6 +2277,22 @@ int main (int argc, const char * argv[]) {
 							}
 						
 						}
+						
+					// If not fragments - 
+					
+					int iQueryHisto ;
+					
+					numBigQueryFragments = 1 ;
+					
+					if( fragmentScoring == YES ) {
+						numBigQueryFragments = 0 ;
+						
+						for( iQueryHisto = 0 ; iQueryHisto < nQueryHistos ; ++iQueryHisto ) {
+							if( (double)queryHistoSegmentCount[iQueryHisto]/totalQuerySegmentCount > 0.1 ) {
+								++numBigQueryFragments ;
+							}
+						}
+					}
 														  
 					// Start parsing the memory resource
 						
@@ -2245,15 +2310,17 @@ int main (int argc, const char * argv[]) {
 					int nextTargetHistoCount[200] ;
 					int accumTargetHistoCount[200] ;
 					double accumTargetHistoProb[200] ;
-					int nextNBin ;
 				
 					void *inMemPtr = inMem + sizeof( double ) + sizeof( int ) ;
 				
 					int iSig, jBin ;
 				
-					int hitAlloc = 2. * maxHits ;
+					int hitAlloc = 20000 ;
 				
 					int numHits = 0 ;
+					
+					int useQueryFragments = 0 ;
+					int useTargetFragments = 0 ;
 				
 					quickHit *hits = (quickHit *) malloc( hitAlloc * sizeof( quickHit ) ) ;
 				
@@ -2276,6 +2343,14 @@ int main (int argc, const char * argv[]) {
 				
 					for( iSig = 0 ; iSig < *numTargetSignatures ; ++iSig )
 						{
+							numBigTargetFragments = 0 ;
+							
+							// Clear best scores for query histos
+							
+							for( iQueryHisto = 0 ; iQueryHisto < nQueryHistos ; ++iQueryHisto ) {
+								minScoreForQueryHisto[iQueryHisto] = 2. ;
+							}
+							
 							// Scan next signature
 						
 							memcpy(&molID, inMemPtr, sizeof( unsigned int )  ) ;
@@ -2340,8 +2415,6 @@ int main (int argc, const char * argv[]) {
 												nextTargetHistoProb[jBin] = ((double)nextTargetHistoCount[jBin])/segmentsByFragment[jFrag] ;
 											}
 										
-										minQueryScore = 2. ;
-										int iQueryHisto ;
 										
 										
 										for( iQueryHisto = 0 ; iQueryHisto < nQueryHistos ; ++iQueryHisto )
@@ -2373,11 +2446,13 @@ int main (int argc, const char * argv[]) {
 															}
 													}
 												
-												if( nextQueryScore < minQueryScore ) minQueryScore = nextQueryScore ;
+												if( nextQueryScore < minScoreForQueryHisto[iQueryHisto] )  {
+													minScoreForQueryHisto[iQueryHisto] = nextQueryScore ;
+													minTargetFragmentForQueryHisto[iQueryHisto] = jFrag ;
+												}
 											
 											}
 										
-										minScoreByFragment[jFrag] = minQueryScore ;
 										
 										
 									}
@@ -2423,25 +2498,61 @@ int main (int argc, const char * argv[]) {
 									}
 							}
 						else {
-								for( jFrag = 0 ; jFrag < numTargetFrags ; ++jFrag )
+						
+								int targetSegmentsUsed = 0 ;
+								
+								for( iQueryHisto = 0 ; iQueryHisto < nQueryHistos ; ++iQueryHisto ) {
+									targetSegmentsUsed += segmentsByFragment[ minTargetFragmentForQueryHisto[ iQueryHisto ] ] ;
+									}
+								
+								for( iQueryHisto = 0 ; iQueryHisto < nQueryHistos ; ++iQueryHisto )
 									{
-										compositeScore += (minScoreByFragment[jFrag] * segmentsByFragment[jFrag]) / totalSegmentsForSig ;
+										double factor = queryHistoSegmentCount[iQueryHisto] + segmentsByFragment[ minTargetFragmentForQueryHisto[ iQueryHisto ] ] ;
+										factor /= ( totalQuerySegmentCount + targetSegmentsUsed ) ;
+										
+										compositeScore += minScoreForQueryHisto[iQueryHisto] * factor  ;
 									}
 						}
 
 						hits[numHits].ID = molID ;
 						hits[numHits].score = compositeScore ;
 					
-						// Sort and cull if needed
-					
-						++numHits ;
+						// Sort realloc if needed
 						
-						if( numHits == hitAlloc )
-							{
-								qsort(hits, hitAlloc, sizeof(quickHit), quickHitCompare ) ;
+						BOOL addHit = YES ;
+						
+						if( useRelativeTargetFragmentCount == YES ) {
+						
+							numBigTargetFragments = 0 ;
 							
-								numHits = maxHits ;
+							int iTarget ;
+							
+							for( iTarget = 0 ; iTarget < numTargetFrags ; ++iTarget ) {
+								if( (double)segmentsByFragment[iTarget] / totalSegmentsForSig > 0.1 ) {
+									++numBigTargetFragments ;
+								}
 							}
+							
+							int relCount = numBigTargetFragments - numBigQueryFragments ;
+							if( relCount < relativeTargetFragmentCount ) addHit = NO ;
+						}
+						
+						if( hits[numHits].score > maxScore ) addHit = NO ;
+						
+						if( addHit == YES ) {
+					
+							++numHits ;
+							
+							if( numHits == hitAlloc )
+								{
+									qsort(hits, hitAlloc, sizeof(quickHit), quickHitCompare ) ;
+									hitAlloc += 20000 ;
+									hits = (quickHit *) realloc( hits, hitAlloc * sizeof( quickHit ) ) ;
+									
+									// Why did I do this?
+									//numHits = maxHits ;
+								}
+						}
 						
 						if( (((double)iSig)/ *numTargetSignatures)*100. > percentComplete + 10. )
 							{
@@ -2452,7 +2563,7 @@ int main (int argc, const char * argv[]) {
 						// Next target signature
 						}
 						
-					// Now we have maxHits quick hits, write to output file. Format will be molID\tscore
+					// Write to output file. Format will be molID\tscore
 				
 					// Final sort
 				
@@ -2466,6 +2577,7 @@ int main (int argc, const char * argv[]) {
 				
 					for( iHit = 0 ; iHit < numHits ; ++iHit )
 						{
+							if( hits[iHit].score > maxScore ) break ;
 							fprintf( hitFile, "%d\t%f\n", hits[iHit].ID, hits[iHit].score ) ;
 						}
 				
@@ -2566,6 +2678,8 @@ int main (int argc, const char * argv[]) {
 			
 			while( ( nextQuery = [ queryEnumerator nextObject ] ) )
 				{
+					int numQueryFrags = nextQuery->sourceTree->nFragments ;
+					
 					[ hits removeAllObjects ] ;
 				
 					if( targetIsDirectory == NO && targetIsMySQLIDs == NO  )
@@ -2583,11 +2697,9 @@ int main (int argc, const char * argv[]) {
 							while( ( nextTarget = [ targetEnumerator nextObject ] ) )
 								{
 									NSAutoreleasePool * localPool = [[NSAutoreleasePool alloc] init];
+									
+									int numTargetFrags = nextTarget->sourceTree->nFragments ;
 							
-									NSArray *queryHits = [ X2Signature scoreQuerySignature:nextQuery againstTarget:nextTarget
-																		  usingTag:compareTag withCorrelation:useCorrelationScoring
-																	  useFragments:fragmentScoring fragmentGrouping:permitFragmentGrouping
-																   bigFragmentSize:bigFragSize maxBigFragmentCount:maxBigFragCount ] ;
 								
 									++count ;
 							
@@ -2599,6 +2711,18 @@ int main (int argc, const char * argv[]) {
 										
 										}
 								
+									// Check fragment counts upfront, if appropriate
+									
+									if( useRelativeTargetFragmentCount == YES ) {
+										int relCount = numTargetFrags - numQueryFrags ;
+										if (relCount < relativeTargetFragmentCount ) continue ;
+									}
+									
+									NSArray *queryHits = [ X2Signature scoreQuerySignature:nextQuery againstTarget:nextTarget
+																		  usingTag:compareTag withCorrelation:useCorrelationScoring
+																	  useFragments:fragmentScoring fragmentGrouping:permitFragmentGrouping
+																   bigFragmentSize:bigFragSize maxBigFragmentCount:maxBigFragCount ] ;
+
 									// Merge into hit list
 							
 									[ hitListItem merge:queryHits intoHitList:hits withMaxScore:maxScore 
@@ -2723,7 +2847,13 @@ int main (int argc, const char * argv[]) {
 								
 									while ( ( nextTarget = [ targetEnumerator nextObject ] ) )
 										{
-									
+											int numTargetFrags = nextTarget->sourceTree->nFragments ;
+											
+											if( useRelativeTargetFragmentCount == YES ) {
+												int relCount = numTargetFrags - numQueryFrags ;
+												
+												if( relCount < relativeTargetFragmentCount ) continue ;
+											}
 									
 											NSArray *queryHits = [ X2Signature scoreQuerySignature:nextQuery againstTarget:nextTarget
 																						  usingTag:compareTag withCorrelation:useCorrelationScoring
@@ -2816,7 +2946,13 @@ int main (int argc, const char * argv[]) {
 								
 									while ( ( nextTarget = [ targetEnumerator nextObject ] ) )
 										{
+											int numTargetFrags = nextTarget->sourceTree->nFragments ;
 											
+											if( useRelativeTargetFragmentCount == YES ) {
+												int relCount = numTargetFrags - numQueryFrags ;
+												
+												if( relCount < relativeTargetFragmentCount ) continue ;
+											}
 									
 											NSArray *queryHits = [ X2Signature scoreQuerySignature:nextQuery againstTarget:nextTarget
 																						  usingTag:compareTag withCorrelation:useCorrelationScoring
