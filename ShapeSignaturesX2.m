@@ -1314,7 +1314,7 @@ int main (int argc, const char * argv[]) {
 		{
 			// Create output memory resource. 
 		
-			FILE *rsrc = fopen(	[ createRsrc cString ], 'w' ) ;
+			FILE *rsrc = fopen(	[ createRsrc cString ], "w" ) ;
 		
 			if( ! rsrc ) {
 				printf("COULD NOT OPEN MEMORY RESOURCE FOR WRITING - Exit!\n" ) ;
@@ -3480,6 +3480,9 @@ int main (int argc, const char * argv[]) {
 						
 							unsigned int nFrags = (unsigned int) nextSignature->sourceTree->nFragments ;
 						
+							//printf("$%d = molID\n", molID ) ;
+							//printf("$%d = nFrags\n", nFrags ) ;
+
 							if( nFrags > 100 )
 								{
 									printf( "WARNING: Molecule %s has %d fragments - must skip it!\n",
@@ -3595,6 +3598,8 @@ int main (int argc, const char * argv[]) {
 								{
 									if( nBinsUsed[jFrag] < 0 ) continue ;
 								
+									//printf("$\t%d = frag idx\n", jFrag ) ;
+								
 									memcpy( inMemPtr, &nBinsUsed[jFrag], sizeof( short ) ) ;
 									inMemPtr += sizeof( short ) ;
 									smallSigUsed += sizeof( short ) ;
@@ -3609,6 +3614,7 @@ int main (int argc, const char * argv[]) {
 													memcpy( inMemPtr, & shortValue, sizeof( short ) ) ;
 													inMemPtr += sizeof( short ) ;
 													smallSigUsed += sizeof( short ) ;
+													//printf("$\t\t%d\t%d\n", jBin, fragHistos[jFrag]->binCounts[jBin]) ;
 												}
 											else
 												{
@@ -3618,6 +3624,7 @@ int main (int argc, const char * argv[]) {
 													memcpy( inMemPtr, & intValue, sizeof( unsigned int ) ) ;
 													inMemPtr += sizeof( unsigned int ) ;
 													smallSigUsed += sizeof( short ) + sizeof( unsigned int ) ;
+													//printf("$\t\t%d\t%d\n", jBin, -fragHistos[jFrag]->binCounts[jBin]) ;
 												}
 											
 										}

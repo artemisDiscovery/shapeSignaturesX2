@@ -1031,6 +1031,9 @@ NSInteger indexCompare2( id A, id B, void *ctxt )
 		unsigned int molID = (unsigned int) atoi( ssID ) ;
 		
 		unsigned int nFrags = (unsigned int) sourceTree->nFragments ;
+	
+		//printf("#%d = molID\n", molID ) ;
+		//printf("#%d = nFrags\n", nFrags ) ;
 		
 		if( nFrags > 100 )
 			{
@@ -1173,6 +1176,8 @@ NSInteger indexCompare2( id A, id B, void *ctxt )
 				smallSigUsed += sizeof( short ) ;
 				
 				int jBin ;
+			
+				//printf("#\t%d = frag idx\n", jFrag ) ;
 				
 				for( jBin = 0 ; jBin < nBinsUsed[jFrag] ; ++jBin )
 					{
@@ -1182,6 +1187,7 @@ NSInteger indexCompare2( id A, id B, void *ctxt )
 								memcpy( inMemPtr, & shortValue, sizeof( short ) ) ;
 								inMemPtr += sizeof( short ) ;
 								smallSigUsed += sizeof( short ) ;
+								//printf("#\t\t%d\t%d\n", jBin, fragHistos[jFrag]->binCounts[jBin]) ;
 							}
 						else
 							{
@@ -1191,6 +1197,7 @@ NSInteger indexCompare2( id A, id B, void *ctxt )
 								memcpy( inMemPtr, & intValue, sizeof( unsigned int ) ) ;
 								inMemPtr += sizeof( unsigned int ) ;
 								smallSigUsed += sizeof( short ) + sizeof( unsigned int ) ;
+								//printf("#\t\t%d\t%d\n", jBin, -fragHistos[jFrag]->binCounts[jBin]) ;
 							}
 					}
 			}
