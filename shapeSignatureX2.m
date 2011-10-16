@@ -1000,6 +1000,210 @@ NSInteger indexCompare2( id A, id B, void *ctxt )
 		return returnData ;
 	
 	}
+
+
+- (int) memoryResource:(void **)binary
+	{
+		// This method creates a short binary structure that holds a "memory resource" version of this
+		// signature
+	
+		// We assume that ID is embedded in name - lame, but I do not feel like figuring out 
+		// anything smarter right now.
+		
+		NSString *IDString = [ sourceTree->treeName 
+							  stringByTrimmingCharactersInSet:[ [ NSCharacterSet decimalDigitCharacterSet ] invertedSet ] ] ;
+		
+		// May have leading zeroes to deal with 
+		
+		char *ssID = [ IDString cString ] ;
+		
+		while( *ssID == '0' && *ssID != '\0' )
+			{
+			++ssID ;
+			}
+		
+		if( *ssID == '\0' )
+			{
+			// ID is all zeroes
+			--ssID ;
+			}
+		
+		unsigned int molID = (unsigned int) atoi( ssID ) ;
+		
+		unsigned int nFrags = (unsigned int) sourceTree->nFragments ;
+		
+		if( nFrags > 100 )
+			{
+				printf( "WARNING: Molecule %s has %d fragments - must skip it!\n",
+					   [ sourceTree->treeName cString ], (int)nFrags ) ;
+				*binary = nil ;
+				return 0 ;
+			}
+		
+		int nFragsUsed  ;
+		
+		int jFrag ;
+		
+		histogramBundle *nextBundle = [ histogramBundleForTag objectForKey:@"1DHISTO" ] ;
+	
+		// Initialize 1000 bytes for the signature, we will resize before return
+	
+		int smallSigAlloc = 1000 ;
+		int smallSigUsed = 0 ;
+	
+		void *inMem = (void *) malloc( smallSigAlloc ) ;
+	
+		void *inMemPtr = inMem ;
+	
+		
+	
+		// This is an incredibly stupid linear data structure - 
+		// First 8 bytes - bin width (as a double)
+		// Next 4 bytes - number of signatures (as unsigned int)
+		// Followed by (numSignatures X ):
+		// 		4 bytes (unsigned long) = Next mol ID
+		//		2 bytes (unsigned short) = number of frags next molecule
+		//		(num Frags X ):
+		//			2 bytes (unsigned short) = number of bins next signature
+		//			(num bins X):
+		//				(unsigned short)
+		//				if content = -1, use next 4 bytes (unsigned int), then switch back to original pattern
+	
+		short nBinsUsed[101] ;
+		histogram *fragHistos[101] ;
+		short minusOne = -1 ;
+		unsigned int intValue ;
+		short shortValue ;
+	
+		// Unfortunately, this is hardwired
+	
+		int smallFragmentSize = 5 ;
+	
+		
+		for( jFrag = 1 ; jFrag <= nFrags ; ++jFrag )
+			{
+				nBinsUsed[jFrag] = -1 ;
+				
+				int fragmentIndex = jFrag - 1 ;
+				
+				fragment *nextFragment = (fragment *)[ nextBundle->sourceTree->treeFragments objectAtIndex:fragmentIndex ] ;
+				
+				int fragCount = [ nextFragment->fragmentNodes count ] ;
+				
+				NSString *keyString = [ NSString stringWithFormat:@"%d_%d",jFrag,jFrag ] ;
+				
+				fragHistos[jFrag] = 
+						(histogram *)[ nextBundle->sortedFragmentsToHistogram objectForKey:keyString ] ;
+				
+				if( fragHistos[jFrag] == nil || fragCount < smallFragmentSize ) 
+					{
+						continue ;
+					}
+				
+				// How many bins to use?
+				
+				nBinsUsed[jFrag] = fragHistos[jFrag]->nBins ;
+				
+				int jBin = fragHistos[jFrag]->nBins - 1 ;
+				
+				while( fragHistos[jFrag]->binCounts[jBin] == 0 && jBin >= 0 )
+					{
+						--jBin ;
+						--nBinsUsed[jFrag] ;
+					}
+				
+				if( jBin < 0 )
+					{
+						nBinsUsed[jFrag] = -1 ; 
+						continue ;
+					}
+				
+				
+				
+			}
+		
+		nFragsUsed = nFrags ;
+		int totalBins = 0 ;
+		
+		for( jFrag = 1 ; jFrag <= nFrags ; ++jFrag )
+			{
+				if( nBinsUsed[jFrag] < 0 ) 
+					{
+						--nFragsUsed ;
+					}
+				else
+					{
+						totalBins += nBinsUsed[jFrag] ;
+					}
+			}
+		
+		// Worst case
+		
+		int addSize = sizeof( unsigned int ) + sizeof( unsigned short ) + 
+		nFragsUsed * sizeof( unsigned short ) + 
+		( totalBins * ( sizeof(short) + sizeof( unsigned int ) ) ) ;
+		
+		if( addSize > smallSigAlloc )
+			{
+				smallSigAlloc += 2*addSize ;
+				inMem = (void *) realloc( inMem, smallSigAlloc ) ;
+				inMemPtr = inMem  ;
+
+				if( ! inMem )
+					{
+						printf( "ERROR - COULD NOT EXPAND \"SMALL SIG\" DATA STRUCTURE - Exit!\n" ) ;
+						exit(1) ;
+					}
+			}
+		
+		memcpy( inMemPtr, &molID, sizeof( unsigned int ) ) ;
+		inMemPtr += sizeof( unsigned int ) ;
+		smallSigUsed += sizeof( unsigned int ) ;
+		
+		memcpy( inMemPtr, &nFragsUsed, sizeof( unsigned short ) ) ;
+		inMemPtr += sizeof( unsigned short ) ;
+		smallSigUsed += sizeof( unsigned short ) ;
+		
+		for( jFrag = 1 ; jFrag <= nFrags ; ++jFrag )
+			{
+				if( nBinsUsed[jFrag] < 0 ) continue ;
+				
+				memcpy( inMemPtr, &nBinsUsed[jFrag], sizeof( short ) ) ;
+				inMemPtr += sizeof( short ) ;
+				smallSigUsed += sizeof( short ) ;
+				
+				int jBin ;
+				
+				for( jBin = 0 ; jBin < nBinsUsed[jFrag] ; ++jBin )
+					{
+						if( fragHistos[jFrag]->binCounts[jBin] <= 32767 )
+							{
+								shortValue = (short )fragHistos[jFrag]->binCounts[jBin] ;
+								memcpy( inMemPtr, & shortValue, sizeof( short ) ) ;
+								inMemPtr += sizeof( short ) ;
+								smallSigUsed += sizeof( short ) ;
+							}
+						else
+							{
+								memcpy( inMemPtr, &minusOne, sizeof( short ) ) ;
+								inMemPtr += sizeof( short ) ;
+								intValue = (unsigned int) fragHistos[jFrag]->binCounts[jBin] ;
+								memcpy( inMemPtr, & intValue, sizeof( unsigned int ) ) ;
+								inMemPtr += sizeof( unsigned int ) ;
+								smallSigUsed += sizeof( short ) + sizeof( unsigned int ) ;
+							}
+					}
+			}
+		
+		// Realloc to match size used
+	
+		inMem = (void *) realloc(inMem, smallSigUsed ) ;
+	
+		*binary = inMem ;
+	
+		return smallSigUsed ;
+		
+	}
 								
 NSInteger compareMappingPair( id A, id B, void *ctxt )
 	{

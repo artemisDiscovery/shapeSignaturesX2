@@ -1,5 +1,5 @@
 #include "platform.h"
-#include <mysql.h>
+//#include <mysql.h>
 
 #ifdef LINUX
 #import <Foundation/Foundation.h>
@@ -143,6 +143,7 @@ int main (int argc, const char * argv[]) {
 	NSString *hitsFile = nil ;
 	
 	NSString *createDB = nil ;
+	NSString *createRsrc = nil ;
 	
 	NSString *MySQLDB = @"zinc" ;
 	NSString *MySQLUSER = @"root" ;
@@ -410,7 +411,9 @@ int main (int argc, const char * argv[]) {
 								}
 							else if( strcasestr( &argv[i][1], "targetmysql" ) == &argv[i][1] )
 								{
-									flagType = TARGETISMYSQLIDS ;
+									//flagType = TARGETISMYSQLIDS ;
+									printf("MYSQL SUPPORT DISABLED IN THIS VERSION - Exit!\n" ) ;
+									exit(1) ;
 								}
 							else if( strcasestr( &argv[i][1], "targetmem" ) == &argv[i][1] )
 								{
@@ -497,6 +500,8 @@ int main (int argc, const char * argv[]) {
 									else if( ! createDB )
 										{
 											createDB = [ [ NSString stringWithCString:argv[i] ] retain ] ;
+											// Create a memory resource at same time
+											createRsrc = [ createDB stringByAppendingString:@".memRsrc" ] ;
 										}
 									else
 										{	
@@ -1307,6 +1312,15 @@ int main (int argc, const char * argv[]) {
 	
 	if( mode == CREATEMODE )
 		{
+			// Create output memory resource. 
+		
+			FILE *rsrc = fopen(	[ createRsrc cString ], 'w' ) ;
+		
+			if( ! rsrc ) {
+				printf("COULD NOT OPEN MEMORY RESOURCE FOR WRITING - Exit!\n" ) ;
+				exit(1) ;
+			}
+		
 			// First step - collect all files from directory. We need mol2 files (*.mol2), flats files
 			// (*.flats) and potentially atom fragment files (*.frag) 
 				
@@ -1505,6 +1519,11 @@ int main (int argc, const char * argv[]) {
 			int mol2Index ;
 			
 			// Process the mol2 files
+		
+			// Initialize the memory resource file
+		
+			fwrite( & lengthDelta, sizeof(lengthDelta), 1, rsrc ) ;
+			fwrite( & mol2Count, sizeof(mol2Count), 1, rsrc ) ;
 			
 			for( mol2Index = 0 ; mol2Index < mol2Count ; ++mol2Index )		
 				{
@@ -1598,6 +1617,18 @@ int main (int argc, const char * argv[]) {
 				
 					X2Signature *nextSignature = [ [ X2Signature alloc ] initForAllTagsUsingTree:nextTree 
 																andRayTrace:nextRayTrace withStyle:style ] ;
+				
+					// Immediately write to resource file
+				
+					void *nextSigRsrc ;
+				
+					int numBytes = [ nextSignature memoryResource:&nextSigRsrc ] ;
+				
+					fwrite(nextSigRsrc, numBytes, 1, rsrc ) ;
+				
+					// Free it
+				
+					free( nextSigRsrc ) ;
 													
 					if( outputToURL == YES )
 						{
@@ -1765,6 +1796,11 @@ int main (int argc, const char * argv[]) {
 					[ nextSurface release ] ;
 				}
 				
+			// Close resource file
+		
+			fclose(rsrc) ;
+		
+	
 			// Archive to output file 
 			
 			if( explodeDBs == NO && outputToURL == NO )
@@ -2740,6 +2776,8 @@ int main (int argc, const char * argv[]) {
 						}
 					else if( targetIsMySQLIDs == YES )
 						{
+							// Disabled in this branch of the code
+						/*
 							NSString *nextID ;
 							NSEnumerator *IDEnumerator = [ DBIDs objectEnumerator ] ;
 							int count = 0 ;
@@ -2874,6 +2912,7 @@ int main (int argc, const char * argv[]) {
 									
 								}
 							mysql_close(conn) ;
+						 */
 						}
 					else
 						{
@@ -3744,6 +3783,8 @@ int main (int argc, const char * argv[]) {
 			
 		}
 		else {
+				// Mysql support disabled in this branch
+				/*
 				// Target is file of database IDs ; mol2 files will export to current working directory
 			
 				
@@ -3885,7 +3926,7 @@ int main (int argc, const char * argv[]) {
 			
 			mysql_close(conn) ;
 			
-			
+			*/
 		}
 		
 		

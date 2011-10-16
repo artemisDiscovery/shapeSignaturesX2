@@ -78,5 +78,7 @@
 + (NSData *) compress:(NSData *)data ;
 + (NSData *) decompress:(NSData *)data ;
 
+- (int) memoryResource:(void **)binary ;
+
 
 @end
