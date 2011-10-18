@@ -3725,7 +3725,12 @@ int main (int argc, const char * argv[]) {
 			
 			NSMutableArray *signatureFiles = [ [ NSMutableArray alloc ] initWithCapacity:[ files count ] ] ;
 			
-			for( NSString *nextFile in files ) {
+			int mf ;
+			NSString *nextFile ;
+
+			for( mf = 0 ; mf < [ files count ] ; ++mf ) {
+				nextFile = [ files objectAtIndex:mf ] ;
+
 				if( [ nextFile hasSuffix:@"_X2DB" ] == YES ||  [ nextFile hasSuffix:@"_X2DB.Z" ] == YES ||
 					[ nextFile hasSuffix:@"_X2DB.xml" ] == YES || [ nextFile hasSuffix:@"_X2DB.xml.Z" ] )
 					{
@@ -3736,8 +3741,11 @@ int main (int argc, const char * argv[]) {
 			// Process all the files in the directory
 			
 			NSMutableArray *theSignatures ;
+			NSString *nextSignatureFile ;
 			
-			for( NSString *nextSignatureFile in signatureFiles ) {
+			for( mf = 0 ; mf < [ signatureFiles count ] ; ++mf  ) {
+				nextSignatureFile = [ signatureFiles objectAtIndex:mf ] ;
+
 				if( xmlIN == NO )
 					{
 						theSignatures = [ NSUnarchiver unarchiveObjectWithFile:nextSignatureFile ] ;
@@ -3775,8 +3783,12 @@ int main (int argc, const char * argv[]) {
 					}
 				
 				// Process each signature, export mol2 file
+
+				X2Signature *nextSignature ;
 				
-				for( X2Signature *nextSignature in theSignatures ) {
+				for( mf = 0 ; mf < [  theSignatures count ] ; ++mf  ) {
+					nextSignature = [ theSignatures objectAtIndex:mf ] ;
+
 					NSString *mol2File = [ NSString stringWithFormat:@"%s/%s.mol2",[ signatureDirectoryOrIDFile cString ],
 						[ nextSignature->sourceTree->treeName cString ] ] ;
 					[ nextSignature->sourceTree exportAsMOL2File:mol2File ] ;

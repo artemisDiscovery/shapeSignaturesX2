@@ -1632,7 +1632,11 @@
 	
 		NSMutableDictionary *connectionDict = [ [ NSMutableDictionary alloc ] initWithCapacity:maxFrag ] ;
 	
-		for ( ctBond *nextBond in remainingBonds ) {
+		int mf, mg ;
+		ctBond *nextBond ;
+
+		for ( mf = 0 ; mf < [ remainingBonds count ] ; ++mf ) {
+			nextBond = [ remainingBonds objectAtIndex:mf ] ;
 			int index1, index2 ;
 			fragment *frag1, *frag2 ;
 			ctNode *node1, *node2 ;
@@ -1667,9 +1671,15 @@
 		}
 	
 		// Add the neighbor relationships
+
+		NSArray *neighborArray ;
+		NSArray *neighbor ;
 	
-		for( NSArray *neighborArray in [ connectionDict allValues ] ) {
-			for( NSArray *neighbor in neighborArray ) {
+		for( mf = 0 ; mf < [ [ connectionDict allValues ] count ] ; ++mf ) {
+			neighborArray = [ [ connectionDict allValues ] objectAtIndex:mf ] ;
+
+			for( mg = 0 ; mg < [ neighborArray count ] ; ++mg  ) {
+				neighbor = [ neighborArray objectAtIndex:mg ] ;
 				fragment *fOne = [ neighbor objectAtIndex:0 ] ;
 				fragment *fTwo = [ neighbor objectAtIndex:1 ] ;
 				ctNode *nodeOne = [ neighbor objectAtIndex:2 ] ;
@@ -1692,8 +1702,11 @@
 		
 		// For later convenience, we set a set of all the neighbor fragment indices, saved as strings
 		
-		for( fragment *nextFragment in treeFragments  )
+		fragment *nextFragment ;
+
+		for( mf = 0 ; mf < [ treeFragments count ] ; ++mf )
 			{
+				nextFragment = [ treeFragments objectAtIndex:mf ] ;
 				[ nextFragment assignNeighborFragmentIndices ] ;
 			}
 		
@@ -3425,7 +3438,12 @@
 			}
 		}
 	
-		for( fragment *nextFrag in treeFragments ) {
+		int mf ;
+		fragment *nextFrag ;
+
+		for( mf = 0 ; mf < [ treeFragments count ] ; ++mf ) {
+			nextFrag = [ treeFragments objectAtIndex:mf ] ;
+
 			fprintf( outFile, "@<TRIPOS>SET\nSTATIC fragment%d ATOMS\n", nextFrag->index ) ;
 			fprintf( outFile, "%d", [ nextFrag->fragmentNodes count ] ) ;
 			
@@ -3433,7 +3451,10 @@
 			
 			// Max of 20 atoms per line
 			
-			for( ctNode *nextNode in nextFrag->fragmentNodes ) {
+			ctNode *nextNode ;
+
+			for( mf = 0 ; mf < [ nextFrag->fragmentNodes count ] ; ++mf ) {
+				nextNode = [ nextFrag->fragmentNodes objectAtIndex:mf ] ;
 				fprintf( outFile, " %d", nextNode->index ) ;
 				++count ;
 				
