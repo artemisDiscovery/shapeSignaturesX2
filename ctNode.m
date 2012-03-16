@@ -690,7 +690,25 @@ static NSDictionary *atomicWeightForElement ;
 		bonds = (ctBond **) malloc( nBonds * sizeof( ctBond * ) ) ;
 		
 		theData = [ pListDict objectForKey:@"originalBondPtrs" ] ;
-		[ theData getBytes:bonds length:(nBonds*sizeof( ctBond *)) ] ;
+		
+		if( [ theData length ] == 8 * nBonds )
+		{
+			// Uh oh
+			
+			int j ;
+			
+			for( j= 0 ; j < nBonds ; ++j )
+			{
+				[ theData getBytes:(bonds + j) range:NSMakeRange(8*j, sizeof( ctBond * ))  ] ;
+				
+			}
+		}
+		else
+		{
+			[ theData getBytes:bonds length:(nBonds*sizeof( ctBond *)) ] ;
+		}
+		
+		
 		
 		atBondStart = (BOOL *) malloc( nBonds * sizeof( BOOL ) ) ;
 		
@@ -703,6 +721,7 @@ static NSDictionary *atomicWeightForElement ;
 		theData = [ pListDict objectForKey:@"fragmentIndex" ] ;
 		[ theData getBytes:&fragmentIndex length:sizeof(int) ] ;
 		
+		// The following should be OK in 64 bits - MSB bytes hold data
 		theData = [ pListDict objectForKey:@"fragmentTree" ] ;
 		[ theData getBytes:&fragmentTree length:sizeof(ctTree *) ] ;
 		

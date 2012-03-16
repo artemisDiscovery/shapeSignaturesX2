@@ -17,6 +17,7 @@
 #import "ctTree.h"
 #import "elementCollection.h" 
 #include <math.h>
+#include <stdlib.h>
 
 typedef enum {CONTACT, REENTRANT, SADDLE } elemType ;
 

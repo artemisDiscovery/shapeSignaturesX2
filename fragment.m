@@ -389,13 +389,49 @@
 		ctNode **originalNodePtrs = (ctNode **) malloc( fragmentNodeCount * sizeof( ctNode * ) ) ;
 		
 		theData = [ pListDict objectForKey:@"originalNodePtrs" ] ;
-		[ theData getBytes:originalNodePtrs length:( fragmentNodeCount * sizeof( ctNode * ) ) ] ;
+		
+		if( [ theData length ] == 8 * fragmentNodeCount )
+		{
+			// Uh oh
+			
+			int j ;
+			
+			for( j= 0 ; j < fragmentNodeCount ; ++j )
+			{
+				[ theData getBytes:(originalNodePtrs + j) range:NSMakeRange(8*j, sizeof( ctNode * ))  ] ;
+				
+			}
+		}
+		else
+		{
+			[ theData getBytes:originalNodePtrs length:( fragmentNodeCount * sizeof( ctNode * ) ) ] ;
+		}
+		
+		
 		
 		ctBond **originalBondPtrs = (ctBond **) malloc( fragmentBondCount * sizeof( ctNode * ) ) ;
 		
 		theData = [ pListDict objectForKey:@"originalBondPtrs" ] ;
-		[ theData getBytes:originalBondPtrs length:( fragmentBondCount * sizeof( ctBond * ) ) ] ;
 		
+		if( [ theData length ] == 8 * fragmentBondCount )
+		{
+			// Uh oh
+			
+			int j ;
+			
+			for( j= 0 ; j < fragmentBondCount ; ++j )
+			{
+				[ theData getBytes:(originalBondPtrs + j) range:NSMakeRange(8*j, sizeof( ctBond * ))  ] ;
+				
+			}
+		}
+		else
+		{
+			[ theData getBytes:originalBondPtrs length:( fragmentBondCount * sizeof( ctBond * ) ) ] ;
+		}
+		
+		
+				
 		NSMutableArray *newNodeArray = [ [ NSMutableArray alloc ] initWithCapacity:fragmentNodeCount ] ;
 				
 		int j ;

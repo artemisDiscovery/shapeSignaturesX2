@@ -8,6 +8,7 @@
 
 #import "rayTrace.h"
 #include <math.h>
+#include <stdlib.h>
 
 
 @implementation rayTrace

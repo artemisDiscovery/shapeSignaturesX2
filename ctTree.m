@@ -3196,14 +3196,56 @@
 		nodes = (ctNode **) malloc( nNodes * sizeof( ctNode * ) ) ;
 		ctNode **originalNodes = (ctNode **) malloc( nNodes * sizeof( ctNode * ) ) ;
 		
+		// Need to handle possibility of 64 bit pointers, if data came from 
+		// supercomputer (say).
+		
+		// We expect the most significant bytes to hold useful data.
+		
+		// This is a kludge motivted in part by my distaste at (probably) needing
+		// to link against 64 bit libraries should I attempt to comnpile thia 64-bit
+		
 		theData = [ pListDict objectForKey:@"orginalNodePtrs" ] ;
-		[ theData getBytes:originalNodes length:(nNodes * sizeof( ctNode * ) ) ] ;
+		
+		if( [ theData length ] == 8 * nNodes )
+		{
+			// Uh oh
+			
+			int j ;
+			
+			for( j= 0 ; j < nNodes ; ++j )
+			{
+				[ theData getBytes:(originalNodes + j) range:NSMakeRange(8*j, sizeof( ctNode * ))  ] ;
+				
+			}
+		}
+		else
+		{
+			[ theData getBytes:originalNodes length:(nNodes * sizeof( ctNode * ) ) ] ;
+		}
+		
 		
 		bonds = (ctBond **) malloc( nBonds * sizeof( ctBond * ) ) ;
 		ctBond **originalBonds = (ctBond **) malloc( nBonds * sizeof( ctBond * ) ) ;
 		
 		theData = [ pListDict objectForKey:@"originalBondPtrs" ] ;
-		[ theData getBytes:originalBonds length:(nBonds * sizeof( ctBond * ) ) ] ;
+		
+		if( [ theData length ] == 8 * nBonds )
+		{
+			// Uh oh
+			
+			int j ;
+			
+			for( j= 0 ; j < nBonds ; ++j )
+			{
+				[ theData getBytes:(originalBonds + j) range:NSMakeRange(8*j, sizeof( ctBond * ))  ] ;
+				
+			}
+		}
+		else
+		{
+			[ theData getBytes:originalBonds length:(nBonds * sizeof( ctBond * ) ) ] ;
+		}
+		
 		
 		
 		// Array of current nodes as propertylists

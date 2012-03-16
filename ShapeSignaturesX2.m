@@ -144,7 +144,7 @@ int main (int argc, const char * argv[]) {
 	
 	NSString *createDB = nil ;
 	
-	NSString *MySQLDB = @"zinc" ;
+	NSString *MySQLDB = @"zinc11" ;
 	NSString *MySQLUSER = @"root" ;
 	NSString *MySQLPASSWORD = @"vr9tr74m" ;
 	NSString *MySQLHOST = @"localhost" ;
@@ -195,7 +195,7 @@ int main (int argc, const char * argv[]) {
 			printf( "\t-targetdir <target DB is a directory (yes|no); default = NO >\n" ) ;
 			printf( "\t-targetmysqlIDs <target file holds molecule IDs for mysql database (yes|no); default = NO>\n" ) ;
 			printf( "\t-targetmem <target points to memory resource; quick compare, abbreviated output (yes|no); default = NO>\n" ) ;
-			printf( "\t-mysqlDB <mysql target database; default = 'ZINC'>\n" ) ;
+			printf( "\t-mysqlDB <mysql target database; default = 'ZINC11'>\n" ) ;
 			printf( "\t-mysqlHost <mysql host; default = 'localhost'>\n" ) ;
 			printf( "\t-mysqlTableName <table name with shape sigs; default = 'shapeSignatures'>\n" ) ;
 			printf( "\t-mysqlUserName <user name for mysql; default = 'root'>\n" ) ;
