@@ -1551,7 +1551,7 @@ int main (int argc, const char * argv[]) {
 					// Surface - check that file name matches mol2 - warning if not
 					
 					NSString *nextSurfaceName = [ flatsFiles objectAtIndex:mol2Index ] ;
-					NSString *nextSurfaceFile = [ mol2Directory stringByAppendingString:nextSurfaceName ] ;
+					NSString *nextSurfaceFile  ; // Static analyzer change
 					
 					NSString *surfaceRoot = [ [ nextSurfaceName componentsSeparatedByString:@"." ] objectAtIndex:0 ] ;
 					
@@ -1598,6 +1598,8 @@ int main (int argc, const char * argv[]) {
 				
 					X2Signature *nextSignature = [ [ X2Signature alloc ] initForAllTagsUsingTree:nextTree 
 																andRayTrace:nextRayTrace withStyle:style ] ;
+				
+					[ nextTree release ] ; // Pointed out by static analyzer
 													
 					if( outputToURL == YES )
 						{
@@ -1852,7 +1854,7 @@ int main (int argc, const char * argv[]) {
 			// If target is a directory - 
 		
 			NSMutableArray *DBFiles = nil ;
-			NSMutableArray *DBIDs = nil ;
+			NSArray *DBIDs = nil ;
 			
 			if( xmlIN == NO )
 				{
@@ -2298,7 +2300,6 @@ int main (int argc, const char * argv[]) {
 						
 					// IF no fragment scoring, we will sum the histos together
 				
-					double *resourceBinWidth = inMem ;
 					int *numTargetSignatures = (int *)( inMem + sizeof( double ) ) ;
 				
 					// Have less than 100 target fragments per signature
@@ -2319,8 +2320,6 @@ int main (int argc, const char * argv[]) {
 				
 					int numHits = 0 ;
 					
-					int useQueryFragments = 0 ;
-					int useTargetFragments = 0 ;
 				
 					quickHit *hits = (quickHit *) malloc( hitAlloc * sizeof( quickHit ) ) ;
 				
@@ -3653,6 +3652,7 @@ int main (int argc, const char * argv[]) {
 		if( targetIsMySQLIDs == NO ) {
 			// Our target is a directory
 			
+			[ signatureDirectoryOrIDFile release ] ;
 			signatureDirectoryOrIDFile = [ signatureDirectoryOrIDFile stringByAppendingString:@"/" ] ; 
 			
 			NSFileManager *fileManager = [ NSFileManager defaultManager ] ;
@@ -3694,7 +3694,7 @@ int main (int argc, const char * argv[]) {
 			for( NSString *nextSignatureFile in signatureFiles ) {
 				if( xmlIN == NO )
 					{
-						theSignatures = [ NSUnarchiver unarchiveObjectWithFile:nextSignatureFile ] ;
+						theSignatures = [ [  NSUnarchiver unarchiveObjectWithFile:nextSignatureFile ] retain ] ;
 					}
 				else
 					{
@@ -3740,6 +3740,8 @@ int main (int argc, const char * argv[]) {
 				
 					
 			}
+			
+			[ signatureFiles release ] ;
 			
 			
 		}

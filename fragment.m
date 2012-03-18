@@ -158,7 +158,7 @@
 	
 - (int) neighborRingCount 
 	{
-		if( ! sourceTree->fragmentToNeighborData ) return ;
+		if( ! sourceTree->fragmentToNeighborData ) return 0 ;
 	
 		NSArray *neighborData = [ sourceTree->fragmentToNeighborData objectForKey:[ NSValue valueWithPointer:self ] ] ;
 		
@@ -183,7 +183,7 @@
 
 - (int) neighborBridgeCount
 	{
-		if( ! sourceTree->fragmentToNeighborData ) return ;
+		if( ! sourceTree->fragmentToNeighborData ) return 0 ;
 		
 		NSArray *neighborData = [ sourceTree->fragmentToNeighborData objectForKey:[ NSValue valueWithPointer:self ] ] ;
 		
@@ -260,9 +260,7 @@
 		NSEnumerator *neighborDataEnumerator = [ neighborData objectEnumerator ] ;
 		
 		NSArray *nextBundle ;
-		
-		fragment *nextNeighborFragment ;
-	
+			
 		neighborFragmentIndices = [ [ NSMutableSet alloc ] initWithCapacity:[ neighborFragments count ] ] ;
  
 		while( ( nextBundle = [ neighborDataEnumerator nextObject ] ) )

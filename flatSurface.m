@@ -35,13 +35,10 @@ static short *testIntersect = NULL ;
 - (id) initWithFlatFile: (NSString *)f andTree: (ctTree *) t haveFragmentFile:(BOOL) customFrag andGridSpacing:(double)del
     {
         FILE *flats ;
-		NSString *fragmentFile ;
-		NSScanner *fileScanner ;
         char buffer[1000] ;
         char *word ;
-        int i, j, k, count, v1, v2, v3, atomNum, partitionNum ;
+        int i, j, k, v1, v2, v3 ;
         double x, y, z ;
-		int *partitionForAtom = nil, fail ;
         
         if( !( self = [ super init ] ) )
             {
@@ -138,7 +135,7 @@ static short *testIntersect = NULL ;
 		
 		partitionForElement = (int *) malloc( nElements * sizeof( int ) ) ;
 		
-        count = 0 ;
+ 
         
         for( i = 0 ; i < nElements ; ++i )
             {                
@@ -306,7 +303,7 @@ static short *testIntersect = NULL ;
 				
 				for( i = 0 ; i < nElements ; ++i )
 					{
-						fail = NO ;
+
 												
 						double xc = (vertexX[elemVertex0[i]] + vertexX[elemVertex1[i]] + vertexX[elemVertex2[i]])/3. ;
 						double yc = (vertexY[elemVertex0[i]] + vertexY[elemVertex1[i]] + vertexY[elemVertex2[i]])/3. ;
@@ -1454,9 +1451,9 @@ static short *testIntersect = NULL ;
             {
                 if( dotn < -0.999 )
                     {
-                        dotn = -1.0 ;
-                        dotu = 0. ;
-                        dotv = 0. ;
+                        //dotn = -1.0 ;
+                        //dotu = 0. ;
+                        //dotv = 0. ;
                         
                         //[ tempDir setX:dotn*[ norm X ]
 						//            Y:dotn*[ norm Y ] 

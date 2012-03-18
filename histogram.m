@@ -484,7 +484,6 @@ static NSArray *tagDescriptions ;
 				nFragments = 0 ;
 			}
 			
-		int nFrags = hostBundle->sourceTree->nFragments ;
 		
 		return self ;
 	}
@@ -659,10 +658,8 @@ static NSArray *tagDescriptions ;
 		// To match my spiel above:
 		
 		int LQ = hostBundle->nLengthBins - 1 ;
-		int BQ = nBins - 1 ;
 		
 		int LT = target->hostBundle->nLengthBins - 1 ;
-		int BT = target->nBins - 1 ;
 		
 		int L = LQ > LT ? LQ : LT ;
 		
@@ -1218,7 +1215,7 @@ static NSArray *tagDescriptions ;
 		
 		if( idx == NSNotFound ) return NO ;
 		
-		if( [ classByRecognizedTag objectAtIndex:idx ] == TWO_DIMENSIONAL )
+		if( ((NSNumber *)[ [ histogram classByRecognizedTag ] objectAtIndex:idx ]).intValue == TWO_DIMENSIONAL )
 			{
 				return YES ;
 			}

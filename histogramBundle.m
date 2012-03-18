@@ -224,6 +224,8 @@ int MED3( int a, int b, int c )
 						if( iBin < 0 || iBin >= nBins )
 							{
 								printf("ERROR - ILLEGAL BIN IN 1D\n");
+								[ allHistograms release ] ;
+                                [ globalHistogram release ] ;
 								return nil ;
 							}
 					
@@ -746,7 +748,12 @@ int MED3( int a, int b, int c )
 		
 		// For now only do 1DHISTO
 		
-		if( [ tag isEqualToString:@"1DHISTO" ] == NO ) return nil ;
+		if( [ tag isEqualToString:@"1DHISTO" ] == NO ) 
+			{
+				[ returnString release ] ;
+				return nil ;
+				
+			}
 		
 		// Go through all keys, only use type "x_x" 
 		

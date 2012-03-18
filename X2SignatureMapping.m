@@ -148,7 +148,7 @@
 						if( nextMapping->isMaximal == YES )
 							{
 								[ newMappings addObject:nextMapping ] ;
-								continue ;
+ 								continue ;
 							}
 							
 						nextMapping->isMaximal = YES ;
@@ -212,11 +212,9 @@
 						if( nextMapping->isMaximal == YES )
 							{
 								[ newMappings addObject:nextMapping ] ;
-							}
+ 							}
 					}
-							
-				[ mappings release ] ;
-						
+													
 				if( change == NO ) return newMappings ;
 						
 				mappings = newMappings ;

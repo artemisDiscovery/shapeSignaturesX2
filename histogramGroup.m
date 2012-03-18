@@ -91,9 +91,9 @@
 		
 		[ sortedGroupFragmentIndices sortUsingFunction:indexCompare context:nil ] ;
 		
-		histoEnumerator = [ histos objectEnumerator ] ;
+		/*histoEnumerator = [ histos objectEnumerator ] ;
 		
-		/*
+		
 		while( ( nextHisto = [ histoEnumerator nextObject ] ) )
 			{
 				if( [ nextHisto->sortedFragmentKey isEqualToString:@"GLOBAL" ] == YES ) continue ;
@@ -300,10 +300,8 @@
 		// To match my spiel above:
 		
 		int LQ = hostBundle->nLengthBins - 1 ;
-		int BQ = nBins - 1 ;
 		
 		int LT = target->hostBundle->nLengthBins - 1 ;
-		int BT = target->nBins - 1 ;
 		
 		int L = LQ > LT ? LQ : LT ;
 		

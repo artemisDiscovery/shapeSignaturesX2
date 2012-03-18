@@ -19,12 +19,15 @@
 
 - (id) initWithURL:(NSString *)url data:(NSData *)d fileName:(NSString *)name
 {
+    self = [ super init ] ;
 	
 	targetURL = [ url retain ] ;
 	
 	uploadData = [ d retain ] ;
 	
 	uploadFileName = [ name retain ] ;
+    
+    return self ;
 }
 
 - (void) dealloc

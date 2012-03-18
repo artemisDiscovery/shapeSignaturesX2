@@ -64,6 +64,6 @@
 - (void) normalize ;
 - (BOOL) normalizeWithZero: (double) z ;
 
-- (void) coordPointersX: (double *)xp Y:(double *)yp Z:(double *) zp ;
+- (void) coordPointersX: (double **)xp Y:(double **)yp Z:(double **) zp ;
 
 @end

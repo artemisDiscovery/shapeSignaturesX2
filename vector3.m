@@ -277,11 +277,11 @@
     }
         
 
-- (void) coordPointersX: (double *)xp Y:(double *)yp Z:(double *) zp 
+- (void) coordPointersX: (double **)xp Y:(double **)yp Z:(double **) zp 
 	{
-		xp = & X ;
-		yp = & Y ;
-		zp = & Z ;
+		*xp = & X ;
+		*yp = & Y ;
+		*zp = & Z ;
 		
 		return ;
 	}

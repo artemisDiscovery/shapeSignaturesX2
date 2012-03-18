@@ -19,7 +19,7 @@
 		// them based on histogram memberships in the groups and connections between associated fragments 
 		// in the source connect tree 
 		
-		memberGroups = [ [ NSArray alloc ] initWithArray:grps ] ;
+		memberGroups = [ [ NSMutableArray alloc ] initWithArray:grps ] ;
 		
 		
 		hostBundle = hBundle ;
@@ -316,6 +316,8 @@
 							inBundle:hBundle withFragmentIndices:fragmentSetIndices ] ;
 							
 						[ groupsToBundle addObject:nextGroup ] ;
+						// From static analyzer
+						[ nextGroup release ] ;
 					}
 					
 				if( hadEmptyGroup == YES )

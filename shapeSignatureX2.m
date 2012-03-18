@@ -501,9 +501,11 @@ static NSString *version ;
 												NSMutableArray *mappings = [ [ NSMutableArray alloc ] initWithObjects:theMapping,nil ] ;
 												[ theMapping release ] ;
 								
-												mappings = [ X2SignatureMapping expandMappings:mappings ] ;
+												NSMutableArray *newMappings = [ X2SignatureMapping expandMappings:mappings ] ;
 								
-												[ accumMappings addObjectsFromArray:mappings ] ;
+												[ accumMappings addObjectsFromArray:newMappings ] ;
+											
+												[ newMappings release ] ;
 								
 												[ mappings release ] ;
 											}
@@ -914,7 +916,7 @@ NSInteger indexCompare2( id A, id B, void *ctxt )
 		NSMutableData *returnData = [ NSMutableData dataWithCapacity:bytesLeft ] ;
 		
 		
-		int ret, flush;
+		int ret;
 		unsigned have;
 		z_stream strm;
 		unsigned char in[CHUNK];

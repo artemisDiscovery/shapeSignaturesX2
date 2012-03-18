@@ -1559,7 +1559,7 @@
 		
 		NSString *fragmentFile = [ NSString stringWithContentsOfFile:frag ] ;
 		
-		if( ! fragmentFile ) return nil ;
+		if( ! fragmentFile ) return ;
 		
 		NSScanner *fileScanner = [ NSScanner scannerWithString:fragmentFile ] ;
 		
@@ -1572,6 +1572,7 @@
 				if( [ fileScanner scanInt:&fragNum ] == NO )
 					{
 						printf( "ERROR - Fragment file format messed up!\n" ) ;
+                        [ localPool drain ] ;
 						return nil ;
 					}
 			
@@ -1585,6 +1586,7 @@
 		if( [ fileScanner isAtEnd ] == NO )
 			{
 				printf( "ERROR - Fragment file format messed up!\n" ) ;
+                [ localPool drain ] ;
 				return nil ;
 			}
 		
@@ -1703,8 +1705,11 @@
 	
 		[ remainingBonds release ] ;
 	
+		[ connectionDict release ] ; // From static analyzer
+	
 		free( fragNumToBonds ) ;
 		
+        [ localPool drain ] ;
 		
 		return ;
 		
@@ -3146,7 +3151,6 @@
 		
 		fragment **originalTreeFragmentPtrs = (fragment **) malloc( [ treeFragments count ] * sizeof( fragment *) ) ;
 				
-		j = 0 ;
 		
 		for( j = 0 ; j < [ treeFragments count ] ; ++j )
 			{
@@ -3381,7 +3385,7 @@
 		
 		nodes = (ctNode **) malloc( nNodes * sizeof( ctNode *) ) ;
 		
-		NSArray *nodeArray = [ [ coder decodeObject ] retain ] ;
+		NSArray *nodeArray = [ coder decodeObject ] ; // Static analyzer (remove retain)
 		
 		NSRange rng = NSMakeRange(0, nNodes ) ;
 		
@@ -3393,7 +3397,7 @@
 		
 		bonds = (ctBond **) malloc( nBonds * sizeof( ctBond *) ) ;
 		
-		NSArray *bondArray = [ [ coder decodeObject ] retain ] ;
+		NSArray *bondArray = [ coder decodeObject ]  ;  // Static analyzer (remove retain)
 		
 		rng = NSMakeRange(0, nBonds ) ;
 		

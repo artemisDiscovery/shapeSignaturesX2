@@ -139,6 +139,8 @@ static NSDictionary *atomicWeightForElement ;
 		
 		atomicNumber = [ [ atomicNumberForElement objectForKey:key ] intValue ] ;
 		atomicWeight = [ [ atomicWeightForElement objectForKey:key ] doubleValue ] ;
+	
+		[ key release ] ;
 		
 		return self ;
 	}
@@ -612,7 +614,7 @@ static NSDictionary *atomicWeightForElement ;
 		
 		[ bondArray getObjects:bonds range:rng ] ;
 		
-		[ coder decodeArrayOfObjCType:@encode(BOOL) count:nBonds at:atBondStart ] ;
+		[ coder decodeArrayOfObjCType:@encode(BOOL) count:nBonds at:&atBondStart ] ; // From static analyzer
 		
 		matchNode = nil ;
 		
