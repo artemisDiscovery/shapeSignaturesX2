@@ -132,13 +132,15 @@
 		//
 		//		
 		
+		NSArray *seedMappings = [ [ NSArray alloc ] initWithArray:mappings ] ;
+		
 		while( TRUE )
 			{
 				BOOL change = NO ;
 				
 				NSMutableArray *newMappings = [ [ NSMutableArray alloc ] initWithCapacity:10 ] ;
 				
-				NSEnumerator *mappingEnumerator = [ mappings objectEnumerator ] ;
+				NSEnumerator *mappingEnumerator = [ seedMappings objectEnumerator ] ;
 		
 				X2SignatureMapping *nextMapping ;
 				
@@ -214,10 +216,12 @@
 								[ newMappings addObject:nextMapping ] ;
  							}
 					}
-													
+				
 				if( change == NO ) return newMappings ;
 						
-				mappings = newMappings ;
+				[ seedMappings release ] ;
+				
+				seedMappings = newMappings ;
 				
 				// Try to expand again
 			}
