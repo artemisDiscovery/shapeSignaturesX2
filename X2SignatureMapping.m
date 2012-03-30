@@ -71,7 +71,7 @@
 				[ addArray addObject:q ] ;
 				[ addArray addObject:t ] ;
 				[ histoGroupPairs addObject:addArray ] ;
-				
+ 				
 				[ unpairedQueryHistoGroups removeObject:q ] ;
 				[ unpairedTargetHistoGroups removeObject:t ] ;
 			
@@ -217,7 +217,11 @@
  							}
 					}
 				
-				if( change == NO ) return newMappings ;
+				if( change == NO ) 
+                {
+                    [ seedMappings release ] ;
+                    return newMappings ;
+                }
 						
 				[ seedMappings release ] ;
 				

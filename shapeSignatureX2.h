@@ -71,7 +71,7 @@
 
 + (NSString *) version ;
 
-- (NSString *) propertyListDict ;
+- (NSDictionary *) propertyListDict ;
 
 - (id) initWithPropertyListDict:(NSDictionary *)sourceDictionary ;
 

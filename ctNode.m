@@ -608,7 +608,7 @@ static NSDictionary *atomicWeightForElement ;
 		
 		atBondStart = (BOOL *) malloc( nBonds * sizeof( BOOL ) ) ;
 		
-		NSArray *bondArray = [ [ coder decodeObject ] retain ] ;
+		NSArray *bondArray = [ coder decodeObject ]  ; // Remove a retain here
 		
 		NSRange rng = NSMakeRange(0, nBonds ) ;
 		

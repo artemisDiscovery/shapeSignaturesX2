@@ -58,6 +58,7 @@ static NSString *version ;
 		histogramBundleForTag = [ [ NSMutableDictionary alloc ] 
 			initWithCapacity:[ [ histogram tagDescriptions ] count ] ] ;
 		
+        [ tree retain ] ;
 		sourceTree = tree ;
 		
 		// Add ID if we like - the source tree has a name. 
@@ -700,7 +701,7 @@ NSInteger indexCompare2( id A, id B, void *ctxt )
 		return NSOrderedSame ;
 	}
 
-- (NSString *) propertyListDict
+- (NSDictionary *) propertyListDict
 	{
 		// This method expresses an XSignature in text format as a property list. This is 
 		// a portable alternative to archiving using NSCoder, and which we can also use 
