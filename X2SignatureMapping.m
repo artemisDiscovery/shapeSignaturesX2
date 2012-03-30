@@ -132,7 +132,17 @@
 		//
 		//		
 		
-		NSArray *seedMappings = [ [ NSArray alloc ] initWithArray:mappings ] ;
+		NSEnumerator *argumentMappingEnumerator = [ mappings objectEnumerator ] ;
+		NSMutableArray *seedMappings = [ [ NSMutableArray alloc ] initWithCapacity:[ mappings count ] ] ;
+		
+		for( X2SignatureMapping *nextArgMap in argumentMappingEnumerator )
+		{
+			X2SignatureMapping *copyMap = [ [ X2SignatureMapping alloc ] initWithMapping:nextArgMap ] ;
+			[ seedMappings addObject:copyMap ] ;
+			[ copyMap release ] ;
+		}
+		
+		//NSArray *seedMappings = [ [ NSArray alloc ] initWithArray:mappings ] ;
 		
 		while( TRUE )
 			{
@@ -142,20 +152,20 @@
 				
 				NSEnumerator *mappingEnumerator = [ seedMappings objectEnumerator ] ;
 		
-				X2SignatureMapping *nextMapping ;
+				X2SignatureMapping *nextSeedMapping ;
 				
 				
-				while( ( nextMapping = [ mappingEnumerator nextObject ] ) )
+				while( ( nextSeedMapping = [ mappingEnumerator nextObject ] ) )
 					{
-						if( nextMapping->isMaximal == YES )
+						if( nextSeedMapping->isMaximal == YES )
 							{
-								[ newMappings addObject:nextMapping ] ;
- 								continue ;
+								[ newMappings addObject:nextSeedMapping ] ;
+								continue ;
 							}
 							
-						nextMapping->isMaximal = YES ;
+						nextSeedMapping->isMaximal = YES ;
 						
-						NSEnumerator *histoGroupPairEnumerator = [ nextMapping->histoGroupPairs objectEnumerator ] ;
+						NSEnumerator *histoGroupPairEnumerator = [ nextSeedMapping->histoGroupPairs objectEnumerator ] ;
 						NSArray *nextHistoGroupPair ;
 
 						while( ( nextHistoGroupPair = [ histoGroupPairEnumerator nextObject ] ) )
@@ -169,7 +179,7 @@
 								
 								// Any unused?
 								
-								[ queryChildren intersectSet:nextMapping->unpairedQueryHistoGroups ] ;
+								[ queryChildren intersectSet:nextSeedMapping->unpairedQueryHistoGroups ] ;
 								
 								if( [ queryChildren count ] == 0 ) continue ;
 								
@@ -177,7 +187,7 @@
 								
 								// Any unused?
 								
-								[ targetChildren intersectSet:nextMapping->unpairedTargetHistoGroups ] ;
+								[ targetChildren intersectSet:nextSeedMapping->unpairedTargetHistoGroups ] ;
 								
 								if( [ targetChildren count ] == 0 ) continue ;
 								
@@ -193,10 +203,10 @@
 										
 										while( ( nextTargetChild = [ targetChildrenEnumerator nextObject ] ) )
 											{
-												nextMapping->isMaximal = NO ;
+												nextSeedMapping->isMaximal = NO ;
 												
 												X2SignatureMapping *newMapping = [ [ X2SignatureMapping alloc ]
-																					initWithMapping:nextMapping ] ;
+																					initWithMapping:nextSeedMapping ] ;
 												[ newMapping addMatchBetweenQueryHistoGroup:nextQueryChild 
 														andTargetHistoGroup:nextTargetChild ] ;
 														
@@ -211,17 +221,16 @@
 							
 						// Is our current mapping maximal?
 						
-						if( nextMapping->isMaximal == YES )
+						if( nextSeedMapping->isMaximal == YES )
 							{
-								[ newMappings addObject:nextMapping ] ;
+								[ newMappings addObject:nextSeedMapping ] ;
  							}
 					}
 				
-				if( change == NO ) 
-                {
-                    [ seedMappings release ] ;
-                    return newMappings ;
-                }
+				if( change == NO ) {
+					[ seedMappings release ] ;
+					return newMappings ;
+				}
 						
 				[ seedMappings release ] ;
 				
