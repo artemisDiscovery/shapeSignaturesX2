@@ -700,7 +700,7 @@ NSInteger indexCompare2( id A, id B, void *ctxt )
 		return NSOrderedSame ;
 	}
 
-- (NSString *) propertyListDict
+- (NSDictionary *) propertyListDict
 	{
 		// This method expresses an XSignature in text format as a property list. This is 
 		// a portable alternative to archiving using NSCoder, and which we can also use 
