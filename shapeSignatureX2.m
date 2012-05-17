@@ -58,6 +58,7 @@ static NSString *version ;
 		histogramBundleForTag = [ [ NSMutableDictionary alloc ] 
 			initWithCapacity:[ [ histogram tagDescriptions ] count ] ] ;
 		
+        [ tree retain ] ;
 		sourceTree = tree ;
 		
 		// Add ID if we like - the source tree has a name. 

@@ -71,7 +71,7 @@
 				[ addArray addObject:q ] ;
 				[ addArray addObject:t ] ;
 				[ histoGroupPairs addObject:addArray ] ;
-				
+ 				
 				[ unpairedQueryHistoGroups removeObject:q ] ;
 				[ unpairedTargetHistoGroups removeObject:t ] ;
 			
