@@ -3752,10 +3752,10 @@ int main (int argc, const char * argv[]) {
 				
 				NSError *error = nil ;
 #ifdef LINUX
-				NSString *fileContent = [ NSString stringWithContentsOfFile:targetDB ] ;
+				NSString *fileContent = [ NSString stringWithContentsOfFile:signatureDirectoryOrIDFile ] ;
 				// encoding:NSASCIIStringEncoding error:&error ] ;
 #else
-				NSString *fileContent = [ NSString stringWithContentsOfFile:targetDB 
+				NSString *fileContent = [ NSString stringWithContentsOfFile:signatureDirectoryOrIDFile 
 											encoding:NSASCIIStringEncoding error:&error ] ;
 #endif
 			
@@ -3877,7 +3877,7 @@ int main (int argc, const char * argv[]) {
 				while ( ( nextTarget = [ targetEnumerator nextObject ] ) )
 					{
 						NSString *mol2File = [ NSString stringWithFormat:@"%s.mol2",
-											  nextTarget->sourceTree->treeName ] ;
+											  [ nextTarget->sourceTree->treeName cString] ] ;
 						[ nextTarget->sourceTree exportAsMOL2File:mol2File ] ;
 					}
 				
