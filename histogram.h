@@ -71,7 +71,7 @@ typedef struct { double lengthDelta ; double MEPDelta ; } histogramStyle ;
 
 - (void) setSortedFragmentKey:(NSString *)key ;
 			
-- (double) scoreWithHistogram:(histogram *)target useCorrelation:(BOOL)useCor  ;
+//- (double) scoreWithHistogram:(histogram *)target useCorrelation:(BOOL)useCor  ;
 
 + (NSArray *) recognizedTags ;
 + (NSArray *) classByRecognizedTag ;

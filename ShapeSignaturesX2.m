@@ -19,6 +19,7 @@
 #import "libCURLDownloader.h"
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#import "scoringScheme.h"
 
 typedef struct  
 {
@@ -97,6 +98,16 @@ int main (int argc, const char * argv[]) {
 	
 	double maxPercentQueryUnmatched = 100. ;
 	double maxPercentTargetUnmatched = 100. ;
+	
+	// Add a new feature - 'logistic scoring' will use smooth step function to reduce the influence of 
+	// small fragments on the final score. Will require two parameters:
+	//   H - the threshold against which the size of a fragment is compared (size is fraction of segments)
+	//   gamma - multiplying factor to control sharpness of step function. 
+	
+	double threshold = 0.1 ;
+	double gamma = 1. ;
+	
+	BOOL useLogisticScoring = NO ;
 	
 	BOOL keysWithFragments = YES ;
 	double keyIncrement = 0.05 ;
@@ -1803,6 +1814,23 @@ int main (int argc, const char * argv[]) {
 		}
 	else if( mode == COMPAREMODE )
 		{
+			// Make scoring scheme
+			
+			scoringScheme *scheme = [ [ scoringScheme alloc ] init ] ;
+			
+			if( useCorrelationScoring == YES )
+			{
+				scheme.scoring = CORRELATION ;
+			}
+			
+			if( useLogisticScoring == YES )
+			{
+				scheme.useLogistic = YES ;
+			}
+			
+			scheme.switchThreshold = threshold ;
+			scheme.gamma = gamma ;
+			
 			// Compare two databases of X2 signatures
 			
 			// We permit the option that the target may be a directory of X2 signatures - it must 
@@ -2718,7 +2746,7 @@ int main (int argc, const char * argv[]) {
 									}
 									
 									NSArray *queryHits = [ X2Signature scoreQuerySignature:nextQuery againstTarget:nextTarget
-																		  usingTag:compareTag withCorrelation:useCorrelationScoring
+																		  usingTag:compareTag withScoringScheme:scheme
 																	  useFragments:fragmentScoring fragmentGrouping:permitFragmentGrouping
 																   bigFragmentSize:bigFragSize maxBigFragmentCount:maxBigFragCount ] ;
 
@@ -2855,7 +2883,7 @@ int main (int argc, const char * argv[]) {
 											}
 									
 											NSArray *queryHits = [ X2Signature scoreQuerySignature:nextQuery againstTarget:nextTarget
-																						  usingTag:compareTag withCorrelation:useCorrelationScoring
+																						  usingTag:compareTag withScoringScheme:scheme
 																					  useFragments:fragmentScoring fragmentGrouping:permitFragmentGrouping
 																				   bigFragmentSize:bigFragSize maxBigFragmentCount:maxBigFragCount ] ;
 									
@@ -2954,7 +2982,7 @@ int main (int argc, const char * argv[]) {
 											}
 									
 											NSArray *queryHits = [ X2Signature scoreQuerySignature:nextQuery againstTarget:nextTarget
-																						  usingTag:compareTag withCorrelation:useCorrelationScoring
+																						  usingTag:compareTag withScoringScheme:scheme
 																					  useFragments:fragmentScoring fragmentGrouping:permitFragmentGrouping
 																				   bigFragmentSize:bigFragSize maxBigFragmentCount:maxBigFragCount ] ;
 									

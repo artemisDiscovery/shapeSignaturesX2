@@ -17,6 +17,7 @@
 #import "histogramBundle.h"
 #include <math.h>
 
+#import "scoringScheme.h"
 
 // This represents a group of histograms. All must have the same dimension so that they can be 
 // easily merged into a single 1D array of probabilities. 
@@ -52,6 +53,6 @@
 
 - (NSArray *) sortedFragmentIndices ;
 
-- (double) scoreWithHistogramGroup:(histogramGroup *)target useCorrelation:(BOOL)useCorr ;
+- (double) scoreWithHistogramGroup:(histogramGroup *)target scoringScheme:(scoringScheme *)scheme ;
 
 @end

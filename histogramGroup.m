@@ -180,7 +180,7 @@
 		return ;
 	}
 
-- (double) scoreWithHistogramGroup:(histogramGroup *)target useCorrelation:(BOOL)useCorr
+- (double) scoreWithHistogramGroup:(histogramGroup *)target scoringScheme:(scoringScheme *)scheme
 	{
 		// Always tricky to do this, especially if we admit different "minMep" value for the second dimension.
 		
@@ -278,6 +278,17 @@
 		//	
 		
 		double Score = 0. ;
+		
+		BOOL useCor ;
+		
+		if( scheme.scoring == CORRELATION )
+		{
+			useCor = YES ;
+		}
+		else
+		{
+			useCor = NO ;
+		}
 		
 		// Check for empty group
 	
@@ -396,7 +407,7 @@
 			{
 				// Easy 1D case!
 				
-				if( useCorr == NO )
+				if( useCor == NO )
 					{
 						for( l = 0 ; l <= L ; ++l )
 							{

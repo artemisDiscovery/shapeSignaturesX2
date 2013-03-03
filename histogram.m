@@ -552,7 +552,7 @@ static NSArray *tagDescriptions ;
 		
 		return ;
 	}
-
+/*
 - (double) scoreWithHistogram:(histogram *)target useCorrelation:(BOOL)useCorr
 	{
 		// Always tricky to do this, especially if we admit different "minMep" value for the second dimension.
@@ -846,7 +846,7 @@ static NSArray *tagDescriptions ;
 			
 		return Score ;
 	}
-			
+*/
 /*
 - (void) addConnectionToHistogram:(histogram *)h 
 	{

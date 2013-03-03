@@ -22,7 +22,7 @@
 // X2Signature objects via mappings, since those objects may be dealloced (for better memory 
 // performance, I want to release target signatures after we have compared against them). 
 
-
+@class scoringScheme ;
 
 @interface hitListItem : NSObject 
 {
@@ -51,7 +51,7 @@
 
 - (id) initWithMapping:(X2SignatureMapping *)map ;
 
-- (void) addScoresWithCorrelation:(BOOL)useCor ;
+- (void) addScoresWithScoringScheme:(scoringScheme *)scheme ;
 
 + (void) merge:(NSArray *)sourceHits intoHitList:(NSMutableArray *)targetHits withMaxScore:(double)maxScore 
 									maxPercentQueryUnmatched:(double)maxQueryUnmatched 

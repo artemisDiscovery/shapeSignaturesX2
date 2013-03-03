@@ -29,6 +29,7 @@
 		E81F76F21277210E00045CB5 /* shapeSignatureX2.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76DC1277210D00045CB5 /* shapeSignatureX2.m */; };
 		E81F76F31277210E00045CB5 /* vector3.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76DE1277210D00045CB5 /* vector3.m */; };
 		E81F76F41277210E00045CB5 /* X2SignatureMapping.m in Sources */ = {isa = PBXBuildFile; fileRef = E81F76E01277210D00045CB5 /* X2SignatureMapping.m */; };
+		E8FEFB3B1589039700F8EEC3 /* scoringScheme.m in Sources */ = {isa = PBXBuildFile; fileRef = E8FEFB3A1589039700F8EEC3 /* scoringScheme.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -90,6 +91,8 @@
 		E81F76DE1277210D00045CB5 /* vector3.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = vector3.m; sourceTree = "<group>"; };
 		E81F76DF1277210D00045CB5 /* X2SignatureMapping.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = X2SignatureMapping.h; sourceTree = "<group>"; };
 		E81F76E01277210D00045CB5 /* X2SignatureMapping.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = X2SignatureMapping.m; sourceTree = "<group>"; };
+		E8FEFB391589039700F8EEC3 /* scoringScheme.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = scoringScheme.h; sourceTree = "<group>"; };
+		E8FEFB3A1589039700F8EEC3 /* scoringScheme.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = scoringScheme.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -160,6 +163,8 @@
 				E81F76DF1277210D00045CB5 /* X2SignatureMapping.h */,
 				E81F76E01277210D00045CB5 /* X2SignatureMapping.m */,
 				32A70AAB03705E1F00C91783 /* ShapeSignaturesX2_Prefix.pch */,
+				E8FEFB391589039700F8EEC3 /* scoringScheme.h */,
+				E8FEFB3A1589039700F8EEC3 /* scoringScheme.m */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -260,6 +265,7 @@
 				E81F76F21277210E00045CB5 /* shapeSignatureX2.m in Sources */,
 				E81F76F31277210E00045CB5 /* vector3.m in Sources */,
 				E81F76F41277210E00045CB5 /* X2SignatureMapping.m in Sources */,
+				E8FEFB3B1589039700F8EEC3 /* scoringScheme.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

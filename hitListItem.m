@@ -7,6 +7,7 @@
 //
 
 #import "hitListItem.h"
+#import "scoringScheme.h"
 
 
 @implementation hitListItem
@@ -46,12 +47,20 @@
 		
 		return ;
 	}
+
+double logistic( double thresh, double gamma, int segCount, int cumSeg )
+{
+	double f = (double)segCount / cumSeg ;
+	double term = exp( -gamma * ( thresh - f ) ) ;
 	
-- (void) addScoresWithCorrelation:(BOOL)useCor
+	return term / ( 1. + term ) ;
+}
+	
+- (void) addScoresWithScoringScheme:(scoringScheme *)scheme
 	{
 		// Add score as third list of each histogram pair, then compute aggregate scores
 		
-		NSEnumerator *histoGroupPairEnumerator =  [ mapping->histoGroupPairs objectEnumerator ] ;
+ 		NSEnumerator *histoGroupPairEnumerator =  [ mapping->histoGroupPairs objectEnumerator ] ;
 		
 		NSMutableArray *nextHistoGroupPair ;
 		
@@ -64,12 +73,13 @@
 		cumQuerySegments =  0 ;
 		cumTargetSegments = 0 ;
 		
+		
 		while( ( nextHistoGroupPair = [ histoGroupPairEnumerator nextObject ] ) )
 			{
 				histogramGroup *queryHistoGroup = [ nextHistoGroupPair objectAtIndex:0 ] ;
 				histogramGroup *targetHistoGroup = [ nextHistoGroupPair objectAtIndex:1 ] ;
 				
-				double score = [ queryHistoGroup scoreWithHistogramGroup:targetHistoGroup useCorrelation:useCor ] ;
+				double score = [ queryHistoGroup scoreWithHistogramGroup:targetHistoGroup scoringScheme:scheme ] ;
 				
 				
 			
@@ -97,24 +107,59 @@
 				
 			}
 			
-		weightedScore /= ( cumQuerySegments + cumTargetSegments ) ;
+		if( scheme.useLogistic == YES )
+		{
+			// We need to recompute score using the logistic function approach
+			
+			weightedScore = 0. ;
+			double denom = 0. ;
+			double num = 0. ;
+			
+			int cumSegments = cumQuerySegments + cumTargetSegments ;
+			
+			for ( NSArray *pair in fragmentGroupPairs )
+			{
+				int segCount = [ (NSNumber *)[ pair objectAtIndex:3 ] intValue ] +
+				[ (NSNumber *)[ pair objectAtIndex:4 ] intValue ] ;
 				
-		if( mapping->query->hostBundle->type == ONE_DIMENSIONAL  )
-			{
-				totalQuerySegments = mapping->query->hostBundle->sourceSignature->totalSegments ;
-				totalTargetSegments = mapping->target->hostBundle->sourceSignature->totalSegments ;
+				double pairScore = [ (NSNumber *)[ pair objectAtIndex:2 ] doubleValue ] ;
+				
+				double lg = logistic( scheme.switchThreshold, scheme.gamma, segCount, cumSegments) ;
+				
+				num +=  lg * segCount *  pairScore ;
+				denom += lg * segCount ;
 			}
-		else
-			{
-				totalQuerySegments = mapping->query->hostBundle->sourceSignature->totalSegmentPairs ;
-				totalTargetSegments = mapping->target->hostBundle->sourceSignature->totalSegmentPairs ;
-			}
+			
+			weightedScore = num / denom ;
+		}
+		else 
+		{
+			weightedScore /= ( cumQuerySegments + cumTargetSegments ) ;
+		}
 		
 		// Compute "percentage" of query unmatched, likewise for target
 		
+		// There is an issue here - the totalQuerySegements counts all segments, both inter- and intra-fragment,
+		// but only intra- are used currently in scoring - thus percent used can never reach 100. Modify
+		// to use totalIntraFragmentSegments or segmentPairs as appropriate
+				
+		if( mapping->query->hostBundle->type == ONE_DIMENSIONAL  )
+			{
+				totalQuerySegments = mapping->query->hostBundle->sourceSignature->totalIntraFragmentSegments ;
+				totalTargetSegments = mapping->target->hostBundle->sourceSignature->totalIntraFragmentSegments ;
+			}
+		else
+			{
+				totalQuerySegments = mapping->query->hostBundle->sourceSignature->totalIntraFragmentSegmentPairs ;
+				totalTargetSegments = mapping->target->hostBundle->sourceSignature->totalIntraFragmentSegmentPairs ;
+			}
+		
+		
+		
 		percentQueryUnmatched = 100. * ( 1. - ((double) cumQuerySegments ) / totalQuerySegments ) ;
 		percentTargetUnmatched = 100. * ( 1. - ((double) cumTargetSegments ) / totalTargetSegments ) ;
-	
+		
+		
 		// No longer need the mapping 
 	
 		[ mapping release ] ;

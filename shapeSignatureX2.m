@@ -18,6 +18,7 @@
 
 
 
+
 static NSString *version ;
 
 @implementation X2Signature
@@ -361,7 +362,7 @@ static NSString *version ;
 	}
 
 + (NSArray *) scoreQuerySignature:(X2Signature *)query againstTarget:(X2Signature *)target usingTag:(NSString *)tag 
-					withCorrelation:(BOOL)useCor useFragments:(BOOL)useFrag fragmentGrouping:(BOOL)useGroups
+					withScoringScheme:(scoringScheme *)scheme useFragments:(BOOL)useFrag fragmentGrouping:(BOOL)useGroups
 					bigFragmentSize:(int)bigFSize maxBigFragmentCount:(int)maxBigFCount
 	{
 		// Critical method - compare two signatures and return an array of hit-list items
@@ -434,7 +435,7 @@ static NSString *version ;
 				theItem = [ [ hitListItem alloc ] initWithMapping:theMapping ] ;
 				[ theMapping release ] ;
 				
-				[ theItem addScoresWithCorrelation:useCor ] ;
+				[ theItem addScoresWithScoringScheme:scheme ] ;
 				
 				NSArray *returnArray = [ [ NSArray alloc ] initWithObjects:theItem,nil ] ;
 				[ theItem release ] ;
@@ -576,7 +577,7 @@ static NSString *version ;
 				while( ( nextMapping = [ mappingEnumerator nextObject ] ) )
 					{
 						theItem = [ [ hitListItem alloc ] initWithMapping:nextMapping ] ;
-						[ theItem addScoresWithCorrelation:useCor ] ;
+						[ theItem addScoresWithScoringScheme:scheme ] ;
 						
 						[ returnArray addObject:theItem ] ;
 						[ theItem release ] ;

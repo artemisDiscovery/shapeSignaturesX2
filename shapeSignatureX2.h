@@ -15,6 +15,8 @@
 #endif
 
 #import "histogramBundle.h"
+#import "scoringScheme.h"
+
 
 
 @interface X2Signature : NSObject 
@@ -66,7 +68,7 @@
 - (void) addHistogramsWithTag:(NSString *)tag forRayTrace:(rayTrace *)rt withStyle:(histogramStyle)st ;
 
 + (NSArray *) scoreQuerySignature:(X2Signature *)query againstTarget:(X2Signature *)target usingTag:(NSString *)tag
-				withCorrelation:(BOOL)useCor useFragments:(BOOL)useFrag fragmentGrouping:(BOOL)useGroups
+				withScoringScheme:(scoringScheme *)scheme useFragments:(BOOL)useFrag fragmentGrouping:(BOOL)useGroups
 				bigFragmentSize:(int)bigFSize maxBigFragmentCount:(int)maxBigFCount ;
 
 + (NSString *) version ;
