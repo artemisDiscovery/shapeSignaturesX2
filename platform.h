@@ -7,8 +7,8 @@
  *
  */
 
-#define OSX
-//#define LINUX
-//#define TRUE 1
-//#define FALSE 0
+//#define OSX
+#define LINUX
+#define TRUE 1
+#define FALSE 0
 

@@ -11,10 +11,6 @@
 
 @implementation scoringScheme
 
-@synthesize scoring ;
-@synthesize switchThreshold ;
-@synthesize useLogistic ;
-@synthesize gamma ;
 
 - (id) init
 {
@@ -33,5 +29,50 @@
 	[ super dealloc ] ;
 	return ;
 }
+
+- (scoreType) scoring 
+	{
+		return scoring ;
+	}
+
+- (BOOL) useLogistic 
+	{
+		return useLogistic ;
+	}
+
+- (double) switchThreshold 
+	{
+		return switchThreshold ;
+	}
+
+- (double) gamma 
+	{
+		return gamma ;
+	}
+
+- (void) setScoring:(scoreType)s 
+	{
+		scoring = s ;
+		return ;
+	}
+
+- (void) setUseLogistic:(BOOL)u 
+	{
+		useLogistic = u ;
+		return ;
+	}
+
+- (void) setSwitchThreshold:(double)t 
+	{
+		switchThreshold = t ;
+		return ;
+	}
+
+- (void) setGamma:(double)g 
+	{
+		gamma = g ;
+		return ;
+	}
+
 
 @end

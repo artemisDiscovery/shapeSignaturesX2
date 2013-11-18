@@ -135,7 +135,10 @@
 		NSEnumerator *argumentMappingEnumerator = [ mappings objectEnumerator ] ;
 		NSMutableArray *seedMappings = [ [ NSMutableArray alloc ] initWithCapacity:[ mappings count ] ] ;
 		
-		for( X2SignatureMapping *nextArgMap in argumentMappingEnumerator )
+		X2SignatureMapping *nextArgMap ;
+
+		while( ( nextArgMap = [ argumentMappingEnumerator nextObject ] ) )
+		//for( X2SignatureMapping *nextArgMap in argumentMappingEnumerator )
 		{
 			X2SignatureMapping *copyMap = [ [ X2SignatureMapping alloc ] initWithMapping:nextArgMap ] ;
 			[ seedMappings addObject:copyMap ] ;

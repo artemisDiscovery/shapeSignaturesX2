@@ -1820,16 +1820,16 @@ int main (int argc, const char * argv[]) {
 			
 			if( useCorrelationScoring == YES )
 			{
-				scheme.scoring = CORRELATION ;
+				[ scheme setScoring:CORRELATION ] ;
 			}
 			
 			if( useLogisticScoring == YES )
 			{
-				scheme.useLogistic = YES ;
+				[ scheme setUseLogistic:YES ] ;
 			}
 			
-			scheme.switchThreshold = threshold ;
-			scheme.gamma = gamma ;
+			[ scheme setSwitchThreshold:threshold ] ;
+			[ scheme setGamma:gamma ] ;
 			
 			// Compare two databases of X2 signatures
 			
@@ -3707,7 +3707,11 @@ int main (int argc, const char * argv[]) {
 			
 			NSMutableArray *signatureFiles = [ [ NSMutableArray alloc ] initWithCapacity:[ files count ] ] ;
 			
-			for( NSString *nextFile in files ) {
+			//for( NSString *nextFile in files ) {
+
+			int jFile ;
+			for(  jFile = 0 ; jFile < [ files count ] ; ++jFile ) {
+				NSString *nextFile = [ files objectAtIndex:jFile ] ;
 				if( [ nextFile hasSuffix:@"_X2DB" ] == YES ||  [ nextFile hasSuffix:@"_X2DB.Z" ] == YES ||
 					[ nextFile hasSuffix:@"_X2DB.xml" ] == YES || [ nextFile hasSuffix:@"_X2DB.xml.Z" ] )
 					{
@@ -3719,7 +3723,9 @@ int main (int argc, const char * argv[]) {
 			
 			NSMutableArray *theSignatures ;
 			
-			for( NSString *nextSignatureFile in signatureFiles ) {
+			//for( NSString *nextSignatureFile in signatureFiles ) {
+			for(  jFile = 0 ; jFile < [ signatureFiles count ] ; ++jFile  ) {
+				NSString *nextSignatureFile = [ signatureFiles objectAtIndex:jFile ] ;
 				if( xmlIN == NO )
 					{
 						theSignatures = [ [  NSUnarchiver unarchiveObjectWithFile:nextSignatureFile ] retain ] ;
@@ -3758,7 +3764,10 @@ int main (int argc, const char * argv[]) {
 				
 				// Process each signature, export mol2 file
 				
-				for( X2Signature *nextSignature in theSignatures ) {
+				//for( X2Signature *nextSignature in theSignatures ) {
+				int jSig ;
+				for(  jSig = 0 ; jSig < [ theSignatures count ] ; ++jSig ) {
+					X2Signature *nextSignature = [ theSignatures objectAtIndex:jSig ] ;
 					NSString *mol2File = [ NSString stringWithFormat:@"%s/%s.mol2",[ signatureDirectoryOrIDFile cString ],
 						[ nextSignature->sourceTree->treeName cString ] ] ;
 					[ nextSignature->sourceTree exportAsMOL2File:mol2File ] ;

@@ -25,9 +25,19 @@ typedef enum { RAW, CORRELATION } scoreType ;
 
 }
 
-@property (assign, nonatomic) scoreType scoring  ;
-@property (assign, nonatomic) BOOL useLogistic  ;
-@property (assign, nonatomic) double switchThreshold ;
-@property (assign, nonatomic) double gamma ;
+//@property (assign, nonatomic) scoreType scoring  ;
+//@property (assign, nonatomic) BOOL useLogistic  ;
+//@property (assign, nonatomic) double switchThreshold ;
+//@property (assign, nonatomic) double gamma ;
+
+- (scoreType) scoring ;
+- (BOOL) useLogistic ;
+- (double) switchThreshold ;
+- (double) gamma ;
+
+- (void) setScoring:(scoreType)s ;
+- (void) setUseLogistic:(BOOL)u ;
+- (void) setSwitchThreshold:(double)t ;
+- (void) setGamma:(double)g ;
 
 @end

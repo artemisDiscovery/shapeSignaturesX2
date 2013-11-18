@@ -107,7 +107,7 @@ double logistic( double thresh, double gamma, int segCount, int cumSeg )
 				
 			}
 			
-		if( scheme.useLogistic == YES )
+		if( [ scheme useLogistic ] == YES )
 		{
 			// We need to recompute score using the logistic function approach
 			
@@ -117,14 +117,17 @@ double logistic( double thresh, double gamma, int segCount, int cumSeg )
 			
 			int cumSegments = cumQuerySegments + cumTargetSegments ;
 			
-			for ( NSArray *pair in fragmentGroupPairs )
+			int jPair ;
+			//for ( NSArray *pair in fragmentGroupPairs )
+			for ( jPair = 0 ; jPair < [  fragmentGroupPairs count ] ; ++jPair  )
 			{
+				NSArray *pair = [ fragmentGroupPairs objectAtIndex:jPair ] ;
 				int segCount = [ (NSNumber *)[ pair objectAtIndex:3 ] intValue ] +
 				[ (NSNumber *)[ pair objectAtIndex:4 ] intValue ] ;
 				
 				double pairScore = [ (NSNumber *)[ pair objectAtIndex:2 ] doubleValue ] ;
 				
-				double lg = logistic( scheme.switchThreshold, scheme.gamma, segCount, cumSegments) ;
+				double lg = logistic( [ scheme switchThreshold], [ scheme gamma] , segCount, cumSegments) ;
 				
 				num +=  lg * segCount *  pairScore ;
 				denom += lg * segCount ;
