@@ -44,6 +44,10 @@ skipSelfIntersectingSurface:(BOOL)ss insideTrace:(BOOL)inside randomizationAngle
 		minMEP = 1.e12 ;
 		maxMEP = -1.e12 ;
 		
+		double minMEPX, minMEPY, minMEPZ ;
+		int minMEPElement ;
+		
+		
 		maxSegmentLength = 0. ;
 		maxTwoSegmentLength = 0. ;
 		
@@ -126,7 +130,15 @@ skipSelfIntersectingSurface:(BOOL)ss insideTrace:(BOOL)inside randomizationAngle
 					andDirection:direction fromElementWithIndex:theElem
 					withRayTraceType:inside ] ;
 					
-				if( mep < minMEP ) minMEP = mep ;
+				if( mep < minMEP ) 
+				{
+					minMEP = mep ;
+					minMEPX = intersectPoint[0] ;
+					minMEPY = intersectPoint[1] ;
+					minMEPZ = intersectPoint[2] ;
+					minMEPElement = intersectElem ;
+				}
+					
 				if( mep > maxMEP ) maxMEP = mep ;
 
 				if( intersectElem < 0 )
