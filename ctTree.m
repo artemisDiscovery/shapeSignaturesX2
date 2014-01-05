@@ -3468,8 +3468,8 @@
 		}
 	
 		int jNext ;
-		//for( fragment *nextFrag in treeFragments ) {
-		for( jNext = 0 ; jNext < [  treeFragments count ] ; ++jNext ) {
+		for( fragment *nextFrag in treeFragments ) {
+		//for( jNext = 0 ; jNext < [  treeFragments count ] ; ++jNext ) {
 			fragment *nextFrag = [ treeFragments objectAtIndex:jNext ] ;
 			fprintf( outFile, "@<TRIPOS>SET\nSTATIC fragment%d ATOMS\n", nextFrag->index ) ;
 			fprintf( outFile, "%d", [ nextFrag->fragmentNodes count ] ) ;
