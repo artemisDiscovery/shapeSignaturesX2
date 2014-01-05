@@ -1618,7 +1618,10 @@
 	
 		NSMutableDictionary *connectionDict = [ [ NSMutableDictionary alloc ] initWithCapacity:maxFrag ] ;
 	
-		for ( ctBond *nextBond in remainingBonds ) {
+		int jBond ;
+		//for ( ctBond *nextBond in remainingBonds ) {
+		for ( jBond = 0 ; jBond < [ remainingBonds count ] ; ++jBond ) {
+			ctBond *nextBond = [ remainingBonds objectAtIndex:jBond ] ;
 			int index1, index2 ;
 			fragment *frag1, *frag2 ;
 			ctNode *node1, *node2 ;
@@ -1654,8 +1657,14 @@
 	
 		// Add the neighbor relationships
 	
-		for( NSArray *neighborArray in [ connectionDict allValues ] ) {
-			for( NSArray *neighbor in neighborArray ) {
+		//for( NSArray *neighborArray in [ connectionDict allValues ] ) {
+		int jArray ;
+		for( jArray = 0 ; jArray < [  [ connectionDict allValues ] count ] ; ++jArray ) {
+			NSArray *neighborArray = [ [ connectionDict allValues ] objectAtIndex:jArray ] ;
+			int jNeigh ;
+			//for( NSArray *neighbor in neighborArray ) {
+			for( jNeigh = 0 ; jNeigh < [ neighborArray count ] ; ++jNeigh ) {
+				NSArray *neighbor = [ neighborArray objectAtIndex:jNeigh ] ;
 				fragment *fOne = [ neighbor objectAtIndex:0 ] ;
 				fragment *fTwo = [ neighbor objectAtIndex:1 ] ;
 				ctNode *nodeOne = [ neighbor objectAtIndex:2 ] ;
@@ -1678,8 +1687,11 @@
 		
 		// For later convenience, we set a set of all the neighbor fragment indices, saved as strings
 		
-		for( fragment *nextFragment in treeFragments  )
+		int jFrag ;
+		//for( fragment *nextFragment in treeFragments  )
+		for( jFrag = 0 ; jFrag < [  treeFragments count ] ; ++jFrag  )
 			{
+				fragment *nextFragment = [ treeFragments objectAtIndex:jFrag ] ;
 				[ nextFragment assignNeighborFragmentIndices ] ;
 			}
 		
@@ -3455,7 +3467,10 @@
 			}
 		}
 	
-		for( fragment *nextFrag in treeFragments ) {
+		int jNext ;
+		//for( fragment *nextFrag in treeFragments ) {
+		for( jNext = 0 ; jNext < [  treeFragments count ] ; ++jNext ) {
+			fragment *nextFrag = [ treeFragments objectAtIndex:jNext ] ;
 			fprintf( outFile, "@<TRIPOS>SET\nSTATIC fragment%d ATOMS\n", nextFrag->index ) ;
 			fprintf( outFile, "%d", [ nextFrag->fragmentNodes count ] ) ;
 			
@@ -3463,7 +3478,10 @@
 			
 			// Max of 20 atoms per line
 			
-			for( ctNode *nextNode in nextFrag->fragmentNodes ) {
+			int jNode ;
+			//for( ctNode *nextNode in nextFrag->fragmentNodes ) {
+			for( jNode = 0 ; jNode < [ nextFrag->fragmentNodes count ] ; ++jNode  ) {
+				ctNode *nextNode = [ nextFrag->fragmentNodes objectAtIndex:jNode ] ;
 				fprintf( outFile, " %d", nextNode->index ) ;
 				++count ;
 				

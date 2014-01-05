@@ -1215,7 +1215,7 @@ static NSArray *tagDescriptions ;
 		
 		if( idx == NSNotFound ) return NO ;
 		
-		if( ((NSNumber *)[ [ histogram classByRecognizedTag ] objectAtIndex:idx ]).intValue == TWO_DIMENSIONAL )
+		if( (NSNumber *)[ [ [ histogram classByRecognizedTag ] objectAtIndex:idx ] intValue ] == TWO_DIMENSIONAL )
 			{
 				return YES ;
 			}

@@ -15,7 +15,7 @@
 #define TAR_EXE @"/usr/bin/tar"
 #define GUNZIP_EXE @"/usr/bin/gunzip"
 #else
-#include "/usr/local/include/curl/curl.h"
+#include "/usr/include/curl/curl.h"
 #define TAR_EXE @"/bin/tar"
 #define GUNZIP_EXE @"/usr/bin/gunzip"
 #endif

@@ -281,7 +281,7 @@
 		
 		BOOL useCor ;
 		
-		if( scheme.scoring == CORRELATION )
+		if( [ scheme scoring ] == CORRELATION )
 		{
 			useCor = YES ;
 		}
