@@ -2,11 +2,13 @@
 #include <mysql.h>
 
 #ifdef LINUX
+#define _GNU_SOURCE
 #import <Foundation/Foundation.h>
 #else
 #import <Cocoa/Cocoa.h>
 #endif
 
+#include <stdio.h>
 #include <string.h>
 #import "flatSurface.h"
 #import "rayTrace.h"
@@ -27,6 +29,26 @@ typedef struct
 	double score ;
 } quickHit ;
 
+/* borrowed these definitions from Apache */
+#define ap_tolower(c) (tolower(((unsigned char)(c))))
+#define ap_toupper(c) (toupper(((unsigned char)(c))))
+
+static inline
+char *strcasestr( char *h, char *n )
+{ /* h="haystack", n="needle" */
+char *a=h, *e=n;
+
+if( !h || !*h || !n || !*n ) { return 0; }
+while( *a && *e ) {
+if( ap_toupper(*a)!=ap_toupper(*e) ) {
+++h; a=h; e=n;
+}
+else {
+++a; ++e;
+}
+}
+return *e ? 0 : h;
+}
 
 NSInteger fileNameCompare( id A, id B, void *ctxt ) ;
 
@@ -489,7 +511,7 @@ int main (int argc, const char * argv[]) {
 								}
 							else
 								{
-									printf( "CAN'T INTERPRET FLAG - Exit!\n" ) ;
+									printf( "CAN'T INTERPRET FLAG %s - Exit!\n", &argv[i][1] ) ;
 									exit(1) ;
 								}
 									
