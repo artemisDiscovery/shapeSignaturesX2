@@ -1,7 +1,7 @@
 include $(GNUSTEP_MAKEFILES)/common.make
 
 TOOL_NAME = ShapeSignaturesX2
-OBJC_LIBS = /usr/lib64/libcurl.so.4 /usr/lib64/libmysqlclient.so /usr/lib64/libobjc.so /lib64/libz.so
+OBJC_LIBS = /usr/lib64/libcurl.so /usr/lib64/mysql/libmysqlclient.so /usr/lib/gcc/x86_64-amazon-linux/4.6.3/libobjc.so /usr/lib64/libz.so
 OBJCFLAGS = -lobjc -static -g -lz -lm  -I/usr/include/mysql -I/usr/include/curl  
 
 ShapeSignaturesX2_OBJC_FILES = bondPath.m fragment.m rayTrace.m \
