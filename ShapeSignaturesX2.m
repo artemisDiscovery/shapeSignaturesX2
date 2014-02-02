@@ -3338,8 +3338,9 @@ int main (int argc, const char * argv[]) {
 		
 			NSError *error ;
 		
+// Looks like in latest GNUstep the updated signature for contentsOfDirectoryAtPath is implemented
 #ifdef LINUX
-			NSArray *files = [ fileManager contentsOfDirectoryAtPath:queryDB  ] ;
+			NSArray *files = [ fileManager contentsOfDirectoryAtPath:queryDB error:&error  ] ;
 #else
 			NSArray *files = [ fileManager contentsOfDirectoryAtPath:queryDB error:&error ] ;
 #endif

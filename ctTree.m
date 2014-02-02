@@ -44,6 +44,8 @@
 		
 		//fragmentIndex = -1 ;
 		
+		NSCharacterSet *nonChargeCharacterSet = [ [ NSCharacterSet characterSetWithCharactersInString:@"0123456789.+-" ] invertedSet ] ;
+		
 		nFragments = 0 ;
 		
 		FILE *mol2File = fopen( f, "r" ) ;
@@ -155,99 +157,81 @@
 						haveResidueName = NO ;
 						haveChargeString = NO ;
 						
+						// Need to parse more flexibly, treat as NSString
+						
+						NSCharacterSet *nonWhiteSpace = [ [ NSCharacterSet whitespaceCharacterSet ] invertedSet ] ;
+						
 						fgets( buffer, 1000, mol2File ) ;
 						
-						token = strtok(buffer, " \t\n\r" ) ;
+						NSString *theLine = [ [ NSString stringWithCString:buffer ] 
+											 stringByTrimmingCharactersInSet:[ NSCharacterSet newlineCharacterSet ] ] ;
 						
-						// Skip atom number
+						NSMutableArray *tokens = [ NSMutableArray arrayWithCapacity:10  ] ;
 						
-						if( strlen( token ) == 0 )
-							{
-								token = strtok(NULL, " \t\n\r" ) ;
-							}
-							
+						NSScanner *theScanner = [ NSScanner scannerWithString:theLine ] ;
 						
-						// Atom name
+						NSString *nextToken ;
 						
-						token = strtok(NULL, " \t\n\r" ) ; 
+						while( [ theScanner scanCharactersFromSet:nonWhiteSpace intoString:&nextToken ] )
+						{
+							[ tokens addObject:nextToken ] ;
+						}
 						
-						strcpy( atomName, token ) ;
+						if( [ [ tokens objectAtIndex:0 ] length ] == 0 )
+						{
+							tokens = [ tokens subarrayWithRange:NSMakeRange(1, [ tokens count ] - 1) ] ;
+						}
 						
-						// X
+						// Last string assumed to be charge, tokens at 
+						// 1 = atom name
+						// 2 = X
+						// 3 = Y
+						// 4 = Z
+						// 5 = type
+						// 6 = residue index or charge?
+						// If 6 is the last field, we will assume charge;
+						// If max index >= 8, assume 6 and 7 are res index and name, 
+						// last is charge
 						
-						token = strtok(NULL, " \t\n\r" ) ;
+						strcpy( atomName, [ [ tokens objectAtIndex:1 ] cString ] ) ;
+						X = [ [ tokens objectAtIndex:2 ] doubleValue ] ;
+						Y = [ [ tokens objectAtIndex:3 ] doubleValue ] ;
+						Z = [ [ tokens objectAtIndex:4 ] doubleValue ] ;
+							   
+						strcpy( atomType, [[ tokens objectAtIndex:5 ] cString ] ) ;
+						strcpy( element, [[ tokens objectAtIndex:5 ] cString ] ) ;
+							   
+						if( [ tokens count ] <= 7 )
+							   {
+								   haveResidueName = NO ;
+								   haveResidueIndex = NO ;
+							   }
+						else if( [ tokens count ] >= 8 )
+							   {
+								   haveResidueIndex = YES ;
+								   strcpy( residueIndex, [[ tokens objectAtIndex:6 ] cString ] ) ;
+							   }
+						else if( [ tokens count ] >= 9 ) 
+							   {
+								   haveResidueName = YES ;
+								   strcpy( residueName, [[ tokens objectAtIndex:7 ] cString ] ) ;
+							   }
+							   
+							   
+						// Check for illegal characters in charge string
+							   
+						NSRange illegal = [ [ tokens lastObject ] rangeOfCharacterFromSet:nonChargeCharacterSet ] ;
+					   
+					   if( illegal.location == NSNotFound )
+					   {
+						   haveChargeString = YES ;
+						   strcpy( chargeString, [ [ tokens lastObject ] cString ] ) ;
+					   }
+					   else {
+						   haveChargeString = NO ;
+					   }
+								   
 						
-						X = atof( token ) ;
-						
-						// Y
-						
-						token = strtok(NULL, " \t\n\r" ) ;
-						
-						Y = atof( token ) ;
-						
-						// Z
-						
-						token = strtok(NULL, " \t\n\r" ) ;
-						
-						Z = atof( token ) ;
-						
-						// Atom type 
-						
-						token = strtok(NULL, " \t\n\r" ) ;
-						
-						strcpy( atomType, token ) ;
-						strcpy( element, token ) ;
-						
-						if( ( token = strtok( NULL, " \t\n\r" ) ) )
-							{
-								// Assume this is residue index
-								
-								strcpy( residueIndex, token ) ;
-								haveResidueIndex = YES ;
-								
-								if( ( token = strtok( NULL, " \t\n\r" ) ) )
-									{
-										// Is this residue name or charge?
-										
-										BOOL foundNonNumber = NO ;
-										
-										char *digitChars = "0123456789.+-" ;
-										
-										for( i = 0 ; i < strlen( token ) ; ++i )
-											{
-												if( ! ( strchr( digitChars, token[i] ) ) )
-													{
-														foundNonNumber = YES ;
-														break ;
-													}
-											}
-											
-										if( foundNonNumber == YES )
-											{
-												// This is a residue name
-												
-												strcpy( residueName, token ) ;
-												haveResidueName = YES ;
-												
-												if( ( token = strtok( NULL, " \t\n\r" ) ) )
-													{
-														// ASSUME this is a charge
-														
-														strcpy( chargeString, token ) ;
-														haveChargeString = YES ;
-													}
-											}
-										else
-											{
-												// All we have is a charge 
-												
-												strcpy( chargeString, token ) ;
-												haveChargeString = YES ;
-											}
-									}
-							}
-										
-							
 						
 						// Assume a period separates element name from hybridization
 						
@@ -1573,7 +1557,7 @@
 					{
 						printf( "ERROR - Fragment file format messed up!\n" ) ;
                         [ localPool drain ] ;
-						return nil ;
+						return  ;
 					}
 			
 				if ( fragNum > maxFrag ) {
@@ -1587,7 +1571,7 @@
 			{
 				printf( "ERROR - Fragment file format messed up!\n" ) ;
                 [ localPool drain ] ;
-				return nil ;
+				return  ;
 			}
 		
 		NSMutableSet **fragNumToBonds = (NSMutableSet **) malloc(( maxFrag + 1) * sizeof( NSMutableSet * ) ) ;
@@ -1633,11 +1617,13 @@
 		// fragment indices in sorted order, then add the neighbor information to the tree
 	
 		NSMutableDictionary *connectionDict = [ [ NSMutableDictionary alloc ] initWithCapacity:maxFrag ] ;
-	
-		int jBond ;
+		
+		NSArray *remainingBondsAsArray = [ remainingBonds allObjects ] ;
+		int remainingBondsCount = [ remainingBondsAsArray count ] ;
+
 		//for ( ctBond *nextBond in remainingBonds ) {
-		for ( jBond = 0 ; jBond < [ remainingBonds count ] ; ++jBond ) {
-			ctBond *nextBond = [ remainingBonds objectAtIndex:jBond ] ;
+		for ( j = 0 ; j < remainingBondsCount ; ++j  ) {
+			ctBond *nextBond = [ remainingBondsAsArray objectAtIndex:j ] ;
 			int index1, index2 ;
 			fragment *frag1, *frag2 ;
 			ctNode *node1, *node2 ;
@@ -1672,15 +1658,16 @@
 		}
 	
 		// Add the neighbor relationships
+
+		int k ;
 	
+		NSArray *connectionDictValuesArray = [ connectionDict allValues ] ;
+		int connectionDictValuesArrayCount = [ connectionDictValuesArray count ] ;
 		//for( NSArray *neighborArray in [ connectionDict allValues ] ) {
-		int jArray ;
-		for( jArray = 0 ; jArray < [  [ connectionDict allValues ] count ] ; ++jArray ) {
-			NSArray *neighborArray = [ [ connectionDict allValues ] objectAtIndex:jArray ] ;
-			int jNeigh ;
-			//for( NSArray *neighbor in neighborArray ) {
-			for( jNeigh = 0 ; jNeigh < [ neighborArray count ] ; ++jNeigh ) {
-				NSArray *neighbor = [ neighborArray objectAtIndex:jNeigh ] ;
+		for( j = 0 ; j < connectionDictValuesArrayCount ; ++j ) {
+			NSArray *neighborArray = [ connectionDictValuesArray objectAtIndex:j ] ;
+			for( k = 0 ; k <  [ neighborArray count ]; ++k ) {
+				NSArray *neighbor = [ neighborArray objectAtIndex:k ] ;
 				fragment *fOne = [ neighbor objectAtIndex:0 ] ;
 				fragment *fTwo = [ neighbor objectAtIndex:1 ] ;
 				ctNode *nodeOne = [ neighbor objectAtIndex:2 ] ;
@@ -1703,11 +1690,10 @@
 		
 		// For later convenience, we set a set of all the neighbor fragment indices, saved as strings
 		
-		int jFrag ;
 		//for( fragment *nextFragment in treeFragments  )
-		for( jFrag = 0 ; jFrag < [  treeFragments count ] ; ++jFrag  )
+		for( j = 0 ; j < [  treeFragments count ] ; ++j  )
 			{
-				fragment *nextFragment = [ treeFragments objectAtIndex:jFrag ] ;
+				fragment *nextFragment = [ treeFragments objectAtIndex:j ] ;
 				[ nextFragment assignNeighborFragmentIndices ] ;
 			}
 		
@@ -3483,10 +3469,12 @@
 			}
 		}
 	
-		int jNext ;
 		//for( fragment *nextFrag in treeFragments ) {
-		for( jNext = 0 ; jNext < [  treeFragments count ] ; ++jNext ) {
-			fragment *nextFrag = [ treeFragments objectAtIndex:jNext ] ;
+
+		int j ;
+
+		for( j = 0 ; j < [  treeFragments count ] ; ++j  ) {
+			fragment *nextFrag = [ treeFragments objectAtIndex:j ] ;
 			fprintf( outFile, "@<TRIPOS>SET\nSTATIC fragment%d ATOMS\n", nextFrag->index ) ;
 			fprintf( outFile, "%d", [ nextFrag->fragmentNodes count ] ) ;
 			
@@ -3494,10 +3482,10 @@
 			
 			// Max of 20 atoms per line
 			
-			int jNode ;
+			NSArray *nextFragNodes = [ nextFrag->fragmentNodes allObjects ] ;
 			//for( ctNode *nextNode in nextFrag->fragmentNodes ) {
-			for( jNode = 0 ; jNode < [ nextFrag->fragmentNodes count ] ; ++jNode  ) {
-				ctNode *nextNode = [ nextFrag->fragmentNodes objectAtIndex:jNode ] ;
+			for( j = 0 ; j < [ nextFragNodes count ] ; ++j ) {
+				ctNode *nextNode = [ nextFragNodes objectAtIndex:j ] ;
 				fprintf( outFile, " %d", nextNode->index ) ;
 				++count ;
 				
