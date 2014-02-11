@@ -6,7 +6,14 @@
 //  Copyright 2012 __MyCompanyName__. All rights reserved.
 //
 
+#import "platform.h"
+
+#ifdef LINUX
+#import <Foundation/Foundation.h>
+#else
 #import <Cocoa/Cocoa.h>
+#endif
+
 
 typedef enum { RAW, CORRELATION } scoreType ;
 

@@ -6,8 +6,14 @@
 //  Copyright 2010 Artemis Discovery, LLC. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
 #include "platform.h"
+
+#ifdef LINUX
+#import <Foundation/Foundation.h>
+#else
+#import <Cocoa/Cocoa.h>
+#endif
+
 
 #ifdef OSX
 #include <curl/curl.h>
