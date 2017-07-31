@@ -262,234 +262,234 @@ int main (int argc, const char * argv[]) {
 						{
 							parseState = GETFLAG ;
 							
-							if( strcasestr( &argv[i][1], "create" ) == &argv[i][1] )
+							if( strcasestr( "create", &argv[i][1] )  )
 								{
 									mode = CREATEMODE ;
 									parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "compare" ) == &argv[i][1] )
+							else if( strcasestr( "compare", &argv[i][1] )  )
 								{
 									mode = COMPAREMODE ;
 									parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "convert" ) == &argv[i][1] )
+							else if( strcasestr( "convert", &argv[i][1] )  )
 								{
 									mode = CONVERTMODE ;
 									parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "memr" ) == &argv[i][1] )
+							else if( strcasestr( "memr", &argv[i][1] )  )
 								{
 									mode = MEMORYRESOURCEMODE ;
 									parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "info" ) == &argv[i][1] )
+							else if( strcasestr( "info", &argv[i][1] )  )
 								{
 									mode = INFOMODE ;
 									parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "keys" ) == &argv[i][1] )
+							else if( strcasestr( "keys", &argv[i][1] )  )
 								{
 									mode = KEYSMODE ;
 									parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "mol2" ) == &argv[i][1] )
+							else if( strcasestr( "mol2", &argv[i][1] )  )
 								{
 								mode = MOL2MODE ;
 								parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "kmeans" ) == &argv[i][1] )
+							else if( strcasestr( "kmeans", &argv[i][1] )  )
 								{
 									mode = KMEANSMODE ;
 									parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "check" ) == &argv[i][1] )
+							else if( strcasestr( "check", &argv[i][1] )  )
 								{
 									mode = CHECKMODE ;
 									parseState = GETTOKEN ;
 								}
-							else if( strcasestr( &argv[i][1], "grid" ) == &argv[i][1] )
+							else if( strcasestr( "grid", &argv[i][1] )  )
 									{
 										flagType = GRIDSPACING ;
 									}
-							else if( strcasestr( &argv[i][1], "num" ) == &argv[i][1] )
+							else if( strcasestr( "numsegments", &argv[i][1] )  )
 									{
 										flagType = NUMSEGMENTS ;
 									}
-							else if( strcasestr( &argv[i][1], "ldel" ) == &argv[i][1] )
+							else if( strcasestr( "ldel", &argv[i][1] )  )
 									{
 										flagType = LENGTHDELTA ;
 									}
-							else if( strcasestr( &argv[i][1], "rand" ) == &argv[i][1] )
+							else if( strcasestr( "randomangle", &argv[i][1] )  )
 									{
 										flagType = RANDOMIZATIONANGLE ;
 									}
-							else if( strcasestr( &argv[i][1], "cul" ) == &argv[i][1] )
+							else if( strcasestr( "cull", &argv[i][1] )  )
 									{
 										flagType = SEGMENTCULLING ;
 									}
-							else if( strcasestr( &argv[i][1], "rest" ) == &argv[i][1] )
+							else if( strcasestr( "restart", &argv[i][1] )  )
 									{
 										flagType = RESTARTRATE ;
 									}
-							else if( strcasestr( &argv[i][1], "ori" ) == &argv[i][1] )
+							else if( strcasestr( "orientation", &argv[i][1] )  )
 									{
 										flagType = ORIENTATION ;
 									}
-							else if( strcasestr( &argv[i][1], "see" ) == &argv[i][1] )
+							else if( strcasestr( "seed", &argv[i][1] )  )
 									{
 										flagType = SEED ;
 									}
-							else if( strcasestr( &argv[i][1], "skips" ) == &argv[i][1] )
+							else if( strcasestr( "skipself", &argv[i][1] )  )
 									{
 										flagType = SKIPSELFINTERSECTION ;
 									}
-							else if( strcasestr( &argv[i][1], "scale" ) == &argv[i][1] )
+							else if( strcasestr( "scale", &argv[i][1] )  )
 									{
 										flagType = SCALE ;
 									}
-							else if( strcasestr( &argv[i][1], "pri" ) == &argv[i][1] )
+							else if( strcasestr( "printoption", &argv[i][1] )  )
 									{
 										flagType = PRINTOPTION ;
 									}
-							else if( strcasestr( &argv[i][1], "tag" ) == &argv[i][1] )
+							else if( strcasestr( "tag", &argv[i][1] )  )
 									{
 										flagType = COMPARETAG ;
 									}
-							else if( strcasestr( &argv[i][1], "maxhit" ) == &argv[i][1] )
+							else if( strcasestr( "maxhit", &argv[i][1] )  )
 									{
 										flagType = MAXHITS ;
 									}
-							else if( strcasestr( &argv[i][1], "maxscore" ) == &argv[i][1] )
+							else if( strcasestr( "maxscore", &argv[i][1] )  )
 									{
 										flagType = MAXSCORE ;
 									}
-							else if( strcasestr( &argv[i][1], "fragscore" ) == &argv[i][1] )
+							else if( strcasestr( "fragscore", &argv[i][1] )  )
 								{
 									flagType = FRAGSCORE ;
 								}
-							else if( strcasestr( &argv[i][1], "relative" ) == &argv[i][1] )
+							else if( strcasestr( "relativetargetfragcount", &argv[i][1] )  )
 								{
 									flagType = USERELATIVETARGETFRAGMENTCOUNT ;
 								}
-							else if( strcasestr( &argv[i][1], "fraggroup" ) == &argv[i][1] )
+							else if( strcasestr( "fraggroup", &argv[i][1] )  )
 								{
 									flagType = PERMITFRAGMENTGROUPING ;
 								}
-							else if( strcasestr( &argv[i][1], "bigfragsize" ) == &argv[i][1] )
+							else if( strcasestr( "bigfragsize", &argv[i][1] )  )
 								{
 									flagType = BIGFRAGMENTSIZE ;
 								}
-							else if( strcasestr( &argv[i][1], "maxbigfrag" ) == &argv[i][1] )
+							else if( strcasestr( "maxbigfragcount", &argv[i][1] )  )
 								{
 									flagType = MAXBIGFRAGMENTCOUNT ;
 								}
-							else if( strcasestr( &argv[i][1], "sortbyweight" ) == &argv[i][1] )
+							else if( strcasestr( "sortbyweight", &argv[i][1] )  )
 								{
 									flagType = SORTBYWEIGHTEDSCORE ;
 								}
-							else if( strcasestr( &argv[i][1], "maxqueryun" ) == &argv[i][1] )
+							else if( strcasestr( "maxqueryunmatched", &argv[i][1] )  )
 								{
 									flagType = MAXPERCENTQUERYUNMATCHED ;
 								}
-							else if( strcasestr( &argv[i][1], "maxtargetun" ) == &argv[i][1] )
+							else if( strcasestr( "maxtargetunmatched", &argv[i][1] )  )
 								{
 									flagType = MAXPERCENTTARGETUNMATCHED ;
 								}
-							else if( strcasestr( &argv[i][1], "corr" ) == &argv[i][1] )
+							else if( strcasestr( "correlationscoring", &argv[i][1] )  )
 								{
 									flagType = CORRELATIONSCORING ;
 								}
-							else if( strcasestr( &argv[i][1], "keyIncr" ) == &argv[i][1] )
+							else if( strcasestr( "keyincrement", &argv[i][1] )  )
 								{
 									flagType = KEYINCREMENT ;
 								}
-							else if( strcasestr( &argv[i][1], "keyt" ) == &argv[i][1] )
+							else if( strcasestr( "keytype", &argv[i][1] )  )
 								{
 									flagType = KEYTYPE ;
 								}
-							else if( strcasestr( &argv[i][1], "neigh" ) == &argv[i][1] )
+							else if( strcasestr( "neighborlowerbound", &argv[i][1] )  )
 								{
 									flagType = NEIGHBORLOWERBOUNDTOEXCLUDE ;
 								}
-							else if( strcasestr( &argv[i][1], "mergeR" ) )
+							else if( strcasestr( "mergerings", &argv[i][1] ) )
 								{
 									flagType = MERGENEIGHBORRINGS ;
 								}
-							else if( strcasestr( &argv[i][1], "targetdir" ) == &argv[i][1] )
+							else if( strcasestr( "targetdir", &argv[i][1] )  )
 								{
 									flagType = TARGETISDIRECTORY ;
 								}
-							else if( strcasestr( &argv[i][1], "targetmysql" ) == &argv[i][1] )
+							else if( strcasestr( "targetmysql", &argv[i][1] )  )
 								{
 									flagType = TARGETISMYSQLIDS ;
 								}
-							else if( strcasestr( &argv[i][1], "targetmem" ) == &argv[i][1] )
+							else if( strcasestr( "targetmem", &argv[i][1] )  )
 								{
 									flagType = TARGETISMEMORYRSRC ;
 								}
-							else if( strcasestr( &argv[i][1], "xmlin" ) == &argv[i][1] )
+							else if( strcasestr( "xmlin", &argv[i][1] )  )
 								{
 									flagType = XMLIN ;
 								}
-							else if( strcasestr( &argv[i][1], "xmlout" ) == &argv[i][1] )
+							else if( strcasestr( "xmlout", &argv[i][1] )  )
 								{
 									flagType = XMLOUT ;
 								}
-							else if( strcasestr( &argv[i][1], "urlOut" ) == &argv[i][1] )
+							else if( strcasestr( "urlout", &argv[i][1] )  )
 								{
 									flagType = URLOUT ;
 								}
-							else if( strcasestr( &argv[i][1], "urlIn" ) == &argv[i][1] )
+							else if( strcasestr( "urlin", &argv[i][1] )  )
 								{
 									flagType = URLIN ;
 								}
-							else if( strcasestr( &argv[i][1], "compress" ) == &argv[i][1] )
+							else if( strcasestr( "compress", &argv[i][1] )  )
 								{
 									flagType = COMPRESS ;
 								}
-							else if( strcasestr( &argv[i][1], "decompress" ) == &argv[i][1] )
+							else if( strcasestr( "decompress", &argv[i][1] )  )
 								{
 									flagType = DECOMPRESS ;
 								}						
-							else if( strcasestr( &argv[i][1], "explode" ) == &argv[i][1] )
+							else if( strcasestr( "explode", &argv[i][1] )  )
 								{
 									flagType = EXPLODEDB ;
 								}
-							else if( strcasestr( &argv[i][1], "abbrev" ) == &argv[i][1] )
+							else if( strcasestr( "abbrev", &argv[i][1] )  )
 								{
 									flagType = ABBREVIATEDINFO ;
 								}
-							else if( strcasestr( &argv[i][1], "range" ) == &argv[i][1] )
+							else if( strcasestr( "range", &argv[i][1] )  )
 								{
 									flagType = RANGE ;
 								}
-							else if( strcasestr( &argv[i][1], "mysqltable" ) == &argv[i][1] )
+							else if( strcasestr( "mysqltable", &argv[i][1] )  )
 								{
 									flagType = MYSQLTABLENAME ;
 								}
-							else if( strcasestr( &argv[i][1], "mysqluser" ) == &argv[i][1] )
+							else if( strcasestr( "mysqluser", &argv[i][1] )  )
 								{
 									flagType = MYSQLUSERNAME ;
 								}
-							else if( strcasestr( &argv[i][1], "mysqlpass" ) == &argv[i][1] )
+							else if( strcasestr( "mysqlpass", &argv[i][1] )  )
 								{
 									flagType = MYSQLPASSWORD ;
 								}
-							else if( strcasestr( &argv[i][1], "mysqlhost" ) == &argv[i][1] )
+							else if( strcasestr( "mysqlhost", &argv[i][1] )  )
 								{
 									flagType = MYSQLHOSTNAME ;
 								}
-							else if( strcasestr( &argv[i][1], "mysqldb" ) == &argv[i][1] )
+							else if( strcasestr( "mysqldb", &argv[i][1] )  )
 								{
 									flagType = MYSQLDBNAME ;
 								}
-							else if( strcasestr( &argv[i][1], "loadmem" ) == &argv[i][1] )
+							else if( strcasestr( "loadmem", &argv[i][1] )  )
 								{
 									flagType = LOADMEMORYRESOURCE ;
 								}
 							else
 								{
-									printf( "CAN'T INTERPRET FLAG - Exit!\n" ) ;
+									printf( "CAN'T INTERPRET FLAG %s - Exit!\n",  &argv[i][1] ) ;
 									exit(1) ;
 								}
 									
