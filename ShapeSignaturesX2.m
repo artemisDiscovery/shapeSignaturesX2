@@ -489,7 +489,7 @@ int main (int argc, const char * argv[]) {
 								}
 							else
 								{
-									printf( "CAN'T INTERPRET FLAG - Exit!\n" ) ;
+									printf( "CAN'T INTERPRET FLAG %s - Exit!\n", &argv[i][1] ) ;
 									exit(1) ;
 								}
 									
